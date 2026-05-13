@@ -14,3 +14,5 @@ class EcoLogistUserAdmin(UserAdmin):
     )
     list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
     list_filter = UserAdmin.list_filter + ("role",)
+    search_fields = ("username", "email", "first_name", "last_name", "middle_name", "phone")
+    ordering = ("username",)

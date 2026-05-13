@@ -1,11 +1,14 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
-from django.views.generic import TemplateView
+from django.urls import include, path
+
+from apps.dashboard.views import home
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="base.html"), name="home"),
+    path("", home, name="home"),
+    path("", include("apps.accounts.urls")),
+    path("", include("apps.dashboard.urls")),
     path("admin/", admin.site.urls),
 ]
 

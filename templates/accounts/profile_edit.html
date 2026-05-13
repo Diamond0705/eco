@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование профиля - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel">
+    <h1>Редактирование профиля</h1>
+
+    <form method="post" class="form-card">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="field-errors">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="button-primary">Сохранить</button>
+            <a class="button-secondary" href="{% url 'accounts:profile' %}">Отмена</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
