@@ -1,0 +1,7 @@
+Django>=5.2.8,<5.3
+psycopg[binary]
+django-environ
+reportlab
+pytest
+pytest-django
+ruff

@@ -1,0 +1,17 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+*.sqlite3
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+staticfiles/
+media/*
+!media/waybills/
+!media/waybills/.gitkeep
+!media/reports/
+!media/reports/.gitkeep
+*.log
+~$*
