@@ -15,6 +15,10 @@
             <div class="site-links">
                 {% if user.is_authenticated %}
                     <a href="{% url 'dashboard:dashboard' %}">Панель</a>
+                    {% if user.role == "manager" and not user.is_superuser %}
+                        <a href="{% url 'orders:list' %}">Заявки</a>
+                        <a href="{% url 'orders:create' %}">Создать заявку</a>
+                    {% endif %}
                     <a href="{% url 'accounts:profile' %}">Профиль</a>
                     <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">
                         {% csrf_token %}
@@ -36,5 +40,6 @@
             </section>
         {% endblock %}
     </main>
+    <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

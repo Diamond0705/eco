@@ -10,7 +10,11 @@
     <div class="placeholder-grid">
         <div class="placeholder-card">
             <h2>Заявки</h2>
-            <p>Раздел будет добавлен на следующих фазах.</p>
+            <p>Создавайте заявки на перевозку и просматривайте текущий список.</p>
+            <div class="card-actions">
+                <a class="button-secondary" href="{% url 'orders:list' %}">Заявки</a>
+                <a class="button-secondary" href="{% url 'orders:create' %}">Создать заявку</a>
+            </div>
         </div>
         <div class="placeholder-card">
             <h2>Маршруты</h2>

@@ -2,6 +2,8 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from apps.accounts.forms import ManagerRegistrationForm, ProfileUpdateForm
+
 User = get_user_model()
 
 
@@ -27,6 +29,7 @@ def test_registration_creates_manager_user(client):
     user = User.objects.get(username="manager1")
     assert user.role == User.Role.MANAGER
     assert user.email == "manager@example.com"
+    assert user.phone == "+7 (999) 000-00-00"
 
 
 @pytest.mark.django_db
@@ -166,5 +169,102 @@ def test_profile_edit_updates_allowed_fields(client):
     assert user.last_name == "Иванова"
     assert user.middle_name == "Павловна"
     assert user.email == "new@example.com"
-    assert user.phone == "+79991112233"
+    assert user.phone == "+7 (999) 111-22-33"
     assert user.role == User.Role.MANAGER
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "phone",
+    ["", "89165743355", "+79165743355", "79165743355", "9165743355"],
+)
+def test_registration_form_accepts_valid_russian_phone_values(phone):
+    username_suffix = str(abs(hash(phone)))
+    form = ManagerRegistrationForm(
+        data={
+            "username": f"user_{username_suffix}",
+            "email": f"user_{username_suffix}@example.com",
+            "phone": phone,
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    if phone:
+        user = form.save()
+        assert user.phone == "+7 (916) 574-33-55"
+
+
+@pytest.mark.django_db
+def test_registration_form_rejects_invalid_russian_phone():
+    form = ManagerRegistrationForm(
+        data={
+            "username": "badphone",
+            "email": "badphone@example.com",
+            "phone": "954",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        }
+    )
+
+    assert not form.is_valid()
+    assert "Введите телефон в формате +7 (999) 123-45-67." in form.errors["phone"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "phone",
+    ["89165743355", "+79165743355", "79165743355", "9165743355"],
+)
+def test_profile_update_form_accepts_valid_russian_phone_values(phone):
+    user = User.objects.create_user(username="phone_profile", password="StrongPass12345")
+    form = ProfileUpdateForm(
+        data={
+            "first_name": "Анна",
+            "last_name": "Иванова",
+            "middle_name": "Павловна",
+            "email": "phone_profile@example.com",
+            "phone": phone,
+        },
+        instance=user,
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert user.phone == "+7 (916) 574-33-55"
+
+
+@pytest.mark.django_db
+def test_profile_update_form_rejects_invalid_russian_phone():
+    user = User.objects.create_user(username="bad_phone_profile", password="StrongPass12345")
+    form = ProfileUpdateForm(
+        data={
+            "first_name": "Анна",
+            "last_name": "Иванова",
+            "middle_name": "Павловна",
+            "email": "bad_phone_profile@example.com",
+            "phone": "+1 999 123-45-67",
+        },
+        instance=user,
+    )
+
+    assert not form.is_valid()
+    assert "Введите телефон в формате +7 (999) 123-45-67." in form.errors["phone"]
+
+
+@pytest.mark.django_db
+def test_profile_update_form_allows_blank_phone():
+    user = User.objects.create_user(username="blank_phone_profile", password="StrongPass12345")
+    form = ProfileUpdateForm(
+        data={
+            "first_name": "Анна",
+            "last_name": "Иванова",
+            "middle_name": "Павловна",
+            "email": "blank_phone_profile@example.com",
+            "phone": "",
+        },
+        instance=user,
+    )
+
+    assert form.is_valid(), form.errors

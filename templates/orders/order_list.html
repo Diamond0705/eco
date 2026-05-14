@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Заявки - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Заявки</h1>
+            <p class="muted">Заявки на перевозку текущего менеджера.</p>
+        </div>
+        <a class="button-primary" href="{% url 'orders:create' %}">Создать заявку</a>
+    </div>
+
+    <form method="get" class="filter-form">
+        <label for="status">Статус</label>
+        <select id="status" name="status">
+            <option value="">Все статусы</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="button-secondary">Показать</button>
+    </form>
+
+    {% if orders %}
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Груз</th>
+                        <th>Вес, кг</th>
+                        <th>Транспорт</th>
+                        <th>Дата доставки</th>
+                        <th>Статус</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.cargo_name }}</td>
+                            <td>{{ order.cargo_weight_kg }}</td>
+                            <td>{{ order.transport }}</td>
+                            <td>{{ order.desired_delivery_date|date:"d.m.Y" }}</td>
+                            <td>{{ order.get_status_display }}</td>
+                            <td><a href="{% url 'orders:detail' order.pk %}">Открыть</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Заявок пока нет.</p>
+    {% endif %}
+</section>
+{% endblock %}

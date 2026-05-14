@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Заявка №{{ order.id }} - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel">
+    <div class="page-heading">
+        <div>
+            <h1>Заявка №{{ order.id }}</h1>
+            <p class="muted">{{ order.get_status_display }}</p>
+        </div>
+        <div class="form-actions">
+            {% if order.status == "new" %}
+                <a class="button-secondary" href="{% url 'orders:edit' order.pk %}">Редактировать</a>
+                <form method="post" action="{% url 'orders:cancel' order.pk %}" class="inline-form">
+                    {% csrf_token %}
+                    <button
+                        type="submit"
+                        class="button-secondary danger-button"
+                        onclick="return confirm('Отменить заявку?');"
+                    >
+                        Отменить заявку
+                    </button>
+                </form>
+            {% endif %}
+            <a class="button-secondary" href="{% url 'orders:list' %}">К списку</a>
+        </div>
+    </div>
+
+    <dl class="details-list">
+        <dt>Груз</dt>
+        <dd>{{ order.cargo_name }}</dd>
+        <dt>Тип груза</dt>
+        <dd>{{ order.cargo_type }}</dd>
+        <dt>Вес, кг</dt>
+        <dd>{{ order.cargo_weight_kg }}</dd>
+        <dt>Дата доставки</dt>
+        <dd>{{ order.desired_delivery_date|date:"d.m.Y" }}</dd>
+        <dt>Транспорт</dt>
+        <dd>{{ order.transport }}</dd>
+        <dt>Создана</dt>
+        <dd>{{ order.created_at|date:"d.m.Y H:i" }}</dd>
+        <dt>Обновлена</dt>
+        <dd>{{ order.updated_at|date:"d.m.Y H:i" }}</dd>
+        {% if order.notes %}
+            <dt>Примечания</dt>
+            <dd>{{ order.notes }}</dd>
+        {% endif %}
+    </dl>
+
+    <h2>Точки маршрута</h2>
+    <ol class="point-list">
+        {% for point in points %}
+            <li>
+                <strong>{{ point.get_point_type_display }}:</strong>
+                {{ point.location.name }}
+                {% if point.location.address %}<span class="muted">— {{ point.location.address }}</span>{% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+
+    <div class="message">
+        Расчет маршрутов будет добавлен на следующем этапе.
+    </div>
+</section>
+{% endblock %}

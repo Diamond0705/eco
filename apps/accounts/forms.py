@@ -1,8 +1,29 @@
+import re
+
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 User = get_user_model()
+
+PHONE_HELP_TEXT = "Предпочтительный формат: +7 (999) 123-45-67"
+
+
+def validate_russian_phone(phone):
+    if not phone:
+        return phone
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) == 11 and digits[0] in {"7", "8"}:
+        digits = digits[1:]
+    elif len(digits) == 10:
+        pass
+    else:
+        raise forms.ValidationError("Введите телефон в формате +7 (999) 123-45-67.")
+
+    if not digits.startswith("9"):
+        raise forms.ValidationError("Введите телефон в формате +7 (999) 123-45-67.")
+
+    return f"+7 ({digits[:3]}) {digits[3:6]}-{digits[6:8]}-{digits[8:10]}"
 
 
 class ManagerRegistrationForm(UserCreationForm):
@@ -34,12 +55,17 @@ class ManagerRegistrationForm(UserCreationForm):
             "Минимум 8 символов. Не используйте слишком простой пароль."
         )
         self.fields["password2"].help_text = "Введите тот же пароль еще раз."
+        self.fields["phone"].help_text = PHONE_HELP_TEXT
+        self.fields["phone"].widget.attrs["placeholder"] = "+7 (999) 123-45-67"
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip()
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Пользователь с таким email уже зарегистрирован.")
         return email
+
+    def clean_phone(self):
+        return validate_russian_phone(self.cleaned_data.get("phone", ""))
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -102,3 +128,12 @@ class ProfileUpdateForm(forms.ModelForm):
             "email": "Email",
             "phone": "Телефон",
         }
+        help_texts = {
+            "phone": PHONE_HELP_TEXT,
+        }
+        widgets = {
+            "phone": forms.TextInput(attrs={"placeholder": "+7 (999) 123-45-67"}),
+        }
+
+    def clean_phone(self):
+        return validate_russian_phone(self.cleaned_data.get("phone", ""))

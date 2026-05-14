@@ -89,6 +89,10 @@ body {
     max-width: 760px;
 }
 
+.page-panel-wide {
+    max-width: 1000px;
+}
+
 .page-heading {
     display: flex;
     align-items: center;
@@ -146,9 +150,38 @@ body {
     color: #1f5f43;
 }
 
+.danger-button {
+    color: #8f1d1d;
+}
+
 .form-actions {
     display: flex;
     gap: 12px;
+}
+
+.filter-form,
+.card-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.filter-form {
+    margin-top: 24px;
+}
+
+.filter-form select {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid #ccd4c8;
+    border-radius: 6px;
+    background: #ffffff;
+    font: inherit;
+}
+
+.card-actions {
+    margin-top: 14px;
 }
 
 .form-note,
@@ -222,4 +255,33 @@ body {
     margin: 0;
     color: #596057;
     line-height: 1.45;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    margin-top: 24px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dfe4dc;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.data-table th {
+    color: #596057;
+    font-size: 14px;
+}
+
+.point-list {
+    padding-left: 24px;
+    line-height: 1.7;
 }
