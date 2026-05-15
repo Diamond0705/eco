@@ -11,7 +11,7 @@ from .services.route_calculation_service import RouteCalculationService
 def _manager_orders_queryset(request):
     return (
         ShipmentOrder.objects.filter(manager=request.user)
-        .select_related("transport__eco_standard", "manager")
+        .select_related("transport__eco_standard", "manager", "trip")
         .prefetch_related("points__location", "route_options")
     )
 

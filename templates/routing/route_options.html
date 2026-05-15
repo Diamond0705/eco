@@ -61,12 +61,18 @@
                         <th>NOx</th>
                         <th>PM</th>
                         <th>Эко-рейтинг</th>
+                        <th>Действие</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for option in route_options %}
                         <tr>
-                            <td>{{ option.name }}</td>
+                            <td>
+                                {{ option.name }}
+                                {% if option.is_selected %}
+                                    <span class="status-badge">Выбран</span>
+                                {% endif %}
+                            </td>
                             <td>{{ option.distance_km }} км</td>
                             <td>{{ option.duration_minutes }} мин</td>
                             <td>{{ option.fuel_multiplier }}</td>
@@ -76,6 +82,24 @@
                             <td>{{ option.nox_g }} г</td>
                             <td>{{ option.pm_g }} г</td>
                             <td>{{ option.eco_rating }}</td>
+                            <td>
+                                {% if order.status == "calculated" and not order.trip %}
+                                    <form
+                                        method="post"
+                                        action="{% url 'trips:approve_route' order.pk option.pk %}"
+                                        class="inline-form"
+                                    >
+                                        {% csrf_token %}
+                                        <button type="submit" class="button-primary">
+                                            Утвердить маршрут
+                                        </button>
+                                    </form>
+                                {% elif option.is_selected %}
+                                    <span class="muted">Маршрут утвержден</span>
+                                {% else %}
+                                    <span class="muted">Недоступно</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -85,9 +109,12 @@
         <div class="message">Для этой заявки еще нет рассчитанных маршрутов.</div>
     {% endif %}
 
-    <div class="message">
-        Утверждение маршрута и создание рейса будут добавлены на следующем этапе.
-    </div>
+    {% if order.trip %}
+        <div class="message">
+            Для этой заявки создан рейс:
+            <a href="{% url 'trips:detail' order.trip.pk %}">открыть карточку рейса</a>.
+        </div>
+    {% endif %}
 </section>
 {% endblock %}
 

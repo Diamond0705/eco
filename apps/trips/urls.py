@@ -1,0 +1,17 @@
+from django.urls import path
+
+from . import views
+
+app_name = "trips"
+
+urlpatterns = [
+    path(
+        "orders/<int:order_id>/routes/<int:route_option_id>/approve/",
+        views.approve_route,
+        name="approve_route",
+    ),
+    path("trips/", views.trip_list, name="list"),
+    path("trips/<int:pk>/", views.trip_detail, name="detail"),
+    path("trips/<int:pk>/start/", views.trip_start, name="start"),
+    path("trips/<int:pk>/deliver/", views.trip_deliver, name="deliver"),
+]

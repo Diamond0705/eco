@@ -19,6 +19,7 @@
                     {% if user.role == "manager" and not user.is_superuser %}
                         <a href="{% url 'orders:list' %}">Заявки</a>
                         <a href="{% url 'orders:create' %}">Создать заявку</a>
+                        <a href="{% url 'trips:list' %}">Рейсы</a>
                     {% endif %}
                     <a href="{% url 'accounts:profile' %}">Профиль</a>
                     <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">

@@ -12,8 +12,8 @@ from .models import ShipmentOrder
 def _manager_orders_queryset(request):
     return (
         ShipmentOrder.objects.filter(manager=request.user)
-        .select_related("transport", "manager")
-        .prefetch_related("points__location")
+        .select_related("transport", "manager", "trip")
+        .prefetch_related("points__location", "route_options")
     )
 
 

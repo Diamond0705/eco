@@ -261,7 +261,7 @@ def test_order_detail_displays_points_ordered_by_sequence(client, manager, trans
     assert response.status_code == 200
     assert content.index("Погрузка") < content.index("Доставка")
     assert "Рассчитать маршруты" in content
-    assert "Утверждение маршрута и создание рейса будут добавлены на следующем этапе." in content
+    assert "Утверждение маршрута создает рейс." in content
 
 
 @pytest.mark.django_db

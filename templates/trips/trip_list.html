@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Рейсы - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Рейсы</h1>
+            <p class="muted">Список рейсов по утвержденным маршрутам.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'orders:list' %}">К заявкам</a>
+    </div>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Заявка</th>
+                    <th>Груз</th>
+                    <th>Маршрут</th>
+                    <th>Статус</th>
+                    <th>Создан</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in trips %}
+                    <tr>
+                        <td>№{{ trip.id }}</td>
+                        <td>№{{ trip.order_id }}</td>
+                        <td>{{ trip.order.cargo_name }}</td>
+                        <td>{{ trip.route_option.name }}</td>
+                        <td>{{ trip.get_status_display }}</td>
+                        <td>{{ trip.created_at|date:"d.m.Y H:i" }}</td>
+                        <td><a href="{% url 'trips:detail' trip.pk %}">Открыть</a></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">Рейсы пока не созданы.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

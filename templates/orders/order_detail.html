@@ -60,7 +60,9 @@
     </ol>
 
     <div class="message route-actions">
-        {% if order.route_options.exists %}
+        {% if order.trip %}
+            <a class="button-primary" href="{% url 'trips:detail' order.trip.pk %}">Открыть рейс</a>
+        {% elif order.route_options.exists %}
             <a class="button-primary" href="{% url 'routing:options' order.pk %}">Сравнить маршруты</a>
         {% elif order.status == "new" or order.status == "calculated" %}
             <form method="post" action="{% url 'routing:calculate' order.pk %}" class="inline-form">
@@ -70,7 +72,9 @@
         {% else %}
             <span>Маршруты можно рассчитать только для новой или рассчитанной заявки.</span>
         {% endif %}
-        <span>Утверждение маршрута и создание рейса будут добавлены на следующем этапе.</span>
+        {% if not order.trip %}
+            <span>Утверждение маршрута создает рейс.</span>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

@@ -9,6 +9,7 @@ from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
 from apps.routing.models import RouteOption
 from apps.routing.services.route_calculation_service import RouteCalculationService
+from apps.trips.services import TripLifecycleService
 
 User = get_user_model()
 
@@ -175,7 +176,7 @@ def test_route_comparison_page_displays_route_options(client, manager, transport
     assert "Быстрый" in content
     assert "Короткий" in content
     assert "Экологичный" in content
-    assert "Утверждение маршрута и создание рейса будут добавлены на следующем этапе." in content
+    assert "Утвердить маршрут" in content
 
 
 @pytest.mark.django_db
@@ -198,3 +199,27 @@ def test_route_comparison_page_includes_map_assets_and_route_data(
     assert 'id="route-options-data"' in content
     assert "geometry_json" in content
     assert "Нет корректной геометрии для отображения маршрутов на карте." in content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_shows_approve_buttons_only_when_allowed(
+    client, manager, transport, locations
+):
+    order = create_order(manager, transport, locations)
+    RouteCalculationService().calculate_for_order(order)
+    client.force_login(manager)
+
+    calculated_response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    calculated_content = calculated_response.content.decode()
+
+    assert calculated_response.status_code == 200
+    assert "Утвердить маршрут" in calculated_content
+
+    TripLifecycleService().approve_route(order, order.route_options.first(), manager)
+
+    planned_response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    planned_content = planned_response.content.decode()
+
+    assert planned_response.status_code == 200
+    assert "Утвердить маршрут" not in planned_content
+    assert "Маршрут утвержден" in planned_content
