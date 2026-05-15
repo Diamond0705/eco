@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}EcoLogist{% endblock %}</title>
+    {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
@@ -41,5 +42,6 @@
         {% endblock %}
     </main>
     <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

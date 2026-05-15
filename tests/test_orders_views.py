@@ -9,6 +9,7 @@ from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.admin import OrderPointInline, ShipmentOrderAdmin
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.routing.services.route_calculation_service import RouteCalculationService
 
 User = get_user_model()
 
@@ -259,7 +260,53 @@ def test_order_detail_displays_points_ordered_by_sequence(client, manager, trans
 
     assert response.status_code == 200
     assert content.index("Погрузка") < content.index("Доставка")
-    assert "Расчет маршрутов будет добавлен на следующем этапе." in content
+    assert "Рассчитать маршруты" in content
+    assert "Утверждение маршрута и создание рейса будут добавлены на следующем этапе." in content
+
+
+@pytest.mark.django_db
+def test_new_order_detail_shows_calculate_routes_button(client, manager, transport, locations):
+    order = _create_order(manager, transport, locations)
+    client.force_login(manager)
+
+    response = client.get(reverse("orders:detail", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Рассчитать маршруты" in content
+    assert reverse("routing:calculate", kwargs={"pk": order.pk}) in content
+
+
+@pytest.mark.django_db
+def test_cancelled_order_detail_does_not_show_calculate_routes_button(
+    client, manager, transport, locations
+):
+    order = _create_order(manager, transport, locations, status=ShipmentOrder.Status.CANCELLED)
+    client.force_login(manager)
+
+    response = client.get(reverse("orders:detail", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Рассчитать маршруты" not in content
+    assert "Маршруты можно рассчитать только для новой или рассчитанной заявки." in content
+
+
+@pytest.mark.django_db
+def test_calculated_order_with_route_options_shows_compare_link(
+    client, manager, transport, locations
+):
+    order = _create_order(manager, transport, locations)
+    RouteCalculationService().calculate_for_order(order)
+    client.force_login(manager)
+
+    response = client.get(reverse("orders:detail", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Сравнить маршруты" in content
+    assert reverse("routing:options", kwargs={"pk": order.pk}) in content
+    assert "Рассчитать маршруты" not in content
 
 
 @pytest.mark.django_db

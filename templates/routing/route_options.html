@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Сравнение маршрутов - заявка №{{ order.id }} - EcoLogist{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Сравнение маршрутов</h1>
+            <p class="muted">Заявка №{{ order.id }} · {{ order.cargo_name }}</p>
+        </div>
+        <div class="form-actions">
+            <a class="button-secondary" href="{% url 'orders:detail' order.pk %}">К заявке</a>
+            <a class="button-secondary" href="{% url 'orders:list' %}">К списку</a>
+        </div>
+    </div>
+
+    <dl class="details-list">
+        <dt>Груз</dt>
+        <dd>{{ order.cargo_name }}</dd>
+        <dt>Вес, кг</dt>
+        <dd>{{ order.cargo_weight_kg }}</dd>
+        <dt>Транспорт</dt>
+        <dd>{{ order.transport }}</dd>
+        <dt>Дата доставки</dt>
+        <dd>{{ order.desired_delivery_date|date:"d.m.Y" }}</dd>
+        <dt>Точки</dt>
+        <dd>
+            {% for point in points %}
+                {{ point.location.name }}{% if not forloop.last %} → {% endif %}
+            {% endfor %}
+        </dd>
+    </dl>
+
+    {% if route_options %}
+        {{ map_routes|json_script:"route-options-data" }}
+        <div id="route-map" class="route-map" aria-label="Карта маршрутов"></div>
+        <p class="form-note route-map-note">
+            Маршруты построены демонстрационным mock-провайдером. Реальная дорожная
+            маршрутизация может быть подключена через GraphHopper на следующем этапе.
+        </p>
+        <div id="route-map-warning" class="message route-map-warning" hidden>
+            Нет корректной геометрии для отображения маршрутов на карте.
+        </div>
+
+        <div class="table-wrap route-table-wrap">
+            <table class="data-table route-table">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Расстояние</th>
+                        <th>Время</th>
+                        <th>Множитель расхода</th>
+                        <th>Топливо</th>
+                        <th>Стоимость</th>
+                        <th>CO2</th>
+                        <th>NOx</th>
+                        <th>PM</th>
+                        <th>Эко-рейтинг</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for option in route_options %}
+                        <tr>
+                            <td>{{ option.name }}</td>
+                            <td>{{ option.distance_km }} км</td>
+                            <td>{{ option.duration_minutes }} мин</td>
+                            <td>{{ option.fuel_multiplier }}</td>
+                            <td>{{ option.fuel_liters }} л</td>
+                            <td>{{ option.cost_rub }} руб.</td>
+                            <td>{{ option.co2_kg }} кг</td>
+                            <td>{{ option.nox_g }} г</td>
+                            <td>{{ option.pm_g }} г</td>
+                            <td>{{ option.eco_rating }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="message">Для этой заявки еще нет рассчитанных маршрутов.</div>
+    {% endif %}
+
+    <div class="message">
+        Утверждение маршрута и создание рейса будут добавлены на следующем этапе.
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    (function () {
+        var dataElement = document.getElementById("route-options-data");
+        var mapElement = document.getElementById("route-map");
+        var warningElement = document.getElementById("route-map-warning");
+        if (!dataElement || !mapElement) {
+            return;
+        }
+        if (typeof L === "undefined") {
+            if (warningElement) {
+                warningElement.textContent = "Не удалось загрузить библиотеку карты.";
+                warningElement.hidden = false;
+            }
+            return;
+        }
+
+        var routes = JSON.parse(dataElement.textContent);
+        var routeStyles = {
+            "Быстрый": {color: "#2f6fb1", dashArray: null},
+            "Короткий": {color: "#1f5f43", dashArray: null},
+            "Экологичный": {color: "#b46a16", dashArray: null}
+        };
+        var map = L.map(mapElement);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 18,
+            attribution: "&copy; OpenStreetMap"
+        }).addTo(map);
+
+        function isValidCoordinate(coordinate) {
+            return Array.isArray(coordinate)
+                && coordinate.length === 2
+                && typeof coordinate[0] === "number"
+                && typeof coordinate[1] === "number";
+        }
+
+        var bounds = [];
+        var firstPoint = null;
+        var lastPoint = null;
+        routes.forEach(function (route, index) {
+            var coordinates = route.geometry_json;
+            if (!Array.isArray(coordinates)) {
+                return;
+            }
+            coordinates = coordinates.filter(isValidCoordinate);
+            if (coordinates.length < 2) {
+                return;
+            }
+            var style = routeStyles[route.name] || {color: "#596057", dashArray: null};
+            L.polyline(coordinates, {
+                color: style.color,
+                dashArray: style.dashArray,
+                weight: 5,
+                opacity: 0.85
+            }).addTo(map).bindPopup(
+                route.name + "<br>Эко-рейтинг: " + route.eco_rating
+            );
+            if (index === 0) {
+                firstPoint = coordinates[0];
+                lastPoint = coordinates[coordinates.length - 1];
+            }
+            bounds = bounds.concat(coordinates);
+        });
+
+        if (bounds.length > 0) {
+            if (firstPoint) {
+                L.marker(firstPoint).addTo(map).bindPopup("Начало маршрута");
+            }
+            if (lastPoint) {
+                L.marker(lastPoint).addTo(map).bindPopup("Конец маршрута");
+            }
+            map.fitBounds(bounds, {padding: [24, 24]});
+            window.setTimeout(function () {
+                map.invalidateSize();
+            }, 100);
+        } else if (warningElement) {
+            warningElement.hidden = false;
+        }
+    }());
+</script>
+{% endblock %}

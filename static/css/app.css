@@ -285,3 +285,57 @@ body {
     padding-left: 24px;
     line-height: 1.7;
 }
+
+.route-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.route-map {
+    position: relative;
+    z-index: 0;
+    display: block;
+    width: 100%;
+    height: 420px;
+    min-height: 360px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    border: 1px solid #dfe4dc;
+    border-radius: 8px;
+    background: #ffffff;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.route-map.leaflet-container {
+    width: 100%;
+    height: 420px;
+    min-height: 360px;
+}
+
+.route-map .leaflet-pane,
+.route-map .leaflet-control-container {
+    z-index: 1;
+}
+
+.route-map img {
+    max-width: none;
+}
+
+.route-map-warning {
+    margin-top: 0;
+}
+
+.route-map-note {
+    margin: -12px 0 20px;
+}
+
+.route-table-wrap {
+    clear: both;
+}
+
+.route-table {
+    min-width: 980px;
+}

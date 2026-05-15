@@ -88,7 +88,13 @@ def test_manager_dashboard_allows_manager(client):
 
     response = client.get(reverse("dashboard:manager_dashboard"))
 
+    content = response.content.decode()
+
     assert response.status_code == 200
+    assert (
+        "Сравнивайте рассчитанные варианты маршрутов по стоимости, выбросам и эко-рейтингу."
+        in content
+    )
 
 
 @pytest.mark.django_db
