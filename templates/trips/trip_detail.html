@@ -12,6 +12,7 @@
         <div class="form-actions">
             <a class="button-secondary" href="{% url 'orders:detail' trip.order.pk %}">К заявке</a>
             <a class="button-secondary" href="{% url 'trips:list' %}">К рейсам</a>
+            <a class="button-secondary" href="{% url 'trips:waybill' trip.pk %}">Скачать путевой лист</a>
         </div>
     </div>
 
@@ -66,7 +67,6 @@
         {% else %}
             <span>Рейс отменен.</span>
         {% endif %}
-        <span>PDF-путевой лист будет добавлен на следующем этапе.</span>
     </div>
 
     <h2>История статусов</h2>

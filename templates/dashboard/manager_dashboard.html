@@ -27,6 +27,13 @@
                 <a class="button-secondary" href="{% url 'trips:list' %}">Рейсы</a>
             </div>
         </div>
+        <div class="placeholder-card">
+            <h2>Отчеты</h2>
+            <p>Смотрите суммарные выбросы по доставленным рейсам и скачивайте PDF.</p>
+            <div class="card-actions">
+                <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчет по выбросам</a>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

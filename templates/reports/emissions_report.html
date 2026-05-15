@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Отчет по выбросам - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Отчет по выбросам</h1>
+            <p class="muted">Доставленные рейсы текущего менеджера.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'reports:emissions_pdf' %}?date_from={{ date_from }}&date_to={{ date_to }}">
+            Скачать PDF
+        </a>
+    </div>
+
+    <form method="get" class="filter-form">
+        <label>
+            Дата с
+            <input type="date" name="date_from" value="{{ date_from }}">
+        </label>
+        <label>
+            Дата по
+            <input type="date" name="date_to" value="{{ date_to }}">
+        </label>
+        <button type="submit" class="button-primary">Показать</button>
+        <a class="button-secondary" href="{% url 'reports:emissions' %}">Сбросить</a>
+    </form>
+
+    {% if filters.error_message %}
+        <div class="message message-error">{{ filters.error_message }}</div>
+    {% endif %}
+
+    <div class="placeholder-grid">
+        <div class="placeholder-card">
+            <h2>Рейсы</h2>
+            <p>{{ report.summary.trips_count }}</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Расстояние</h2>
+            <p>{{ report.summary.distance_km }} км</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Топливо</h2>
+            <p>{{ report.summary.fuel_liters }} л</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Стоимость</h2>
+            <p>{{ report.summary.cost_rub }} руб.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>CO2</h2>
+            <p>{{ report.summary.co2_kg }} кг</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>NOx / PM</h2>
+            <p>{{ report.summary.nox_g }} г / {{ report.summary.pm_g }} г</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="data-table route-table">
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Дата доставки</th>
+                    <th>Груз</th>
+                    <th>Транспорт</th>
+                    <th>Маршрут</th>
+                    <th>Расстояние</th>
+                    <th>Топливо</th>
+                    <th>Стоимость</th>
+                    <th>CO2</th>
+                    <th>NOx</th>
+                    <th>PM</th>
+                    <th>Эко-рейтинг</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report.rows %}
+                    <tr>
+                        <td>№{{ row.trip.pk }}</td>
+                        <td>{{ row.finish_date|date:"d.m.Y H:i" }}</td>
+                        <td>{{ row.cargo }}</td>
+                        <td>{{ row.transport }}</td>
+                        <td>{{ row.route_name }}</td>
+                        <td>{{ row.distance_km }} км</td>
+                        <td>{{ row.fuel_liters }} л</td>
+                        <td>{{ row.cost_rub }} руб.</td>
+                        <td>{{ row.co2_kg }} кг</td>
+                        <td>{{ row.nox_g }} г</td>
+                        <td>{{ row.pm_g }} г</td>
+                        <td>{{ row.eco_rating }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="12">Доставленных рейсов за выбранный период нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

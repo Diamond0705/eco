@@ -275,7 +275,7 @@ def test_deliver_action_updates_order_and_creates_event(client, manager, calcula
 
 
 @pytest.mark.django_db
-def test_trip_detail_displays_metrics_history_and_pdf_placeholder(
+def test_trip_detail_displays_metrics_history_and_waybill_link(
     client, manager, calculated_order
 ):
     trip = TripLifecycleService().approve_route(
@@ -291,5 +291,5 @@ def test_trip_detail_displays_metrics_history_and_pdf_placeholder(
     assert response.status_code == 200
     assert "Стоимость" in content
     assert "История статусов" in content
-    assert "PDF-путевой лист будет добавлен на следующем этапе." in content
+    assert "Скачать путевой лист" in content
     assert not trip.waybill_pdf
