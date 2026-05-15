@@ -3,23 +3,111 @@
 {% block title %}Панель администратора - EcoLogist{% endblock %}
 
 {% block content %}
-<section class="page-panel">
-    <h1>Панель администратора</h1>
-    <p class="muted">Базовая панель для будущего управления пользователями и справочниками.</p>
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Панель администратора</h1>
+            <p class="muted">Сводные показатели по пользователям, транспорту, заявкам и рейсам компании.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'admin:index' %}">Django Admin</a>
+    </div>
 
     <div class="placeholder-grid">
         <div class="placeholder-card">
             <h2>Пользователи</h2>
-            <p>Управление пользователями будет добавлено на следующих фазах.</p>
+            <p class="stat-value">{{ analytics.users.total }}</p>
+            <p>Менеджеры: {{ analytics.users.managers }}</p>
         </div>
         <div class="placeholder-card">
             <h2>Транспорт</h2>
-            <p>Справочник транспорта будет реализован отдельно.</p>
+            <p class="stat-value">{{ analytics.transports.total }}</p>
+            <p>Справочник доступен в Django Admin.</p>
         </div>
         <div class="placeholder-card">
-            <h2>Настройки</h2>
-            <p>Настройки расчета появятся после моделей справочников.</p>
+            <h2>Заявки</h2>
+            <p class="stat-value">{{ analytics.orders.total }}</p>
+            <p>Все заявки компании.</p>
         </div>
+        <div class="placeholder-card">
+            <h2>Рейсы</h2>
+            <p class="stat-value">{{ analytics.trips.total }}</p>
+            <p>Доставленные: {{ analytics.trips.delivered }}</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Выбросы CO2</h2>
+            <p class="stat-value">{{ analytics.company.co2_kg }} кг</p>
+            <p>По доставленным рейсам компании.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Стоимость</h2>
+            <p class="stat-value">{{ analytics.company.cost_rub }} руб.</p>
+            <p>Топливо и сервисный тариф по доставленным рейсам.</p>
+        </div>
+    </div>
+
+    <div class="placeholder-grid">
+        <div class="placeholder-card">
+            <h2>Топ менеджеров</h2>
+            {% if analytics.top_managers %}
+                <ol class="compact-list">
+                    {% for row in analytics.top_managers %}
+                        <li>
+                            {{ row.order__manager__last_name }} {{ row.order__manager__first_name }}
+                            {% if not row.order__manager__last_name and not row.order__manager__first_name %}
+                                {{ row.order__manager__username }}
+                            {% endif %}
+                            — {{ row.delivered_count }}
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% else %}
+                <p>Доставленных рейсов пока нет.</p>
+            {% endif %}
+        </div>
+        <div class="placeholder-card">
+            <h2>Топ транспорта</h2>
+            {% if analytics.top_transports %}
+                <ol class="compact-list">
+                    {% for row in analytics.top_transports %}
+                        <li>{{ row.order__transport__plate_number }} — {{ row.order__transport__model }}: {{ row.delivered_count }}</li>
+                    {% endfor %}
+                </ol>
+            {% else %}
+                <p>Доставленных рейсов пока нет.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2>Последние рейсы</h2>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Менеджер</th>
+                    <th>Груз</th>
+                    <th>Транспорт</th>
+                    <th>Статус</th>
+                    <th>Создан</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in analytics.recent_trips %}
+                    <tr>
+                        <td>№{{ trip.pk }}</td>
+                        <td>{{ trip.order.manager }}</td>
+                        <td>{{ trip.order.cargo_name }}</td>
+                        <td>{{ trip.order.transport }}</td>
+                        <td>{{ trip.get_status_display }}</td>
+                        <td>{{ trip.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">Рейсов пока нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </section>
 {% endblock %}

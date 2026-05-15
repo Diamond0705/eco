@@ -53,13 +53,33 @@
 
     <div class="message route-actions">
         {% if trip.status == "planned" %}
-            <form method="post" action="{% url 'trips:start' trip.pk %}" class="inline-form">
+            <form method="post" action="{% url 'trips:start' trip.pk %}" class="form-card compact-form">
                 {% csrf_token %}
+                <div class="form-row">
+                    {{ start_form.actual_start_at.label_tag }}
+                    {{ start_form.actual_start_at }}
+                    {{ start_form.actual_start_at.errors }}
+                </div>
+                <div class="form-row">
+                    {{ start_form.comment.label_tag }}
+                    {{ start_form.comment }}
+                    {{ start_form.comment.errors }}
+                </div>
                 <button type="submit" class="button-primary">Начать рейс</button>
             </form>
         {% elif trip.status == "in_progress" %}
-            <form method="post" action="{% url 'trips:deliver' trip.pk %}" class="inline-form">
+            <form method="post" action="{% url 'trips:deliver' trip.pk %}" class="form-card compact-form">
                 {% csrf_token %}
+                <div class="form-row">
+                    {{ deliver_form.actual_finish_at.label_tag }}
+                    {{ deliver_form.actual_finish_at }}
+                    {{ deliver_form.actual_finish_at.errors }}
+                </div>
+                <div class="form-row">
+                    {{ deliver_form.comment.label_tag }}
+                    {{ deliver_form.comment }}
+                    {{ deliver_form.comment.errors }}
+                </div>
                 <button type="submit" class="button-primary">Завершить рейс</button>
             </form>
         {% elif trip.status == "delivered" %}
@@ -74,7 +94,8 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Время</th>
+                    <th>Фактическое время</th>
+                    <th>Время записи</th>
                     <th>Предыдущий статус</th>
                     <th>Новый статус</th>
                     <th>Изменил</th>
@@ -84,6 +105,13 @@
             <tbody>
                 {% for event in status_events %}
                     <tr>
+                        <td>
+                            {% if event.event_at %}
+                                {{ event.event_at|date:"d.m.Y H:i" }}
+                            {% else %}
+                                {{ event.changed_at|date:"d.m.Y H:i" }}
+                            {% endif %}
+                        </td>
                         <td>{{ event.changed_at|date:"d.m.Y H:i" }}</td>
                         <td>{{ event.get_old_status_display|default:"-" }}</td>
                         <td>{{ event.get_new_status_display }}</td>
@@ -92,7 +120,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5">История статусов пока пуста.</td>
+                        <td colspan="6">История статусов пока пуста.</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
@@ -244,7 +245,10 @@ def test_start_and_deliver_actions_are_post_only(client, manager, calculated_ord
     trip.refresh_from_db()
     assert trip.status == Trip.Status.PLANNED
 
-    assert client.post(reverse("trips:start", kwargs={"pk": trip.pk})).status_code == 302
+    assert client.post(
+        reverse("trips:start", kwargs={"pk": trip.pk}),
+        {"actual_start_at": "2026-06-01T10:00", "comment": "Старт по звонку"},
+    ).status_code == 302
     trip.refresh_from_db()
     assert trip.status == Trip.Status.IN_PROGRESS
 
@@ -260,10 +264,24 @@ def test_deliver_action_updates_order_and_creates_event(client, manager, calcula
         calculated_order.route_options.first(),
         manager,
     )
-    TripLifecycleService().start_trip(trip, manager)
+    TripLifecycleService().start_trip(
+        trip,
+        manager,
+        actual_start_at=timezone.datetime(
+            2026,
+            6,
+            1,
+            10,
+            0,
+            tzinfo=timezone.get_current_timezone(),
+        ),
+    )
     client.force_login(manager)
 
-    response = client.post(reverse("trips:deliver", kwargs={"pk": trip.pk}))
+    response = client.post(
+        reverse("trips:deliver", kwargs={"pk": trip.pk}),
+        {"actual_finish_at": "2026-06-01T12:00", "comment": "Доставка по звонку"},
+    )
     trip.refresh_from_db()
     calculated_order.refresh_from_db()
 

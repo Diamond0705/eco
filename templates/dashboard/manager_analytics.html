@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Аналитика - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Аналитика</h1>
+            <p class="muted">Сводка по вашим заявкам, рейсам и экологическим показателям.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'dashboard:manager_dashboard' %}">К панели</a>
+    </div>
+
+    <form method="get" class="filter-form">
+        <label>
+            Дата с
+            <input type="date" name="date_from" value="{{ date_from }}">
+        </label>
+        <label>
+            Дата по
+            <input type="date" name="date_to" value="{{ date_to }}">
+        </label>
+        <button type="submit" class="button-primary">Показать</button>
+        <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Сбросить</a>
+    </form>
+
+    {% if filters.error_message %}
+        <div class="message message-error">{{ filters.error_message }}</div>
+    {% endif %}
+
+    <div class="placeholder-grid">
+        <div class="placeholder-card">
+            <h2>Заявки</h2>
+            <p class="stat-value">{{ analytics.orders.total }}</p>
+            <p>
+                Новые: {{ analytics.orders.by_status.new }} ·
+                рассчитанные: {{ analytics.orders.by_status.calculated }} ·
+                запланированные: {{ analytics.orders.by_status.planned }} ·
+                завершенные: {{ analytics.orders.by_status.completed }} ·
+                отмененные: {{ analytics.orders.by_status.cancelled }}
+            </p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Рейсы</h2>
+            <p class="stat-value">{{ analytics.trips.total }}</p>
+            <p>
+                План: {{ analytics.trips.planned }} ·
+                в пути: {{ analytics.trips.in_progress }} ·
+                доставлены: {{ analytics.trips.delivered }}
+            </p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Расстояние</h2>
+            <p class="stat-value">{{ analytics.delivered.distance_km }} км</p>
+            <p>По доставленным рейсам за выбранный период.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Топливо</h2>
+            <p class="stat-value">{{ analytics.delivered.fuel_liters }} л</p>
+            <p>Расчетное дизельное топливо.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Стоимость</h2>
+            <p class="stat-value">{{ analytics.delivered.cost_rub }} руб.</p>
+            <p>Топливо и сервисный тариф.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Выбросы</h2>
+            <p class="stat-value">{{ analytics.delivered.co2_kg }} кг CO2</p>
+            <p>NOx: {{ analytics.delivered.nox_g }} г · PM: {{ analytics.delivered.pm_g }} г</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Эко-рейтинг</h2>
+            <p class="stat-value">{{ analytics.delivered.average_eco_rating }}</p>
+            <p>Среднее значение по доставленным рейсам.</p>
+        </div>
+    </div>
+
+    <h2>Последние доставленные рейсы</h2>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Дата доставки</th>
+                    <th>Груз</th>
+                    <th>Транспорт</th>
+                    <th>Маршрут</th>
+                    <th>Расстояние</th>
+                    <th>CO2</th>
+                    <th>Эко-рейтинг</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in analytics.recent_delivered_trips %}
+                    <tr>
+                        <td><a href="{% url 'trips:detail' trip.pk %}">№{{ trip.pk }}</a></td>
+                        <td>{{ trip.actual_finish_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ trip.order.cargo_name }}</td>
+                        <td>{{ trip.order.transport }}</td>
+                        <td>{{ trip.route_option.name }}</td>
+                        <td>{{ trip.route_option.distance_km }} км</td>
+                        <td>{{ trip.route_option.co2_kg }} кг</td>
+                        <td>{{ trip.route_option.eco_rating }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8">Доставленных рейсов за выбранный период пока нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

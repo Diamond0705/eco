@@ -111,6 +111,12 @@ body {
     margin-top: 24px;
 }
 
+.compact-form {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 0;
+}
+
 .form-row {
     display: grid;
     gap: 6px;
@@ -123,6 +129,16 @@ body {
     border: 1px solid #ccd4c8;
     border-radius: 6px;
     font: inherit;
+}
+
+.form-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #ccd4c8;
+    border-radius: 6px;
+    font: inherit;
+    resize: vertical;
 }
 
 .button-primary,
@@ -173,6 +189,16 @@ body {
 
 .filter-form select {
     min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid #ccd4c8;
+    border-radius: 6px;
+    background: #ffffff;
+    font: inherit;
+}
+
+.filter-form input[type="date"] {
+    min-height: 40px;
+    box-sizing: border-box;
     padding: 0 12px;
     border: 1px solid #ccd4c8;
     border-radius: 6px;
@@ -255,6 +281,20 @@ body {
     margin: 0;
     color: #596057;
     line-height: 1.45;
+}
+
+.placeholder-card .stat-value {
+    margin: 0 0 8px;
+    color: #20231f;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.compact-list {
+    margin: 0;
+    padding-left: 20px;
+    color: #596057;
+    line-height: 1.6;
 }
 
 .table-wrap {

@@ -3,35 +3,62 @@
 {% block title %}Панель менеджера - EcoLogist{% endblock %}
 
 {% block content %}
-<section class="page-panel">
-    <h1>Панель менеджера</h1>
-    <p class="muted">Базовая панель для будущего сценария заявок, маршрутов и рейсов.</p>
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Панель менеджера</h1>
+            <p class="muted">Ключевые показатели по вашим заявкам, рейсам и выбросам.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
+    </div>
 
     <div class="placeholder-grid">
         <div class="placeholder-card">
-            <h2>Заявки</h2>
-            <p>Создавайте заявки на перевозку и просматривайте текущий список.</p>
+            <h2>Мои заявки</h2>
+            <p class="stat-value">{{ analytics.orders.total }}</p>
+            <p>Новые: {{ analytics.orders.by_status.new }} · рассчитанные: {{ analytics.orders.by_status.calculated }}</p>
             <div class="card-actions">
                 <a class="button-secondary" href="{% url 'orders:list' %}">Заявки</a>
                 <a class="button-secondary" href="{% url 'orders:create' %}">Создать заявку</a>
             </div>
         </div>
         <div class="placeholder-card">
-            <h2>Маршруты</h2>
-            <p>Сравнивайте рассчитанные варианты маршрутов по стоимости, выбросам и эко-рейтингу.</p>
-        </div>
-        <div class="placeholder-card">
-            <h2>Рейсы</h2>
-            <p>Отслеживайте запланированные рейсы и вручную обновляйте их статусы.</p>
+            <h2>Активные рейсы</h2>
+            <p class="stat-value">{{ analytics.trips.active }}</p>
+            <p>План: {{ analytics.trips.planned }} · в пути: {{ analytics.trips.in_progress }}</p>
             <div class="card-actions">
                 <a class="button-secondary" href="{% url 'trips:list' %}">Рейсы</a>
             </div>
         </div>
         <div class="placeholder-card">
+            <h2>Доставленные рейсы</h2>
+            <p class="stat-value">{{ analytics.trips.delivered }}</p>
+            <p>{{ analytics.delivered.distance_km }} км · {{ analytics.delivered.fuel_liters }} л топлива</p>
+            <div class="card-actions">
+                <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчет по выбросам</a>
+            </div>
+        </div>
+        <div class="placeholder-card">
+            <h2>CO2 доставленных</h2>
+            <p class="stat-value">{{ analytics.delivered.co2_kg }} кг</p>
+            <p>Средний эко-рейтинг: {{ analytics.delivered.average_eco_rating }}</p>
+            <div class="card-actions">
+                <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Подробнее</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="placeholder-grid">
+        <div class="placeholder-card">
+            <h2>Маршруты</h2>
+            <p>Сравнивайте рассчитанные варианты маршрутов по стоимости, выбросам и эко-рейтингу.</p>
+        </div>
+        <div class="placeholder-card">
             <h2>Отчеты</h2>
             <p>Смотрите суммарные выбросы по доставленным рейсам и скачивайте PDF.</p>
             <div class="card-actions">
-                <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчет по выбросам</a>
+                <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчеты</a>
+                <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
             </div>
         </div>
     </div>

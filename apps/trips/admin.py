@@ -6,7 +6,7 @@ from .models import Trip, TripStatusEvent
 class TripStatusEventInline(admin.TabularInline):
     model = TripStatusEvent
     extra = 0
-    fields = ("old_status", "new_status", "changed_by", "changed_at", "comment")
+    fields = ("old_status", "new_status", "changed_by", "event_at", "changed_at", "comment")
     readonly_fields = ("changed_at",)
     ordering = ("changed_at",)
 
@@ -37,7 +37,7 @@ class TripAdmin(admin.ModelAdmin):
 
 @admin.register(TripStatusEvent)
 class TripStatusEventAdmin(admin.ModelAdmin):
-    list_display = ("trip", "old_status", "new_status", "changed_by", "changed_at")
+    list_display = ("trip", "old_status", "new_status", "changed_by", "event_at", "changed_at")
     search_fields = ("trip__id", "trip__order__cargo_name", "changed_by__username", "comment")
-    list_filter = ("new_status", "changed_at")
+    list_filter = ("new_status", "event_at", "changed_at")
     ordering = ("-changed_at",)

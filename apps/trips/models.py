@@ -70,6 +70,7 @@ class TripStatusEvent(models.Model):
         related_name="trip_status_events",
     )
     changed_at = models.DateTimeField("Время изменения", auto_now_add=True)
+    event_at = models.DateTimeField("Фактическое время события", blank=True, null=True)
     comment = models.TextField("Комментарий", blank=True)
 
     class Meta:

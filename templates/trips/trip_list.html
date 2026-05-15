@@ -12,6 +12,31 @@
         <a class="button-secondary" href="{% url 'orders:list' %}">К заявкам</a>
     </div>
 
+    <form method="get" class="filter-form">
+        <label for="status">Статус</label>
+        <select id="status" name="status">
+            <option value="">Все статусы</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="route_name">Маршрут</label>
+        <select id="route_name" name="route_name">
+            <option value="">Все маршруты</option>
+            {% for route_name in route_name_choices %}
+                <option value="{{ route_name }}"{% if selected_route_name == route_name %} selected{% endif %}>
+                    {{ route_name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="button-secondary">Показать</button>
+        <a class="button-secondary" href="{% url 'trips:list' %}">Сбросить</a>
+    </form>
+
     <div class="table-wrap">
         <table class="data-table">
             <thead>
@@ -21,7 +46,8 @@
                     <th>Груз</th>
                     <th>Маршрут</th>
                     <th>Статус</th>
-                    <th>Создан</th>
+                    <th>Факт. начало</th>
+                    <th>Факт. завершение</th>
                     <th></th>
                 </tr>
             </thead>
@@ -33,12 +59,13 @@
                         <td>{{ trip.order.cargo_name }}</td>
                         <td>{{ trip.route_option.name }}</td>
                         <td>{{ trip.get_status_display }}</td>
-                        <td>{{ trip.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ trip.actual_start_at|date:"d.m.Y H:i"|default:"-" }}</td>
+                        <td>{{ trip.actual_finish_at|date:"d.m.Y H:i"|default:"-" }}</td>
                         <td><a href="{% url 'trips:detail' trip.pk %}">Открыть</a></td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7">Рейсы пока не созданы.</td>
+                        <td colspan="8">Рейсы по выбранным фильтрам не найдены.</td>
                     </tr>
                 {% endfor %}
             </tbody>

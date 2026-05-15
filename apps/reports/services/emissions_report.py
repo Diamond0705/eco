@@ -1,9 +1,24 @@
 from dataclasses import dataclass
 from decimal import Decimal
+from io import BytesIO
 
 from django.utils import timezone
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
 
 from apps.trips.models import Trip
+
+from .pdf_fonts import register_pdf_font
+from .pdf_layout import (
+    LEFT,
+    draw_footer,
+    draw_header,
+    draw_key_value_table,
+    draw_section_title,
+    draw_simple_table,
+    ensure_space,
+)
 
 
 @dataclass(frozen=True)
@@ -78,74 +93,107 @@ class EmissionsReportService:
 
 class EmissionsReportPdfService:
     def build(self, manager, report):
-        from io import BytesIO
-
-        from reportlab.lib.pagesizes import A4, landscape
-        from reportlab.lib.units import mm
-        from reportlab.pdfgen import canvas
-
-        from .pdf_fonts import register_pdf_font
-
         buffer = BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
+        page_size = landscape(A4)
+        pdf = canvas.Canvas(buffer, pagesize=page_size)
         font_name = register_pdf_font()
-        width, height = landscape(A4)
-        y = height - 15 * mm
-
-        def text(value, x, current_y, size=8):
-            pdf.setFont(font_name, size)
-            pdf.drawString(x, current_y, str(value))
+        width, height = page_size
+        title = "Отчет по выбросам"
 
         filters = report["filters"]
         period = self._period_label(filters)
-        pdf.setTitle("Отчет по выбросам")
-        text("Отчет по выбросам", 15 * mm, y, 14)
-        y -= 9 * mm
-        text(f"Менеджер: {manager.get_full_name() or manager.username}", 15 * mm, y)
-        y -= 6 * mm
-        text(f"Период: {period}", 15 * mm, y)
-        y -= 6 * mm
-        text(f"Сформировано: {timezone.localtime().strftime('%d.%m.%Y %H:%M')}", 15 * mm, y)
-        y -= 9 * mm
+        manager_name = manager.get_full_name() or manager.username
+
+        pdf.setTitle(title)
+        y = draw_header(pdf, width, height, font_name, title)
+        y = draw_section_title(pdf, "Период и менеджер", LEFT, y, font_name)
+        y = draw_key_value_table(
+            pdf,
+            LEFT,
+            y,
+            width - 30 * mm,
+            [
+                ("Менеджер", manager_name),
+                ("Период", period),
+                ("Сформировано", timezone.localtime().strftime("%d.%m.%Y %H:%M")),
+            ],
+            font_name,
+            label_width=35 * mm,
+        )
 
         summary = report["summary"]
-        text(
-            "Итого: рейсов {trips_count}, расстояние {distance_km} км, топливо "
-            "{fuel_liters} л, стоимость {cost_rub} руб., CO2 {co2_kg} кг, "
-            "NOx {nox_g} г, PM {pm_g} г".format(**summary),
-            15 * mm,
+        y = draw_section_title(pdf, "Итоговые показатели", LEFT, y, font_name)
+        y = draw_key_value_table(
+            pdf,
+            LEFT,
             y,
+            width - 30 * mm,
+            [
+                ("Рейсы", summary["trips_count"]),
+                ("Расстояние, км", summary["distance_km"]),
+                ("Топливо, л", summary["fuel_liters"]),
+                ("Стоимость, руб", summary["cost_rub"]),
+                ("CO2, кг", summary["co2_kg"]),
+                ("NOx, г", summary["nox_g"]),
+                ("PM, г", summary["pm_g"]),
+            ],
+            font_name,
+            label_width=35 * mm,
         )
-        y -= 10 * mm
 
-        headers = ["Рейс", "Дата", "Груз", "Транспорт", "Маршрут", "км", "л", "руб.", "CO2"]
-        x_positions = [15, 28, 52, 88, 124, 158, 174, 190, 215]
-        for header, x in zip(headers, x_positions, strict=True):
-            text(header, x * mm, y)
-        y -= 6 * mm
+        y = ensure_space(pdf, y, width, height, font_name, title, 30 * mm)
+        y = draw_section_title(pdf, "Таблица рейсов", LEFT, y, font_name)
+        headers = [
+            "Рейс",
+            "Дата",
+            "Груз",
+            "Транспорт",
+            "Маршрут",
+            "км",
+            "л",
+            "руб.",
+            "CO2",
+            "Рейтинг",
+        ]
+        column_widths = [13, 24, 34, 38, 30, 18, 18, 24, 20, 20]
+        widths = [value * mm for value in column_widths]
+        table_rows = [self._pdf_row(row) for row in report["rows"]]
 
-        for row in report["rows"]:
-            if y < 15 * mm:
-                pdf.showPage()
-                y = height - 15 * mm
-            values = [
-                f"№{row['trip'].pk}",
-                timezone.localtime(row["finish_date"]).strftime("%d.%m.%Y"),
-                row["cargo"][:18],
-                str(row["transport"])[:18],
-                row["route_name"][:16],
-                row["distance_km"],
-                row["fuel_liters"],
-                row["cost_rub"],
-                row["co2_kg"],
-            ]
-            for value, x in zip(values, x_positions, strict=True):
-                text(value, x * mm, y)
-            y -= 6 * mm
+        if not table_rows:
+            y = draw_key_value_table(
+                pdf,
+                LEFT,
+                y,
+                width - 30 * mm,
+                [("Состояние", "Доставленных рейсов за выбранный период нет.")],
+                font_name,
+                label_width=35 * mm,
+            )
+        else:
+            for index in range(0, len(table_rows), 18):
+                chunk = table_rows[index : index + 18]
+                required_height = (len(chunk) + 2) * 7 * mm
+                y = ensure_space(pdf, y, width, height, font_name, title, required_height)
+                y = draw_simple_table(pdf, LEFT, y, widths, headers, chunk, font_name)
 
+        draw_footer(pdf, width, font_name)
         pdf.showPage()
         pdf.save()
         return buffer.getvalue()
+
+    def _pdf_row(self, row):
+        return [
+            f"№{row['trip'].pk}",
+            timezone.localtime(row["finish_date"]).strftime("%d.%m.%Y"),
+            str(row["cargo"])[:20],
+            str(row["transport"])[:22],
+            str(row["route_name"])[:16],
+            row["distance_km"],
+            row["fuel_liters"],
+            row["cost_rub"],
+            row["co2_kg"],
+            row["eco_rating"],
+        ]
 
     def _period_label(self, filters):
         if filters.date_from and filters.date_to:
