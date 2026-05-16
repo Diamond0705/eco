@@ -2,6 +2,9 @@
 
 EcoLogist MVP is complete through Phase 7.
 
+This file is the current implementation snapshot. Docs `00` through `07` are historical and
+planning notes for earlier phases, so they may describe target behavior or old phase boundaries.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -14,6 +17,16 @@ EcoLogist MVP is complete through Phase 7.
 - PDF waybill and emissions PDF through ReportLab.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
+
+## Routing And Snapshots
+
+- Current routing uses only deterministic `MockRouteProvider` data.
+- Real routing is planned for Phase 8.
+- A future `GraphHopperRouteProvider` must return the same internal `RouteCandidate` format.
+- Views, templates, trips, reports and analytics must not consume raw external routing responses.
+- Analytics and reports use saved `RouteOption` snapshots, including distance, duration, fuel,
+  cost, emissions, eco-rating, geometry and calculation settings reference.
+- Existing `RouteOption` values must not be recalculated automatically when settings change.
 
 ## Demo Flow
 
@@ -31,3 +44,16 @@ EcoLogist MVP is complete through Phase 7.
 - Traffic, roadworks, truck restrictions and GPS tracking are out of scope.
 - Excel export and production deployment are not implemented.
 - Environmental calculations are intentionally simplified for educational use.
+
+## Before Public Deployment
+
+- Set `DEBUG=False`.
+- Read `SECRET_KEY` from the environment only.
+- Configure `ALLOWED_HOSTS`.
+- Review HTTPS, secure cookies and HSTS settings.
+- Keep `.env` out of git.
+- Keep the GraphHopper API key out of git when Phase 8 is implemented.
+- Protect media and PDF access behind authorization.
+- Configure PostgreSQL backups.
+- Consider the personal data policy for names, email, phone, route history and trip history.
+- Review tile, CDN and provider privacy before using real routes.

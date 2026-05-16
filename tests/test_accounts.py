@@ -174,6 +174,96 @@ def test_profile_edit_updates_allowed_fields(client):
 
 
 @pytest.mark.django_db
+def test_profile_edit_rejects_another_users_email(client):
+    user = User.objects.create_user(
+        username="profile_email_owner",
+        email="owner@example.com",
+        password="StrongPass12345",
+    )
+    User.objects.create_user(
+        username="profile_email_existing",
+        email="existing@example.com",
+        password="StrongPass12345",
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("accounts:profile_edit"),
+        {
+            "first_name": "Анна",
+            "last_name": "Иванова",
+            "middle_name": "Павловна",
+            "email": "existing@example.com",
+            "phone": "+79991112233",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Пользователь с таким email уже зарегистрирован" in response.content.decode()
+
+    user.refresh_from_db()
+    assert user.email == "owner@example.com"
+
+
+@pytest.mark.django_db
+def test_profile_edit_allows_own_email(client):
+    user = User.objects.create_user(
+        username="profile_own_email",
+        email="own@example.com",
+        password="StrongPass12345",
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("accounts:profile_edit"),
+        {
+            "first_name": "Анна",
+            "last_name": "Иванова",
+            "middle_name": "Павловна",
+            "email": "own@example.com",
+            "phone": "+79991112233",
+        },
+    )
+
+    assert response.status_code == 302
+
+    user.refresh_from_db()
+    assert user.email == "own@example.com"
+
+
+@pytest.mark.django_db
+def test_profile_edit_rejects_duplicate_email_case_insensitive(client):
+    user = User.objects.create_user(
+        username="profile_case_owner",
+        email="owner_case@example.com",
+        password="StrongPass12345",
+    )
+    User.objects.create_user(
+        username="profile_case_existing",
+        email="existing_case@example.com",
+        password="StrongPass12345",
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("accounts:profile_edit"),
+        {
+            "first_name": "Анна",
+            "last_name": "Иванова",
+            "middle_name": "Павловна",
+            "email": "EXISTING_CASE@example.com",
+            "phone": "+79991112233",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Пользователь с таким email уже зарегистрирован" in response.content.decode()
+
+    user.refresh_from_db()
+    assert user.email == "owner_case@example.com"
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "phone",
     ["", "89165743355", "+79165743355", "79165743355", "9165743355"],

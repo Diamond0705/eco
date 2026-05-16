@@ -17,7 +17,7 @@ Target stack from the source technical brief:
 - PostgreSQL 16
 - Django ORM and migrations
 - Django templates
-- Bootstrap 5
+- project CSS / Bootstrap-style layout
 - Leaflet
 - ReportLab
 - pytest + pytest-django

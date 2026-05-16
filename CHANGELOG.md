@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## MVP Final Polish
+
+- Added case-insensitive duplicate email validation to profile editing.
+- Clarified implemented MVP documentation, mock routing status and Phase 8 provider boundary.
+- Added a concise post-MVP security and deployment checklist.
+
 ## Phase 7 - Analytics And MVP Polish
 
 - Added manager analytics at `/analytics/`.

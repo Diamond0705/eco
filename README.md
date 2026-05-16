@@ -16,14 +16,17 @@ The MVP is completed through Phase 7:
 - PDF waybill and emissions PDF via ReportLab;
 - manager analytics, admin company dashboard and final UI polish.
 
+Routing currently uses deterministic mock data only. A real routing provider is planned for
+Phase 8 and must be added behind the existing provider boundary so orders, trips, reports and
+analytics continue to consume saved `RouteOption` snapshots.
+
 ## Stack
 
 - Python 3.12 target, Python 3.14.4 allowed locally inside `.venv`
 - Django 5.2 LTS
 - PostgreSQL 16
 - Django ORM and migrations
-- Django templates
-- Bootstrap-style project CSS
+- Django templates + project CSS / Bootstrap-style layout
 - Leaflet
 - ReportLab
 - pytest + pytest-django
@@ -78,6 +81,25 @@ The `seed_demo` command creates:
 - No Excel export.
 - No production deployment setup.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
+
+## Current Documentation
+
+`docs/08_current_state.md` is the current implementation snapshot. Earlier docs in `docs/00_*`
+through `docs/07_*` are useful historical and planning notes and may still describe earlier
+phase boundaries.
+
+## Before Public Deployment
+
+- Set `DEBUG=False`.
+- Read `SECRET_KEY` from the environment only.
+- Configure `ALLOWED_HOSTS`.
+- Review HTTPS, secure cookies and HSTS settings.
+- Keep `.env` out of git.
+- Keep the GraphHopper API key out of git when Phase 8 is implemented.
+- Protect media and PDF access behind authorization.
+- Configure PostgreSQL backups.
+- Consider the personal data policy for names, email, phone, route history and trip history.
+- Review tile, CDN and provider privacy before using real routes.
 
 ## MVP Boundaries
 

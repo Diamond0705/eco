@@ -137,3 +137,15 @@ class ProfileUpdateForm(forms.ModelForm):
 
     def clean_phone(self):
         return validate_russian_phone(self.cleaned_data.get("phone", ""))
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "").strip()
+        if not email:
+            return email
+
+        users = User.objects.filter(email__iexact=email)
+        if self.instance.pk:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise forms.ValidationError("Пользователь с таким email уже зарегистрирован.")
+        return email
