@@ -261,6 +261,9 @@ def test_order_detail_displays_points_ordered_by_sequence(client, manager, trans
     assert response.status_code == 200
     assert content.index("Погрузка") < content.index("Доставка")
     assert "Рассчитать маршруты" in content
+    assert "Режим расчета маршрутов:" in content
+    assert "Стандартный — до 3 вариантов" in content
+    assert "Расширенный — до 5 вариантов" in content
     assert "Утверждение маршрута создает рейс." in content
 
 
@@ -274,6 +277,7 @@ def test_new_order_detail_shows_calculate_routes_button(client, manager, transpo
 
     assert response.status_code == 200
     assert "Рассчитать маршруты" in content
+    assert 'name="route_calculation_mode" value="standard" checked' in content
     assert reverse("routing:calculate", kwargs={"pk": order.pk}) in content
 
 
@@ -305,6 +309,8 @@ def test_calculated_order_with_route_options_shows_compare_link(
 
     assert response.status_code == 200
     assert "Сравнить маршруты" in content
+    assert "Найти дополнительные альтернативы" in content
+    assert 'name="route_calculation_mode" value="extended"' in content
     assert reverse("routing:options", kwargs={"pk": order.pk}) in content
     assert "Рассчитать маршруты" not in content
 

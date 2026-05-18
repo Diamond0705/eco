@@ -20,12 +20,20 @@ planning notes for earlier phases, so they may describe target behavior or old p
 
 ## Routing And Snapshots
 
-- Current routing uses only deterministic `MockRouteProvider` data.
-- Real routing is planned for Phase 8.
-- A future `GraphHopperRouteProvider` must return the same internal `RouteCandidate` format.
+- Default routing uses deterministic `MockRouteProvider` data.
+- Phase 8 adds optional `GraphHopperRouteProvider` real routing.
+- `MockRouteProvider` returns three demo routes.
+- `GraphHopperRouteProvider` returns the available real alternatives from the provider and does
+  not duplicate routes to force three options.
+- Standard GraphHopper calculation requests up to 3 real alternatives.
+- Extended GraphHopper calculation requests up to 5 real alternatives and may run limited
+  best-effort strategy requests.
+- `GraphHopperRouteProvider` returns the same internal `RouteCandidate` format.
 - Views, templates, trips, reports and analytics must not consume raw external routing responses.
 - Analytics and reports use saved `RouteOption` snapshots, including distance, duration, fuel,
   cost, emissions, eco-rating, geometry and calculation settings reference.
+- The best eco route is determined after calculation from saved route facts, not assigned before
+  the environmental calculation.
 - Existing `RouteOption` values must not be recalculated automatically when settings change.
 
 ## Demo Flow
@@ -39,8 +47,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 
 ## Known Limits
 
-- Routes are mock routes, not real road routing.
-- GraphHopper is not implemented in the MVP.
+- Mock routes remain the default for local demos.
+- GraphHopper is optional and requires an API key.
 - Traffic, roadworks, truck restrictions and GPS tracking are out of scope.
 - Excel export and production deployment are not implemented.
 - Environmental calculations are intentionally simplified for educational use.

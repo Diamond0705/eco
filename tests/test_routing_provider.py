@@ -1,4 +1,7 @@
+import json
 from decimal import Decimal
+from urllib.error import URLError
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -6,7 +9,11 @@ from django.contrib.auth import get_user_model
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.routing.models import RouteOption
+from apps.routing.services.graphhopper_client import GraphHopperClient
+from apps.routing.services.graphhopper_provider import GraphHopperRouteProvider
 from apps.routing.services.mock_provider import MockRouteProvider
+from apps.routing.services.providers import RouteCalculationOptions, RoutingProviderResponseError
 
 User = get_user_model()
 
@@ -115,3 +122,362 @@ def test_mock_route_provider_is_deterministic_and_does_not_use_external_api(
     second_result = provider.get_candidates(route_order)
 
     assert first_result == second_result
+
+
+class FakeGraphHopperResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def read(self):
+        return json.dumps(self.payload).encode("utf-8")
+
+
+def test_graphhopper_client_builds_route_request_without_real_network():
+    captured = {}
+
+    def fake_opener(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return FakeGraphHopperResponse({"paths": []})
+
+    client = GraphHopperClient(
+        api_key="test-key",
+        base_url="https://graphhopper.test/api/1",
+        profile="car",
+        timeout_seconds=7,
+        opener=fake_opener,
+    )
+
+    response = client.route([[37.6173, 55.7558], [37.5447, 55.4312]])
+    request = captured["request"]
+    parsed_url = urlparse(request.full_url)
+    payload = json.loads(request.data.decode("utf-8"))
+
+    assert response == {"paths": []}
+    assert request.get_method() == "POST"
+    assert parsed_url.path == "/api/1/route"
+    assert parse_qs(parsed_url.query) == {"key": ["test-key"]}
+    assert captured["timeout"] == 7
+    assert payload["points"] == [[37.6173, 55.7558], [37.5447, 55.4312]]
+    assert payload["profile"] == "car"
+    assert payload["points_encoded"] is False
+    assert payload["calc_points"] is True
+    assert payload["instructions"] is False
+    assert payload["algorithm"] == "alternative_route"
+    assert payload["alternative_route.max_paths"] == 3
+
+
+def test_graphhopper_client_sends_alternative_route_settings_without_real_network():
+    captured = {}
+
+    def fake_opener(request, timeout):
+        captured["request"] = request
+        return FakeGraphHopperResponse({"paths": []})
+
+    client = GraphHopperClient(
+        api_key="test-key",
+        base_url="https://graphhopper.test/api/1",
+        profile="car",
+        timeout_seconds=7,
+        opener=fake_opener,
+    )
+
+    client.route(
+        [[37.6173, 55.7558], [37.5447, 55.4312]],
+        alternative_max_paths=5,
+        alternative_max_weight_factor=1.6,
+        alternative_max_share_factor=0.7,
+    )
+
+    payload = json.loads(captured["request"].data.decode("utf-8"))
+    assert payload["algorithm"] == "alternative_route"
+    assert payload["alternative_route.max_paths"] == 5
+    assert payload["alternative_route.max_weight_factor"] == 1.6
+    assert payload["alternative_route.max_share_factor"] == 0.7
+
+
+def test_graphhopper_client_sends_strategy_custom_model_without_real_network():
+    captured = {}
+
+    def fake_opener(request, timeout):
+        captured["request"] = request
+        return FakeGraphHopperResponse({"paths": []})
+
+    client = GraphHopperClient(
+        api_key="test-key",
+        base_url="https://graphhopper.test/api/1",
+        profile="car",
+        timeout_seconds=7,
+        opener=fake_opener,
+    )
+    custom_model = {"distance_influence": 120}
+
+    client.route(
+        [[37.6173, 55.7558], [37.5447, 55.4312]],
+        custom_model=custom_model,
+        use_alternative_route=False,
+    )
+
+    payload = json.loads(captured["request"].data.decode("utf-8"))
+    assert "algorithm" not in payload
+    assert payload["ch.disable"] is True
+    assert payload["custom_model"] == custom_model
+
+
+def test_graphhopper_client_wraps_network_errors_without_real_call():
+    def fake_opener(request, timeout):
+        raise URLError("network is blocked in test")
+
+    client = GraphHopperClient(
+        api_key="test-key",
+        base_url="https://graphhopper.test/api/1",
+        profile="car",
+        timeout_seconds=7,
+        opener=fake_opener,
+    )
+
+    with pytest.raises(RoutingProviderResponseError):
+        client.route([[37.6173, 55.7558], [37.5447, 55.4312]])
+
+
+class StubGraphHopperClient:
+    def __init__(self, response, *extra_responses):
+        self.responses = [response, *extra_responses]
+        self.points = None
+        self.calls = []
+
+    def route(self, points, **kwargs):
+        self.points = points
+        self.calls.append({"points": points, **kwargs})
+        if len(self.responses) > 1:
+            return self.responses.pop(0)
+        return self.responses[0]
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_returns_one_candidate_for_one_path(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                {
+                    "distance": 12345.6,
+                    "time": 90000,
+                    "points": {
+                        "coordinates": [
+                            [37.6173, 55.7558, 180],
+                            [37.5447, 55.4312],
+                        ]
+                    },
+                }
+            ]
+        }
+    )
+
+    candidates = GraphHopperRouteProvider(client).get_candidates(route_order)
+
+    assert client.points == [[37.6173, 55.7558], [37.5447, 55.4312]]
+    assert client.calls[0]["alternative_max_paths"] == 3
+    assert len(candidates) == 1
+    assert candidates[0].name == "Маршрут GraphHopper"
+    assert candidates[0].provider == RouteOption.Provider.GRAPHHOPPER
+    assert candidates[0].distance_km == Decimal("12.35")
+    assert candidates[0].duration_minutes == 2
+    assert candidates[0].fuel_multiplier == Decimal("1.00")
+    assert candidates[0].geometry_json == [[55.7558, 37.6173], [55.4312, 37.5447]]
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_returns_two_candidates_without_padding(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                {
+                    "distance": 10000,
+                    "time": 200000,
+                    "points": {"coordinates": [[37.6173, 55.7558], [37.5447, 55.4312]]},
+                },
+                {
+                    "distance": 12000,
+                    "time": 100000,
+                    "points": {"coordinates": [[37.6173, 55.7558], [37.6, 55.5]]},
+                },
+            ]
+        }
+    )
+
+    candidates = GraphHopperRouteProvider(client).get_candidates(route_order)
+
+    assert len(candidates) == 2
+    assert [candidate.name for candidate in candidates] == [
+        "Маршрут GraphHopper",
+        "Альтернативный маршрут 1",
+    ]
+    assert all(candidate.provider == RouteOption.Provider.GRAPHHOPPER for candidate in candidates)
+    assert all(candidate.fuel_multiplier == Decimal("1.00") for candidate in candidates)
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_does_not_duplicate_fastest_shortest_route(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                {
+                    "distance": 10000,
+                    "time": 100000,
+                    "points": {"coordinates": [[37.6173, 55.7558], [37.5447, 55.4312]]},
+                },
+                {
+                    "distance": 12000,
+                    "time": 130000,
+                    "points": {"coordinates": [[37.6173, 55.7558], [37.6, 55.5]]},
+                },
+            ]
+        }
+    )
+
+    candidates = GraphHopperRouteProvider(client).get_candidates(route_order)
+
+    assert len(candidates) == 2
+    assert [candidate.name for candidate in candidates] == [
+        "Маршрут GraphHopper",
+        "Альтернативный маршрут 1",
+    ]
+
+
+def _graphhopper_path(distance, duration, coordinates):
+    return {
+        "distance": distance,
+        "time": duration,
+        "points": {"coordinates": coordinates},
+    }
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_returns_three_candidates_when_three_paths_exist(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(10000, 100000, [[37.6173, 55.7558], [37.5447, 55.4312]]),
+                _graphhopper_path(11000, 120000, [[37.6173, 55.7558], [37.59, 55.51]]),
+                _graphhopper_path(12000, 140000, [[37.6173, 55.7558], [37.57, 55.48]]),
+            ]
+        }
+    )
+
+    candidates = GraphHopperRouteProvider(client).get_candidates(route_order)
+
+    assert len(candidates) == 3
+    assert [candidate.name for candidate in candidates] == [
+        "Маршрут GraphHopper",
+        "Альтернативный маршрут 1",
+        "Альтернативный маршрут 2",
+    ]
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_deduplicates_paths_without_padding_to_target(route_order):
+    duplicated = _graphhopper_path(
+        10000,
+        100000,
+        [[37.6173, 55.7558], [37.5447, 55.4312]],
+    )
+    client = StubGraphHopperClient({"paths": [duplicated, duplicated]})
+
+    candidates = GraphHopperRouteProvider(client).get_candidates(route_order)
+
+    assert len(candidates) == 1
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_caps_candidates_at_five(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(
+                    10000 + index * 100,
+                    100000 + index * 10000,
+                    [[37.6173, 55.7558], [37.54 + index / 100, 55.43 + index / 100]],
+                )
+                for index in range(6)
+            ]
+        }
+    )
+    options = RouteCalculationOptions(max_candidates=5, alternative_max_paths=5)
+
+    candidates = GraphHopperRouteProvider(client, options=options).get_candidates(route_order)
+
+    assert len(candidates) == 5
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_standard_mode_does_not_use_strategy_requests(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(10000, 100000, [[37.6173, 55.7558], [37.5447, 55.4312]])
+            ]
+        },
+        {
+            "paths": [
+                _graphhopper_path(12000, 120000, [[37.6173, 55.7558], [37.57, 55.48]])
+            ]
+        },
+    )
+    options = RouteCalculationOptions(
+        mode="standard",
+        requested_candidates=3,
+        target_candidates=3,
+        max_candidates=3,
+        alternative_max_paths=3,
+        enable_strategy_requests=False,
+        max_strategy_requests=0,
+    )
+
+    candidates = GraphHopperRouteProvider(client, options=options).get_candidates(route_order)
+
+    assert len(candidates) == 1
+    assert len(client.calls) == 1
+    assert client.calls[0]["alternative_max_paths"] == 3
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_extended_mode_uses_limited_strategy_requests(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(10000, 100000, [[37.6173, 55.7558], [37.5447, 55.4312]])
+            ]
+        },
+        {
+            "paths": [
+                _graphhopper_path(10000, 100000, [[37.6173, 55.7558], [37.5447, 55.4312]])
+            ]
+        },
+        {
+            "paths": [
+                _graphhopper_path(12000, 120000, [[37.6173, 55.7558], [37.57, 55.48]])
+            ]
+        },
+        {
+            "paths": [
+                _graphhopper_path(13000, 130000, [[37.6173, 55.7558], [37.58, 55.49]])
+            ]
+        },
+    )
+    options = RouteCalculationOptions(
+        mode="extended",
+        requested_candidates=5,
+        target_candidates=3,
+        max_candidates=5,
+        alternative_max_paths=5,
+        enable_strategy_requests=True,
+        max_strategy_requests=2,
+    )
+
+    candidates = GraphHopperRouteProvider(client, options=options).get_candidates(route_order)
+
+    assert len(candidates) == 2
+    assert len(client.calls) == 3
+    assert client.calls[0]["alternative_max_paths"] == 5
+    assert client.calls[1]["use_alternative_route"] is False
+    assert client.calls[2]["use_alternative_route"] is False

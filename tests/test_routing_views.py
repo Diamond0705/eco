@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from apps.fleet.models import EcoStandard, Transport
+from apps.fleet.models import EcoCalculationSettings, EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
 from apps.routing.models import RouteOption
@@ -108,6 +108,25 @@ def create_order(manager, transport, locations):
     return order
 
 
+def create_route_option(order, name, distance_km, duration_minutes, eco_rating):
+    return RouteOption.objects.create(
+        order=order,
+        name=name,
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=distance_km,
+        duration_minutes=duration_minutes,
+        fuel_multiplier=Decimal("1.00"),
+        fuel_liters=Decimal("3.00"),
+        cost_rub=Decimal("1500.00"),
+        co2_kg=Decimal("8.00"),
+        nox_g=Decimal("2.00"),
+        pm_g=Decimal("0.020"),
+        eco_rating=eco_rating,
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        calculation_settings=EcoCalculationSettings.get_current(),
+    )
+
+
 @pytest.mark.django_db
 def test_manager_can_calculate_routes_for_own_order(client, manager, transport, locations):
     order = create_order(manager, transport, locations)
@@ -120,6 +139,45 @@ def test_manager_can_calculate_routes_for_own_order(client, manager, transport, 
     assert response["Location"] == reverse("routing:options", kwargs={"pk": order.pk})
     assert order.status == ShipmentOrder.Status.CALCULATED
     assert RouteOption.objects.filter(order=order).count() == 3
+
+
+@pytest.mark.django_db
+def test_calculate_routes_passes_extended_mode_from_post(
+    client,
+    manager,
+    transport,
+    locations,
+    monkeypatch,
+):
+    order = create_order(manager, transport, locations)
+    captured = {}
+
+    class StubRouteCalculationService:
+        last_warning = ""
+        last_requested_count = 5
+        last_found_count = 1
+        last_used_provider = RouteOption.Provider.GRAPHHOPPER
+
+        def __init__(self, calculation_mode):
+            captured["calculation_mode"] = calculation_mode
+
+        def calculate_for_order(self, order):
+            captured["order"] = order
+
+    monkeypatch.setattr(
+        "apps.routing.views.RouteCalculationService",
+        StubRouteCalculationService,
+    )
+    client.force_login(manager)
+
+    response = client.post(
+        reverse("routing:calculate", kwargs={"pk": order.pk}),
+        {"route_calculation_mode": "extended"},
+    )
+
+    assert response.status_code == 302
+    assert captured["calculation_mode"] == "extended"
+    assert captured["order"].pk == order.pk
 
 
 @pytest.mark.django_db
@@ -223,3 +281,84 @@ def test_route_comparison_page_shows_approve_buttons_only_when_allowed(
     assert planned_response.status_code == 200
     assert "Утвердить маршрут" not in planned_content
     assert "Маршрут утвержден" in planned_content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_handles_one_graphhopper_route(
+    client, manager, transport, locations
+):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(order, "Маршрут GraphHopper", Decimal("12.35"), 18, Decimal("82.00"))
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Маршрут GraphHopper" in content
+    assert "GraphHopper" in content
+    assert "Количество вариантов зависит от выбранного провайдера маршрутизации" in content
+    assert "Самый быстрый" in content
+    assert "Самый короткий" in content
+    assert "Лучший по эко-рейтингу" in content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_shows_graphhopper_requested_and_found_counts(
+    client,
+    manager,
+    transport,
+    locations,
+):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(order, "Маршрут GraphHopper", Decimal("12.35"), 18, Decimal("82.00"))
+    session = client.session
+    session[f"route_calculation:{order.pk}"] = {
+        "requested_count": 5,
+        "found_count": 1,
+        "provider": RouteOption.Provider.GRAPHHOPPER,
+    }
+    session.save()
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Запрошено: до 5 вариантов." in content
+    assert "Найдено: 1." in content
+    assert "GraphHopper вернул 1 вариант(а)." in content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_handles_multiple_graphhopper_routes(
+    client, manager, transport, locations
+):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(order, "Короткий", Decimal("10.00"), 25, Decimal("75.00"))
+    create_route_option(order, "Быстрый", Decimal("12.00"), 15, Decimal("70.00"))
+    create_route_option(
+        order,
+        "Альтернативный маршрут 1",
+        Decimal("11.50"),
+        20,
+        Decimal("85.00"),
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Короткий" in content
+    assert "Быстрый" in content
+    assert "Альтернативный маршрут 1" in content
+    assert "Самый быстрый" in content
+    assert "Самый короткий" in content
+    assert "Лучший по эко-рейтингу" in content

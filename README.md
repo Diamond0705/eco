@@ -16,9 +16,9 @@ The MVP is completed through Phase 7:
 - PDF waybill and emissions PDF via ReportLab;
 - manager analytics, admin company dashboard and final UI polish.
 
-Routing currently uses deterministic mock data only. A real routing provider is planned for
-Phase 8 and must be added behind the existing provider boundary so orders, trips, reports and
-analytics continue to consume saved `RouteOption` snapshots.
+Routing defaults to deterministic mock data. Phase 8 adds optional GraphHopper routing behind
+the existing provider boundary so orders, trips, reports and analytics continue to consume saved
+`RouteOption` snapshots.
 
 ## Stack
 
@@ -44,6 +44,24 @@ docker compose up -d db
 python manage.py migrate
 python manage.py seed_demo
 python manage.py runserver
+```
+
+Routing provider settings:
+
+```powershell
+ROUTE_PROVIDER=mock
+GRAPHHOPPER_API_KEY=
+GRAPHHOPPER_BASE_URL=https://graphhopper.com/api/1
+GRAPHHOPPER_PROFILE=car
+GRAPHHOPPER_TIMEOUT_SECONDS=10
+GRAPHHOPPER_FALLBACK_TO_MOCK=True
+GRAPHHOPPER_ALTERNATIVE_MAX_PATHS=5
+GRAPHHOPPER_ALTERNATIVE_MAX_WEIGHT_FACTOR=1.6
+GRAPHHOPPER_ALTERNATIVE_MAX_SHARE_FACTOR=0.7
+GRAPHHOPPER_TARGET_CANDIDATES=3
+GRAPHHOPPER_MAX_CANDIDATES=5
+GRAPHHOPPER_ENABLE_STRATEGY_REQUESTS=False
+GRAPHHOPPER_MAX_STRATEGY_REQUESTS=2
 ```
 
 Run checks:
@@ -75,8 +93,12 @@ The `seed_demo` command creates:
 
 ## Current Limitations
 
-- Routing uses only deterministic mock geometry.
-- GraphHopper integration is planned as a future extension.
+- Mock routing returns three deterministic demo routes.
+- GraphHopper routing returns the real alternatives available from the provider and does not
+  duplicate routes to force three options.
+- Standard GraphHopper calculation requests up to 3 routes; extended calculation requests up to
+  5 routes and may try best-effort strategy requests.
+- The best eco route is determined after calculation from stored route facts and settings.
 - No real traffic, roadworks, truck restrictions or GPS tracking.
 - No Excel export.
 - No production deployment setup.

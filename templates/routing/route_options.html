@@ -40,9 +40,19 @@
         {{ map_routes|json_script:"route-options-data" }}
         <div id="route-map" class="route-map" aria-label="Карта маршрутов"></div>
         <p class="form-note route-map-note">
-            Маршруты построены демонстрационным mock-провайдером. Реальная дорожная
-            маршрутизация может быть подключена через GraphHopper на следующем этапе.
+            Количество вариантов зависит от выбранного провайдера маршрутизации и доступных
+            реальных альтернатив.
         </p>
+        <p class="form-note route-map-note">
+            Запрошено: до {{ route_diagnostics.requested_count }} вариантов.
+            Найдено: {{ route_diagnostics.found_count }}.
+        </p>
+        {% if route_diagnostics.show_graphhopper_shortage %}
+            <div class="message">
+                GraphHopper вернул {{ route_diagnostics.found_count }} вариант(а).
+                Дополнительные реальные альтернативы для этих точек не найдены.
+            </div>
+        {% endif %}
         <div id="route-map-warning" class="message route-map-warning" hidden>
             Нет корректной геометрии для отображения маршрутов на карте.
         </div>
@@ -52,6 +62,7 @@
                 <thead>
                     <tr>
                         <th>Название</th>
+                        <th>Источник</th>
                         <th>Расстояние</th>
                         <th>Время</th>
                         <th>Множитель расхода</th>
@@ -65,14 +76,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for option in route_options %}
+                    {% for row in route_option_rows %}
+                        {% with option=row.option %}
                         <tr>
                             <td>
                                 {{ option.name }}
+                                {% for badge in row.badges %}
+                                    <span class="status-badge">{{ badge }}</span>
+                                {% endfor %}
                                 {% if option.is_selected %}
                                     <span class="status-badge">Выбран</span>
                                 {% endif %}
                             </td>
+                            <td>{{ option.get_provider_display }}</td>
                             <td>{{ option.distance_km }} км</td>
                             <td>{{ option.duration_minutes }} мин</td>
                             <td>{{ option.fuel_multiplier }}</td>
@@ -101,6 +117,7 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% endwith %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -137,11 +154,7 @@
         }
 
         var routes = JSON.parse(dataElement.textContent);
-        var routeStyles = {
-            "Быстрый": {color: "#2f6fb1", dashArray: null},
-            "Короткий": {color: "#1f5f43", dashArray: null},
-            "Экологичный": {color: "#b46a16", dashArray: null}
-        };
+        var routeColors = ["#2f6fb1", "#1f5f43", "#b46a16", "#7a4ca0", "#596057", "#a63f3f"];
         var map = L.map(mapElement);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 18,
@@ -167,14 +180,13 @@
             if (coordinates.length < 2) {
                 return;
             }
-            var style = routeStyles[route.name] || {color: "#596057", dashArray: null};
+            var color = routeColors[index % routeColors.length];
             L.polyline(coordinates, {
-                color: style.color,
-                dashArray: style.dashArray,
+                color: color,
                 weight: 5,
                 opacity: 0.85
             }).addTo(map).bindPopup(
-                route.name + "<br>Эко-рейтинг: " + route.eco_rating
+                route.name + "<br>Источник: " + route.provider_display + "<br>Эко-рейтинг: " + route.eco_rating
             );
             if (index === 0) {
                 firstPoint = coordinates[0];

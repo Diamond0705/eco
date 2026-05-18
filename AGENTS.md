@@ -70,13 +70,15 @@ All foreign keys to users must use `settings.AUTH_USER_MODEL` or `get_user_model
 
 ## Routing Rules
 
-The first version uses `MockRouteProvider` only.
+Default routing uses `MockRouteProvider`.
 
 `MockRouteProvider` must not call external APIs. It builds `distance_km`, `duration_minutes`, `geometry_json`, and `fuel_multiplier` from predefined `Location` coordinates.
 
 Leaflet draws `geometry_json` as polylines. Internal `geometry_json` format is always `[[lat, lon], ...]`.
 
-Future `GraphHopperRouteProvider` must be isolated and must return the same internal `RouteCandidate` format. Do not pass raw external API responses to views, templates, reports, or analytics.
+`GraphHopperRouteProvider` must be isolated and must return the same internal `RouteCandidate` format. Do not pass raw external API responses to views, templates, reports, or analytics.
+
+Real providers may return a variable number of route candidates. Do not duplicate identical geometry to force three route options.
 
 ## RouteCandidate / RouteOption Rules
 
@@ -89,6 +91,8 @@ Recommended mock `fuel_multiplier` values:
 - `fast = 1.08`
 - `short = 1.00`
 - `eco = 0.92`
+
+GraphHopper route candidates use `fuel_multiplier = 1.00` unless a documented data-based formula is added later.
 
 `RouteOption` must store calculated values as a snapshot:
 

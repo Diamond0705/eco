@@ -4,7 +4,7 @@ import pytest
 from django.urls import reverse
 
 
-def test_no_new_dependencies_added_for_phase_7():
+def test_no_new_dependencies_added_for_phase_8():
     requirements = {
         line.strip()
         for line in Path("requirements.txt").read_text(encoding="utf-8").splitlines()
@@ -22,7 +22,7 @@ def test_no_new_dependencies_added_for_phase_7():
     }
 
 
-def test_no_graphhopper_provider_or_external_http_client_was_added():
+def test_graphhopper_added_without_forbidden_external_http_dependencies():
     source_paths = [
         path
         for directory in ("apps", "config")
@@ -31,7 +31,7 @@ def test_no_graphhopper_provider_or_external_http_client_was_added():
     ]
     combined_source = "\n".join(path.read_text(encoding="utf-8") for path in source_paths)
 
-    assert "GraphHopperRouteProvider" not in combined_source
+    assert "GraphHopperRouteProvider" in combined_source
     assert "requests." not in combined_source
     assert "httpx." not in combined_source
     assert "aiohttp" not in combined_source

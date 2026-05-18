@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## Phase 8.1 - GraphHopper Alternatives
+
+- Added standard and extended route calculation modes for GraphHopper alternatives.
+- Tuned GraphHopper alternative route settings and capped real candidates at five.
+- Added deduplication and best-effort strategy requests without fabricating route options.
+- Added route comparison diagnostics for requested and found alternatives.
+
+## Phase 8 - Real Routing Provider
+
+- Added optional GraphHopper routing behind the existing provider boundary.
+- Kept mock routing as the default and fallback provider.
+- Updated route comparison to support a variable number of real alternatives.
+
 ## MVP Final Polish
 
 - Added case-insensitive duplicate email validation to profile editing.
