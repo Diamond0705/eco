@@ -1,9 +1,11 @@
 # Current MVP State
 
-EcoLogist MVP is complete through Phase 7.
+EcoLogist MVP is complete through Phase 8.1. Phase 9 is a documentation/specification phase and does not change application behavior.
 
 This file is the current implementation snapshot. Docs `00` through `07` are historical and
 planning notes for earlier phases, so they may describe target behavior or old phase boundaries.
+Фаза 9 является исследовательской и спецификационной: она описывает стратегию провайдеров и
+расчетную модель v2, но сама по себе не меняет поведение приложения.
 
 ## Implemented
 
