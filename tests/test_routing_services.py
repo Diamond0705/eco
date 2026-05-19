@@ -9,8 +9,14 @@ from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
 from apps.routing.models import RouteOption
 from apps.routing.services.emission_calculator import EmissionCalculator
+from apps.routing.services.graphhopper_provider import GraphHopperRouteProvider
 from apps.routing.services.mock_provider import MockRouteProvider
-from apps.routing.services.providers import RouteCandidate, RoutingProviderResponseError
+from apps.routing.services.providers import (
+    RouteCalculationOptions,
+    RouteCandidate,
+    RouteFacts,
+    RoutingProviderResponseError,
+)
 from apps.routing.services.route_calculation_service import RouteCalculationService
 
 User = get_user_model()
@@ -86,6 +92,36 @@ def test_emission_calculator_returns_positive_values_and_bounded_rating(routing_
 
 
 @pytest.mark.django_db
+def test_emission_calculator_ignores_route_facts_for_current_formula(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    base_candidate = RouteCandidate(
+        name="Маршрут GraphHopper",
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=Decimal("10.00"),
+        duration_minutes=20,
+        fuel_multiplier=Decimal("1.00"),
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+    )
+    enriched_candidate = RouteCandidate(
+        name=base_candidate.name,
+        provider=base_candidate.provider,
+        distance_km=base_candidate.distance_km,
+        duration_minutes=base_candidate.duration_minutes,
+        fuel_multiplier=base_candidate.fuel_multiplier,
+        geometry_json=base_candidate.geometry_json,
+        route_facts=RouteFacts(
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            has_tolls=True,
+            road_details={"road_class_summary": {"motorway": {"distance_km": "10.00"}}},
+        ),
+    )
+
+    assert EmissionCalculator().calculate(routing_order, base_candidate, settings) == (
+        EmissionCalculator().calculate(routing_order, enriched_candidate, settings)
+    )
+
+
+@pytest.mark.django_db
 def test_route_calculation_service_creates_snapshots_and_updates_order_status(routing_order):
     route_options = RouteCalculationService().calculate_for_order(routing_order)
     routing_order.refresh_from_db()
@@ -137,6 +173,32 @@ class FailingGraphHopperProvider:
         raise RoutingProviderResponseError("GraphHopper failed in test.")
 
 
+class StubGraphHopperClient:
+    def __init__(self, response):
+        self.response = response
+
+    def route(self, points, **kwargs):
+        return self.response
+
+
+def _graphhopper_path_with_details():
+    return {
+        "distance": 20000,
+        "time": 1200000,
+        "points": {
+            "coordinates": [
+                [37.6173, 55.7558],
+                [37.6000, 55.6000],
+                [37.5447, 55.4312],
+            ]
+        },
+        "details": {
+            "road_class": [[0, 1, "motorway"], [1, 2, "primary"]],
+            "toll": [[0, 1, False], [1, 2, True]],
+        },
+    }
+
+
 @pytest.mark.django_db
 def test_route_calculation_service_accepts_single_graphhopper_candidate(routing_order):
     route_options = RouteCalculationService(provider=OneCandidateProvider()).calculate_for_order(
@@ -148,6 +210,40 @@ def test_route_calculation_service_accepts_single_graphhopper_candidate(routing_
     assert route_options[0].provider == RouteOption.Provider.GRAPHHOPPER
     assert route_options[0].fuel_multiplier == Decimal("1.00")
     assert route_options[0].route_facts_json["provider"] == RouteOption.Provider.GRAPHHOPPER
+
+
+@pytest.mark.django_db
+def test_route_calculation_service_stores_enriched_graphhopper_route_facts(
+    routing_order,
+    monkeypatch,
+):
+    def fake_get_route_provider(options):
+        return GraphHopperRouteProvider(
+            StubGraphHopperClient({"paths": [_graphhopper_path_with_details()]}),
+            options=RouteCalculationOptions(
+                max_candidates=3,
+                alternative_max_paths=3,
+                enable_path_details=True,
+                path_details=("road_class", "toll"),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "apps.routing.services.route_calculation_service.get_route_provider",
+        fake_get_route_provider,
+    )
+
+    route_options = RouteCalculationService(calculation_mode="standard").calculate_for_order(
+        routing_order
+    )
+    facts = route_options[0].route_facts_json
+
+    assert len(route_options) == 1
+    assert facts["provider"] == RouteOption.Provider.GRAPHHOPPER
+    assert facts["has_tolls"] is True
+    assert facts["road_details"]["requested_details"] == ["road_class", "toll"]
+    assert "motorway" in facts["road_details"]["road_class_summary"]
+    assert any("стоимость проезда не рассчитывается" in warning for warning in facts["warnings"])
 
 
 @pytest.mark.django_db

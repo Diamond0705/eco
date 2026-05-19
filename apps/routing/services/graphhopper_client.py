@@ -30,6 +30,7 @@ class GraphHopperClient:
         alternative_max_share_factor=0.7,
         custom_model=None,
         use_alternative_route=True,
+        path_details=None,
     ):
         if not self.api_key:
             raise RoutingProviderConfigurationError(
@@ -49,6 +50,7 @@ class GraphHopperClient:
             alternative_max_share_factor=alternative_max_share_factor,
             custom_model=custom_model,
             use_alternative_route=use_alternative_route,
+            path_details=path_details,
         )
         try:
             response = self.opener(request, timeout=self.timeout_seconds)
@@ -72,6 +74,7 @@ class GraphHopperClient:
         alternative_max_share_factor,
         custom_model,
         use_alternative_route,
+        path_details,
     ):
         query = urlencode({"key": self.api_key})
         payload = {
@@ -93,6 +96,8 @@ class GraphHopperClient:
         if custom_model:
             payload["ch.disable"] = True
             payload["custom_model"] = custom_model
+        if path_details:
+            payload["details"] = list(path_details)
         return Request(
             f"{self.base_url}/route?{query}",
             data=json.dumps(payload).encode("utf-8"),

@@ -1,4 +1,5 @@
 from decimal import ROUND_HALF_UP, Decimal
+from math import atan2, cos, radians, sin, sqrt
 
 from apps.routing.models import RouteOption
 
@@ -16,19 +17,6 @@ from .providers import (
 class GraphHopperRouteProvider:
     provider = RouteOption.Provider.GRAPHHOPPER
     fuel_multiplier = Decimal("1.00")
-    capabilities = RouteProviderCapabilities(
-        provider=provider,
-        supports_real_geometry=True,
-        supports_alternatives=True,
-        supports_traffic=False,
-        supports_truck_routing=False,
-        supports_tolls=False,
-        supports_toll_costs=False,
-        supports_road_incidents=False,
-        supports_low_emission_zones=False,
-        supports_road_details=False,
-        is_demo_provider=False,
-    )
 
     def __init__(
         self,
@@ -37,6 +25,23 @@ class GraphHopperRouteProvider:
     ):
         self.client = client
         self.options = options or RouteCalculationOptions()
+
+    @property
+    def capabilities(self):
+        path_details = self._path_details()
+        return RouteProviderCapabilities(
+            provider=self.provider,
+            supports_real_geometry=True,
+            supports_alternatives=True,
+            supports_traffic=False,
+            supports_truck_routing=False,
+            supports_tolls="toll" in path_details,
+            supports_toll_costs=False,
+            supports_road_incidents=False,
+            supports_low_emission_zones=False,
+            supports_road_details=bool(path_details),
+            is_demo_provider=False,
+        )
 
     def get_candidates(self, order):
         points = list(order.points.select_related("location").order_by("sequence"))
@@ -53,6 +58,7 @@ class GraphHopperRouteProvider:
             alternative_max_paths=self.options.alternative_max_paths,
             alternative_max_weight_factor=self.options.alternative_max_weight_factor,
             alternative_max_share_factor=self.options.alternative_max_share_factor,
+            path_details=self._path_details(),
         )
         paths = self._deduplicate_paths(self._extract_valid_paths(response))
         if not paths:
@@ -62,18 +68,7 @@ class GraphHopperRouteProvider:
             paths = self._add_strategy_paths(request_points, paths)
 
         paths = paths[: self.options.max_candidates]
-        return [
-            RouteCandidate(
-                name=self._candidate_name(index),
-                provider=self.provider,
-                distance_km=self._distance_km(path["distance"]),
-                duration_minutes=self._duration_minutes(path["time"]),
-                fuel_multiplier=self.fuel_multiplier,
-                geometry_json=self._geometry(path),
-                route_facts=RouteFacts.neutral(self.provider),
-            )
-            for index, path in enumerate(paths)
-        ]
+        return [self._candidate_from_path(index, path) for index, path in enumerate(paths)]
 
     def _should_try_strategy_requests(self, paths):
         return (
@@ -93,6 +88,7 @@ class GraphHopperRouteProvider:
                     request_points,
                     custom_model=custom_model,
                     use_alternative_route=False,
+                    path_details=self._path_details(),
                 )
                 strategy_paths = self._extract_valid_paths(response)
             except RoutingProviderError:
@@ -118,6 +114,179 @@ class GraphHopperRouteProvider:
                 ],
             },
         ]
+
+    def _path_details(self):
+        if not self.options.enable_path_details:
+            return ()
+        return tuple(detail for detail in self.options.path_details if detail)
+
+    def _candidate_from_path(self, index, path):
+        geometry = self._geometry(path)
+        return RouteCandidate(
+            name=self._candidate_name(index),
+            provider=self.provider,
+            distance_km=self._distance_km(path["distance"]),
+            duration_minutes=self._duration_minutes(path["time"]),
+            fuel_multiplier=self.fuel_multiplier,
+            geometry_json=geometry,
+            route_facts=self._route_facts(path, geometry),
+        )
+
+    def _route_facts(self, path, geometry):
+        requested_details = list(self._path_details())
+        if not requested_details:
+            return RouteFacts.neutral(self.provider)
+
+        details = path.get("details")
+        warnings = []
+        road_details = {
+            "requested_details": requested_details,
+            "available_details": [],
+        }
+        if not isinstance(details, dict):
+            warnings.append("GraphHopper не вернул дорожные детали для этого маршрута.")
+            return RouteFacts(
+                provider=self.provider,
+                road_details=road_details,
+                warnings=warnings,
+            )
+
+        available_details = [
+            detail for detail in requested_details if isinstance(details.get(detail), list)
+        ]
+        road_details["available_details"] = available_details
+        for detail in requested_details:
+            ranges = details.get(detail)
+            if not isinstance(ranges, list):
+                continue
+            summary, detail_warnings = self._summarize_detail_ranges(geometry, ranges)
+            road_details[f"{detail}_summary"] = summary
+            warnings.extend(
+                f"{detail}: {warning}"
+                for warning in detail_warnings
+            )
+
+        has_tolls = self._has_tolls(road_details.get("toll_summary", {}))
+        if has_tolls:
+            warnings.append(
+                "Маршрут содержит платные участки, но стоимость проезда не рассчитывается."
+            )
+
+        return RouteFacts(
+            provider=self.provider,
+            has_tolls=has_tolls,
+            toll_cost_rub=Decimal("0.00"),
+            road_details=road_details,
+            warnings=warnings,
+        )
+
+    def _summarize_detail_ranges(self, geometry, ranges):
+        distances = {}
+        counts = {}
+        warnings = []
+        total_distance = self._geometry_distance_km(geometry)
+        used_distance = Decimal("0.00")
+
+        for item in ranges:
+            if not isinstance(item, list | tuple) or len(item) < 3:
+                warnings.append("пропущен некорректный диапазон detail")
+                continue
+            start_index, end_index, value = item[:3]
+            key = self._detail_key(value)
+            counts[key] = counts.get(key, 0) + 1
+            distance = self._range_distance_km(geometry, start_index, end_index)
+            if distance <= 0:
+                continue
+            distances[key] = distances.get(key, Decimal("0.00")) + distance
+            used_distance += distance
+
+        if distances:
+            denominator = total_distance if total_distance > 0 else used_distance
+            return self._distance_summary(distances, denominator), warnings
+
+        if counts:
+            warnings.append("дистанции диапазонов недоступны, используется счетчик")
+            return self._count_summary(counts), warnings
+
+        return {}, warnings
+
+    def _range_distance_km(self, geometry, start_index, end_index):
+        if not isinstance(start_index, int) or not isinstance(end_index, int):
+            return Decimal("0.00")
+        start_index = max(start_index, 0)
+        end_index = min(end_index, len(geometry) - 1)
+        if end_index <= start_index:
+            return Decimal("0.00")
+        distance = Decimal("0.00")
+        for index in range(start_index, end_index):
+            distance += self._haversine_km(geometry[index], geometry[index + 1])
+        return distance
+
+    def _geometry_distance_km(self, geometry):
+        distance = Decimal("0.00")
+        for start, end in zip(geometry, geometry[1:], strict=False):
+            distance += self._haversine_km(start, end)
+        return distance
+
+    def _haversine_km(self, start, end):
+        earth_radius_km = 6371.0
+        start_lat, start_lon = start
+        end_lat, end_lon = end
+        lat_delta = radians(end_lat - start_lat)
+        lon_delta = radians(end_lon - start_lon)
+        a = (
+            sin(lat_delta / 2) ** 2
+            + cos(radians(start_lat)) * cos(radians(end_lat)) * sin(lon_delta / 2) ** 2
+        )
+        distance = earth_radius_km * 2 * atan2(sqrt(a), sqrt(1 - a))
+        return Decimal(str(distance))
+
+    def _distance_summary(self, distances, total_distance):
+        summary = {}
+        for key, distance in distances.items():
+            share_percent = Decimal("0.00")
+            if total_distance > 0:
+                share_percent = (distance / total_distance * Decimal("100")).quantize(
+                    Decimal("0.01"),
+                    rounding=ROUND_HALF_UP,
+                )
+            summary[key] = {
+                "distance_km": str(
+                    distance.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                ),
+                "share_percent": str(share_percent),
+            }
+        return summary
+
+    def _count_summary(self, counts):
+        total = sum(counts.values())
+        summary = {}
+        for key, count in counts.items():
+            share_percent = Decimal("0.00")
+            if total:
+                share_percent = (Decimal(count) / Decimal(total) * Decimal("100")).quantize(
+                    Decimal("0.01"),
+                    rounding=ROUND_HALF_UP,
+                )
+            summary[key] = {"count": count, "share_percent": str(share_percent)}
+        return summary
+
+    def _detail_key(self, value):
+        if value is None:
+            return "unknown"
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return str(value)
+
+    def _has_tolls(self, toll_summary):
+        for key, item in toll_summary.items():
+            if key.lower() in {"false", "no", "none", "0", "unknown"}:
+                continue
+            if item.get("distance_km") and Decimal(str(item["distance_km"])) > 0:
+                return True
+            if item.get("count", 0) > 0:
+                return True
+        return False
 
     def _extract_valid_paths(self, response):
         paths = response.get("paths")

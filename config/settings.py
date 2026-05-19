@@ -43,6 +43,15 @@ GRAPHHOPPER_MAX_STRATEGY_REQUESTS = env.int(
     "GRAPHHOPPER_MAX_STRATEGY_REQUESTS",
     default=2,
 )
+GRAPHHOPPER_ENABLE_PATH_DETAILS = env.bool("GRAPHHOPPER_ENABLE_PATH_DETAILS", default=True)
+GRAPHHOPPER_PATH_DETAILS = [
+    detail.strip()
+    for detail in env(
+        "GRAPHHOPPER_PATH_DETAILS",
+        default="road_class,road_environment,surface,max_speed,toll",
+    ).split(",")
+    if detail.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",

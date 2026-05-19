@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Phase 11 - GraphHopper Route Facts
+
+- Added optional GraphHopper path details requests for normalized route facts.
+- Enriched `RouteOption.route_facts_json` with road class, environment, surface, speed and toll summaries.
+- Kept emission, cost, eco-rating, reports, PDFs and analytics behavior unchanged.
+
 ## Phase 8.1 - GraphHopper Alternatives
 
 - Added standard and extended route calculation modes for GraphHopper alternatives.

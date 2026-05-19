@@ -75,6 +75,8 @@ class RouteCalculationOptions:
     alternative_max_share_factor: float = 0.7
     enable_strategy_requests: bool = False
     max_strategy_requests: int = 0
+    enable_path_details: bool = False
+    path_details: tuple[str, ...] = ()
 
 
 class RoutingProviderError(Exception):

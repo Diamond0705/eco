@@ -3,6 +3,8 @@
 EcoLogist MVP is complete through Phase 8.1. Phase 9 is a documentation/specification phase and does not change application behavior.
 Фаза 10 добавляет внутренний контракт capabilities/facts и JSON-снимок фактов маршрута; она не
 меняет пользовательский сценарий, формулы расчета, отчеты, PDF или аналитику.
+Фаза 11 обогащает `route_facts_json` нормализованными дорожными деталями GraphHopper; формулы,
+отчеты, PDF, аналитика и пользовательский сценарий остаются прежними.
 
 This file is the current implementation snapshot. Docs `00` through `07` are historical and
 planning notes for earlier phases, so they may describe target behavior or old phase boundaries.
@@ -39,6 +41,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - The best eco route is determined after calculation from saved route facts, not assigned before
   the environmental calculation.
 - Existing `RouteOption` values must not be recalculated automatically when settings change.
+- GraphHopper route facts may include normalized road details from path details, but raw provider
+  responses are still not stored or exposed.
 
 ## Demo Flow
 

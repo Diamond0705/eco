@@ -67,6 +67,8 @@ def build_route_calculation_options(mode=STANDARD_MODE, *, allow_strategy_reques
             mode == EXTENDED_MODE and bool(allow_strategy_requests) and max_strategy_requests > 0
         ),
         max_strategy_requests=max_strategy_requests,
+        enable_path_details=settings.GRAPHHOPPER_ENABLE_PATH_DETAILS,
+        path_details=tuple(settings.GRAPHHOPPER_PATH_DETAILS),
     )
 
 

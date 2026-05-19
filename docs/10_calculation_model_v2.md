@@ -218,6 +218,9 @@ eco_rating_v2 =
 - `RouteOption` хранит snapshot рассчитанных значений.
 - Начиная с фазы 10, `RouteOption` также хранит нормализованный `route_facts_json` как
   подготовку к будущим провайдерам и расчетной модели v2.
+- Начиная с фазы 11, GraphHopper может заполнять `route_facts_json` дорожными деталями
+  `road_class`, `road_environment`, `surface`, `max_speed` и `toll`; эти данные пока не влияют на
+  стоимость, расход топлива или эко-рейтинг.
 - Старые `RouteOption` не пересчитываются автоматически при смене настроек.
 - Trips, analytics, reports и PDF читают сохраненные значения из `RouteOption`.
 - Raw provider response нельзя передавать в UI, PDF, reports или analytics.
@@ -229,9 +232,10 @@ eco_rating_v2 =
 2. Фаза 10: capability-модель провайдеров и нормализованный route facts contract без нового
    провайдера или с минимальным adapter-интерфейсом. Эта фаза сохраняет факты маршрута как JSON
    snapshot, но не меняет формулы расчета.
-3. Фаза 11: экспериментальный Yandex provider для России с traffic/truck/alternatives, без
+3. Фаза 11: обогащение GraphHopper route facts дорожными деталями без изменения формул.
+4. Фаза 12: экспериментальный Yandex provider для России с traffic/truck/alternatives, без
    замены GraphHopper.
-4. Фаза 12: расчет v2 в shadow mode: сохранить старый `eco_rating`, рядом считать breakdown для
+5. Фаза 13: расчет v2 в shadow mode: сохранить старый `eco_rating`, рядом считать breakdown для
    новых маршрутов.
-5. Фаза 13: расширить отчеты/PDF/analytics на новые snapshot-поля.
-6. Позже: comparison spike по PTV/HERE/TomTom для enterprise truck/toll/eco-zone задач.
+6. Позже: расширить отчеты/PDF/analytics на новые snapshot-поля и выполнить comparison spike по
+   PTV/HERE/TomTom для enterprise truck/toll/eco-zone задач.

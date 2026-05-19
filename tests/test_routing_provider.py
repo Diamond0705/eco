@@ -240,6 +240,52 @@ def test_graphhopper_client_builds_route_request_without_real_network():
     assert payload["instructions"] is False
     assert payload["algorithm"] == "alternative_route"
     assert payload["alternative_route.max_paths"] == 3
+    assert "details" not in payload
+
+
+def test_graphhopper_client_sends_path_details_without_real_network():
+    captured = {}
+
+    def fake_opener(request, timeout):
+        captured["request"] = request
+        return FakeGraphHopperResponse({"paths": []})
+
+    client = GraphHopperClient(
+        api_key="test-key",
+        base_url="https://graphhopper.test/api/1",
+        profile="car",
+        timeout_seconds=7,
+        opener=fake_opener,
+    )
+
+    client.route(
+        [[37.6173, 55.7558], [37.5447, 55.4312]],
+        path_details=["road_class", "toll"],
+    )
+
+    payload = json.loads(captured["request"].data.decode("utf-8"))
+    assert payload["details"] == ["road_class", "toll"]
+
+
+def test_graphhopper_client_omits_empty_path_details_without_real_network():
+    captured = {}
+
+    def fake_opener(request, timeout):
+        captured["request"] = request
+        return FakeGraphHopperResponse({"paths": []})
+
+    client = GraphHopperClient(
+        api_key="test-key",
+        base_url="https://graphhopper.test/api/1",
+        profile="car",
+        timeout_seconds=7,
+        opener=fake_opener,
+    )
+
+    client.route([[37.6173, 55.7558], [37.5447, 55.4312]], path_details=[])
+
+    payload = json.loads(captured["request"].data.decode("utf-8"))
+    assert "details" not in payload
 
 
 def test_graphhopper_client_sends_alternative_route_settings_without_real_network():
@@ -315,8 +361,15 @@ def test_graphhopper_client_wraps_network_errors_without_real_call():
         client.route([[37.6173, 55.7558], [37.5447, 55.4312]])
 
 
-def test_graphhopper_route_provider_exposes_phase_10_capabilities():
-    capabilities = GraphHopperRouteProvider.capabilities
+def test_graphhopper_route_provider_exposes_phase_11_capabilities():
+    provider = GraphHopperRouteProvider(
+        StubGraphHopperClient({"paths": []}),
+        options=RouteCalculationOptions(
+            enable_path_details=True,
+            path_details=("road_class", "toll"),
+        ),
+    )
+    capabilities = provider.capabilities
 
     assert capabilities.provider == RouteOption.Provider.GRAPHHOPPER
     assert capabilities.is_demo_provider is False
@@ -324,11 +377,11 @@ def test_graphhopper_route_provider_exposes_phase_10_capabilities():
     assert capabilities.supports_alternatives is True
     assert capabilities.supports_traffic is False
     assert capabilities.supports_truck_routing is False
-    assert capabilities.supports_tolls is False
+    assert capabilities.supports_tolls is True
     assert capabilities.supports_toll_costs is False
     assert capabilities.supports_road_incidents is False
     assert capabilities.supports_low_emission_zones is False
-    assert capabilities.supports_road_details is False
+    assert capabilities.supports_road_details is True
 
 
 class StubGraphHopperClient:
@@ -414,6 +467,97 @@ def test_graphhopper_provider_returns_two_candidates_without_padding(route_order
 
 
 @pytest.mark.django_db
+def test_graphhopper_provider_parses_path_detail_summaries(route_order):
+    details = {
+        "road_class": [[0, 1, "motorway"], [1, 2, "primary"]],
+        "road_environment": [[0, 1, "road"], [1, 2, "urban"]],
+        "surface": [[0, 1, "asphalt"], [1, 2, "paved"]],
+        "max_speed": [[0, 1, 90], [1, 2, 60]],
+        "toll": [[0, 1, False], [1, 2, True]],
+    }
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(
+                    20000,
+                    1200000,
+                    [[37.6173, 55.7558], [37.6000, 55.6000], [37.5447, 55.4312]],
+                    details=details,
+                )
+            ]
+        }
+    )
+    options = RouteCalculationOptions(
+        enable_path_details=True,
+        path_details=("road_class", "road_environment", "surface", "max_speed", "toll"),
+    )
+
+    candidates = GraphHopperRouteProvider(client, options=options).get_candidates(route_order)
+    facts = candidates[0].route_facts.to_json()
+    road_details = facts["road_details"]
+
+    assert client.calls[0]["path_details"] == (
+        "road_class",
+        "road_environment",
+        "surface",
+        "max_speed",
+        "toll",
+    )
+    assert road_details["requested_details"] == [
+        "road_class",
+        "road_environment",
+        "surface",
+        "max_speed",
+        "toll",
+    ]
+    assert road_details["available_details"] == [
+        "road_class",
+        "road_environment",
+        "surface",
+        "max_speed",
+        "toll",
+    ]
+    assert "motorway" in road_details["road_class_summary"]
+    assert "urban" in road_details["road_environment_summary"]
+    assert "asphalt" in road_details["surface_summary"]
+    assert "90" in road_details["max_speed_summary"]
+    assert "true" in road_details["toll_summary"]
+    assert facts["has_tolls"] is True
+    assert facts["toll_cost_rub"] == "0.00"
+    assert any("стоимость проезда не рассчитывается" in warning for warning in facts["warnings"])
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_missing_path_details_do_not_break_candidates(route_order):
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(
+                    10000,
+                    100000,
+                    [[37.6173, 55.7558], [37.5447, 55.4312]],
+                )
+            ]
+        }
+    )
+    options = RouteCalculationOptions(
+        enable_path_details=True,
+        path_details=("road_class", "toll"),
+    )
+
+    candidates = GraphHopperRouteProvider(client, options=options).get_candidates(route_order)
+    facts = candidates[0].route_facts.to_json()
+
+    assert len(candidates) == 1
+    assert facts["road_details"] == {
+        "requested_details": ["road_class", "toll"],
+        "available_details": [],
+    }
+    assert facts["has_tolls"] is False
+    assert "GraphHopper не вернул дорожные детали для этого маршрута." in facts["warnings"]
+
+
+@pytest.mark.django_db
 def test_graphhopper_provider_does_not_duplicate_fastest_shortest_route(route_order):
     client = StubGraphHopperClient(
         {
@@ -441,12 +585,15 @@ def test_graphhopper_provider_does_not_duplicate_fastest_shortest_route(route_or
     ]
 
 
-def _graphhopper_path(distance, duration, coordinates):
-    return {
+def _graphhopper_path(distance, duration, coordinates, details=None):
+    path = {
         "distance": distance,
         "time": duration,
         "points": {"coordinates": coordinates},
     }
+    if details is not None:
+        path["details"] = details
+    return path
 
 
 @pytest.mark.django_db
