@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Reference Data Expansion
+
+- Added `seed_reference_expansion` command for additional route-testing reference data.
+- Added legacy Euro I-II standards, expanded Russian locations and five demo transports.
+- Kept routing logic, calculation formulas, models and migrations unchanged.
+
 ## Phase 12 - Calculation Model v2
 
 - Added Calculation Model v2 for new route calculations from saved normalized route facts.
