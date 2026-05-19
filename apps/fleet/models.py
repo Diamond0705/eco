@@ -108,6 +108,13 @@ class EcoCalculationSettings(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(Decimal("0.01"))],
     )
+    driver_time_tariff_rub_per_hour = models.DecimalField(
+        "Тариф времени водителя, руб/ч",
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal("900.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
     full_load_fuel_increase_percent = models.DecimalField(
         "Рост расхода при полной загрузке, %",
         max_digits=5,
@@ -175,6 +182,7 @@ class EcoCalculationSettings(models.Model):
             "engine_work_kwh_per_km": Decimal("1.20"),
             "fuel_price_rub_per_liter": Decimal("78.15"),
             "service_tariff_rub_per_km": Decimal("175.00"),
+            "driver_time_tariff_rub_per_hour": Decimal("900.00"),
             "full_load_fuel_increase_percent": Decimal("20.00"),
             "co2_weight": Decimal("0.50"),
             "nox_weight": Decimal("0.30"),

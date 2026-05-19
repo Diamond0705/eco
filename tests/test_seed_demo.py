@@ -45,6 +45,7 @@ def test_seed_demo_creates_reference_data():
     settings = EcoCalculationSettings.objects.get(name=EcoCalculationSettings.DEFAULT_NAME)
     assert settings.is_active is True
     assert settings.fuel_price_rub_per_liter == Decimal("78.15")
+    assert settings.driver_time_tariff_rub_per_hour == Decimal("900.00")
     assert EcoCalculationSettings.objects.filter(is_active=True).count() == 1
 
 

@@ -92,7 +92,7 @@ def test_emission_calculator_returns_positive_values_and_bounded_rating(routing_
 
 
 @pytest.mark.django_db
-def test_emission_calculator_ignores_route_facts_for_current_formula(routing_order):
+def test_emission_calculator_v1_ignores_route_facts(routing_order):
     settings = EcoCalculationSettings.get_current()
     base_candidate = RouteCandidate(
         name="Маршрут GraphHopper",
@@ -116,9 +116,138 @@ def test_emission_calculator_ignores_route_facts_for_current_formula(routing_ord
         ),
     )
 
-    assert EmissionCalculator().calculate(routing_order, base_candidate, settings) == (
-        EmissionCalculator().calculate(routing_order, enriched_candidate, settings)
+    assert EmissionCalculator(model_version="v1").calculate(
+        routing_order,
+        base_candidate,
+        settings,
+    ) == EmissionCalculator(model_version="v1").calculate(
+        routing_order,
+        enriched_candidate,
+        settings,
     )
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v2_uses_average_speed_factor(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    candidate = RouteCandidate(
+        name="Маршрут GraphHopper",
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=Decimal("10.00"),
+        duration_minutes=20,
+        fuel_multiplier=Decimal("1.00"),
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+    )
+
+    result = EmissionCalculator(model_version="v2").calculate(routing_order, candidate, settings)
+
+    assert result["fuel_multiplier"] == Decimal("1.15")
+    assert result["calculation_model_version"] == "v2"
+    assert result["calculation_details_json"]["average_speed_kmh"] == "30.00"
+    assert result["calculation_details_json"]["speed_factor"] == "1.15"
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v2_uses_road_class_and_surface_factors(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    candidate = RouteCandidate(
+        name="Маршрут GraphHopper",
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=Decimal("10.00"),
+        duration_minutes=8,
+        fuel_multiplier=Decimal("1.00"),
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        route_facts=RouteFacts(
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            road_details={
+                "road_class_summary": {
+                    "residential": {"distance_km": "10.00", "share_percent": "100.00"}
+                },
+                "surface_summary": {
+                    "gravel": {"distance_km": "10.00", "share_percent": "100.00"}
+                },
+            },
+        ),
+    )
+
+    result = EmissionCalculator(model_version="v2").calculate(routing_order, candidate, settings)
+    details = result["calculation_details_json"]
+
+    assert details["road_class_factor"] == "1.10"
+    assert details["surface_factor"] == "1.12"
+    assert result["fuel_multiplier"] == Decimal("1.23")
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v2_clamps_route_fact_multiplier(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    candidate = RouteCandidate(
+        name="Маршрут GraphHopper",
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=Decimal("10.00"),
+        duration_minutes=60,
+        fuel_multiplier=Decimal("1.00"),
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        route_facts=RouteFacts(
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            supports_traffic=True,
+            traffic_delay_minutes=60,
+            road_details={
+                "road_class_summary": {
+                    "service": {"distance_km": "10.00", "share_percent": "100.00"}
+                },
+                "surface_summary": {
+                    "ground": {"distance_km": "10.00", "share_percent": "100.00"}
+                },
+            },
+        ),
+    )
+
+    result = EmissionCalculator(model_version="v2").calculate(routing_order, candidate, settings)
+
+    assert result["fuel_multiplier"] == Decimal("1.40")
+    assert result["calculation_details_json"]["route_fact_multiplier"] == "1.40"
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v2_keeps_mock_demo_multiplier(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    candidate = MockRouteProvider().get_candidates(routing_order)[0]
+
+    result = EmissionCalculator(model_version="v2").calculate(routing_order, candidate, settings)
+
+    assert result["fuel_multiplier"] == candidate.fuel_multiplier
+    assert result["calculation_details_json"]["route_fact_multiplier"] == "1.00"
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v2_includes_time_cost_and_unknown_toll_warning(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    candidate = RouteCandidate(
+        name="Маршрут GraphHopper",
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=Decimal("10.00"),
+        duration_minutes=60,
+        fuel_multiplier=Decimal("1.00"),
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        route_facts=RouteFacts(
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            has_tolls=True,
+            toll_cost_rub=Decimal("0.00"),
+        ),
+    )
+
+    result = EmissionCalculator(model_version="v2").calculate(routing_order, candidate, settings)
+    details = result["calculation_details_json"]
+
+    assert details["time_cost_rub"] == "900.00"
+    assert details["toll_cost_rub"] == "0.00"
+    assert result["cost_rub"] > EmissionCalculator(model_version="v1").calculate(
+        routing_order,
+        candidate,
+        settings,
+    )["cost_rub"]
+    assert "Платные участки обнаружены, но стоимость проезда не рассчитана." in details["warnings"]
 
 
 @pytest.mark.django_db
@@ -132,6 +261,11 @@ def test_route_calculation_service_creates_snapshots_and_updates_order_status(ro
     assert routing_order.status == ShipmentOrder.Status.CALCULATED
     assert all(option.calculation_settings == current_settings for option in route_options)
     assert all(option.is_selected is False for option in route_options)
+    assert all(option.calculation_model_version == "v2" for option in route_options)
+    assert all(
+        option.calculation_details_json["calculation_model_version"] == "v2"
+        for option in route_options
+    )
     assert all(option.route_facts_json["schema_version"] == 1 for option in route_options)
     assert all(
         option.route_facts_json["provider"] == RouteOption.Provider.MOCK
@@ -208,7 +342,8 @@ def test_route_calculation_service_accepts_single_graphhopper_candidate(routing_
     assert len(route_options) == 1
     assert RouteOption.objects.filter(order=routing_order).count() == 1
     assert route_options[0].provider == RouteOption.Provider.GRAPHHOPPER
-    assert route_options[0].fuel_multiplier == Decimal("1.00")
+    assert route_options[0].fuel_multiplier == Decimal("1.15")
+    assert route_options[0].calculation_model_version == "v2"
     assert route_options[0].route_facts_json["provider"] == RouteOption.Provider.GRAPHHOPPER
 
 
@@ -240,6 +375,7 @@ def test_route_calculation_service_stores_enriched_graphhopper_route_facts(
 
     assert len(route_options) == 1
     assert facts["provider"] == RouteOption.Provider.GRAPHHOPPER
+    assert route_options[0].calculation_details_json["calculation_model_version"] == "v2"
     assert facts["has_tolls"] is True
     assert facts["road_details"]["requested_details"] == ["road_class", "toll"]
     assert "motorway" in facts["road_details"]["road_class_summary"]

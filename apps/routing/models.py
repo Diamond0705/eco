@@ -76,6 +76,16 @@ class RouteOption(models.Model):
     )
     geometry_json = models.JSONField("Геометрия маршрута")
     route_facts_json = models.JSONField("Факты маршрута", default=dict, blank=True)
+    calculation_model_version = models.CharField(
+        "Версия расчетной модели",
+        max_length=20,
+        default="v1",
+    )
+    calculation_details_json = models.JSONField(
+        "Детали расчета",
+        default=dict,
+        blank=True,
+    )
     calculation_settings = models.ForeignKey(
         "fleet.EcoCalculationSettings",
         verbose_name="Настройки расчета",

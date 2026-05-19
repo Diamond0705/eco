@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Phase 12 - Calculation Model v2
+
+- Added Calculation Model v2 for new route calculations from saved normalized route facts.
+- Added route calculation metadata snapshots with model version and calculation details JSON.
+- Added driver time tariff to eco calculation settings and v2 route cost.
+- Kept old RouteOption snapshots, providers, reports, PDFs and analytics behavior stable.
+
 ## Phase 11 - GraphHopper Route Facts
 
 - Added optional GraphHopper path details requests for normalized route facts.

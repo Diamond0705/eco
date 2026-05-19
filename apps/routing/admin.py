@@ -14,10 +14,11 @@ class RouteOptionAdmin(admin.ModelAdmin):
         "duration_minutes",
         "cost_rub",
         "eco_rating",
+        "calculation_model_version",
         "is_selected",
         "created_at",
     )
-    readonly_fields = ("route_facts_json",)
+    readonly_fields = ("route_facts_json", "calculation_details_json")
     search_fields = ("id", "order__id", "order__cargo_name", "name")
     list_filter = ("provider", "is_selected", "created_at")
     ordering = ("-created_at",)

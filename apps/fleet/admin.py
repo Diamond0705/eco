@@ -37,6 +37,7 @@ class EcoCalculationSettingsAdmin(admin.ModelAdmin):
         "diesel_co2_kg_per_liter",
         "fuel_price_rub_per_liter",
         "service_tariff_rub_per_km",
+        "driver_time_tariff_rub_per_hour",
         "updated_at",
     )
     search_fields = ("name",)

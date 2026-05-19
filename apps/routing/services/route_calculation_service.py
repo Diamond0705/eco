@@ -43,6 +43,7 @@ class RouteCalculationService:
         route_options = []
         for candidate in candidates:
             calculated_values = self.calculator.calculate(order, candidate, calculation_settings)
+            fuel_multiplier = calculated_values.pop("fuel_multiplier", candidate.fuel_multiplier)
             route_options.append(
                 RouteOption.objects.create(
                     order=order,
@@ -50,7 +51,7 @@ class RouteCalculationService:
                     provider=candidate.provider,
                     distance_km=candidate.distance_km,
                     duration_minutes=candidate.duration_minutes,
-                    fuel_multiplier=candidate.fuel_multiplier,
+                    fuel_multiplier=fuel_multiplier,
                     geometry_json=candidate.geometry_json,
                     route_facts_json=candidate.route_facts.to_json(),
                     calculation_settings=calculation_settings,

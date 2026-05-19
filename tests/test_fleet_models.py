@@ -92,6 +92,7 @@ def test_get_current_creates_default_settings_when_no_active_exists():
     assert current.name == EcoCalculationSettings.DEFAULT_NAME
     assert current.is_active is True
     assert current.diesel_co2_kg_per_liter == Decimal("2.69")
+    assert current.driver_time_tariff_rub_per_hour == Decimal("900.00")
     assert EcoCalculationSettings.objects.count() == 1
 
 
@@ -104,6 +105,7 @@ def test_get_current_activates_existing_default_when_no_active_exists():
         engine_work_kwh_per_km=Decimal("1.00"),
         fuel_price_rub_per_liter=Decimal("1.00"),
         service_tariff_rub_per_km=Decimal("1.00"),
+        driver_time_tariff_rub_per_hour=Decimal("1.00"),
         full_load_fuel_increase_percent=Decimal("1.00"),
         co2_weight=Decimal("1.00"),
         nox_weight=Decimal("1.00"),
@@ -119,6 +121,7 @@ def test_get_current_activates_existing_default_when_no_active_exists():
     assert current == settings
     assert settings.is_active is True
     assert settings.fuel_price_rub_per_liter == Decimal("78.15")
+    assert settings.driver_time_tariff_rub_per_hour == Decimal("900.00")
 
 
 @pytest.mark.django_db

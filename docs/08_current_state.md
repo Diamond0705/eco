@@ -1,6 +1,9 @@
 # Current MVP State
 
 EcoLogist MVP is complete through Phase 8.1. Phase 9 is a documentation/specification phase and does not change application behavior.
+Фаза 12 включает расчетную модель v2 для новых маршрутов: она использует сохраненные
+`route_facts_json`, сохраняет версию модели и детали расчета, но не пересчитывает старые
+`RouteOption` и не меняет поведение отчетов, PDF, аналитики или рейсов.
 Фаза 10 добавляет внутренний контракт capabilities/facts и JSON-снимок фактов маршрута; она не
 меняет пользовательский сценарий, формулы расчета, отчеты, PDF или аналитику.
 Фаза 11 обогащает `route_facts_json` нормализованными дорожными деталями GraphHopper; формулы,
@@ -43,6 +46,10 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Existing `RouteOption` values must not be recalculated automatically when settings change.
 - GraphHopper route facts may include normalized road details from path details, but raw provider
   responses are still not stored or exposed.
+- New calculations use Calculation Model v2 by default and store `calculation_model_version` and
+  `calculation_details_json` as part of the route snapshot.
+- Existing saved `RouteOption` rows remain historical snapshots and are not recalculated
+  automatically.
 
 ## Demo Flow
 
