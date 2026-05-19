@@ -6,6 +6,8 @@ from .graphhopper_client import GraphHopperClient
 from .providers import (
     RouteCalculationOptions,
     RouteCandidate,
+    RouteFacts,
+    RouteProviderCapabilities,
     RoutingProviderError,
     RoutingProviderResponseError,
 )
@@ -14,6 +16,19 @@ from .providers import (
 class GraphHopperRouteProvider:
     provider = RouteOption.Provider.GRAPHHOPPER
     fuel_multiplier = Decimal("1.00")
+    capabilities = RouteProviderCapabilities(
+        provider=provider,
+        supports_real_geometry=True,
+        supports_alternatives=True,
+        supports_traffic=False,
+        supports_truck_routing=False,
+        supports_tolls=False,
+        supports_toll_costs=False,
+        supports_road_incidents=False,
+        supports_low_emission_zones=False,
+        supports_road_details=False,
+        is_demo_provider=False,
+    )
 
     def __init__(
         self,
@@ -55,6 +70,7 @@ class GraphHopperRouteProvider:
                 duration_minutes=self._duration_minutes(path["time"]),
                 fuel_multiplier=self.fuel_multiplier,
                 geometry_json=self._geometry(path),
+                route_facts=RouteFacts.neutral(self.provider),
             )
             for index, path in enumerate(paths)
         ]

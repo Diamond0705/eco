@@ -52,6 +52,7 @@ class RouteCalculationService:
                     duration_minutes=candidate.duration_minutes,
                     fuel_multiplier=candidate.fuel_multiplier,
                     geometry_json=candidate.geometry_json,
+                    route_facts_json=candidate.route_facts.to_json(),
                     calculation_settings=calculation_settings,
                     **calculated_values,
                 )

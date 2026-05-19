@@ -13,9 +13,54 @@ from apps.routing.models import RouteOption
 from apps.routing.services.graphhopper_client import GraphHopperClient
 from apps.routing.services.graphhopper_provider import GraphHopperRouteProvider
 from apps.routing.services.mock_provider import MockRouteProvider
-from apps.routing.services.providers import RouteCalculationOptions, RoutingProviderResponseError
+from apps.routing.services.providers import (
+    RouteCalculationOptions,
+    RouteFacts,
+    RoutingProviderResponseError,
+)
 
 User = get_user_model()
+
+
+def test_route_facts_neutral_returns_json_safe_defaults():
+    facts = RouteFacts.neutral(RouteOption.Provider.MOCK)
+
+    assert facts.provider == RouteOption.Provider.MOCK
+    assert facts.supports_traffic is False
+    assert facts.traffic_delay_minutes == 0
+    assert facts.has_tolls is False
+    assert facts.toll_cost_rub == Decimal("0.00")
+    assert facts.has_restriction_warnings is False
+    assert facts.restriction_warnings == []
+    assert facts.road_details == {}
+    assert facts.warnings == []
+
+    assert facts.to_json() == {
+        "schema_version": 1,
+        "provider": RouteOption.Provider.MOCK,
+        "supports_traffic": False,
+        "traffic_delay_minutes": 0,
+        "has_tolls": False,
+        "toll_cost_rub": "0.00",
+        "has_restriction_warnings": False,
+        "restriction_warnings": [],
+        "road_details": {},
+        "warnings": [],
+    }
+
+
+def test_route_facts_to_json_contains_no_raw_provider_response():
+    facts = RouteFacts(
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        warnings=["Данные о пробках не поддерживаются текущей интеграцией."],
+    )
+
+    payload = facts.to_json()
+
+    assert "paths" not in payload
+    assert "raw_response" not in payload
+    assert payload["provider"] == RouteOption.Provider.GRAPHHOPPER
+    assert payload["warnings"] == ["Данные о пробках не поддерживаются текущей интеграцией."]
 
 
 @pytest.fixture
@@ -82,6 +127,36 @@ def test_mock_route_provider_returns_three_routes(route_order):
         Decimal("1.00"),
         Decimal("0.92"),
     ]
+
+
+def test_mock_route_provider_exposes_phase_10_capabilities():
+    capabilities = MockRouteProvider.capabilities
+
+    assert capabilities.provider == RouteOption.Provider.MOCK
+    assert capabilities.is_demo_provider is True
+    assert capabilities.supports_real_geometry is False
+    assert capabilities.supports_alternatives is True
+    assert capabilities.supports_traffic is False
+    assert capabilities.supports_truck_routing is False
+    assert capabilities.supports_tolls is False
+    assert capabilities.supports_toll_costs is False
+    assert capabilities.supports_road_incidents is False
+    assert capabilities.supports_low_emission_zones is False
+    assert capabilities.supports_road_details is False
+
+
+@pytest.mark.django_db
+def test_mock_route_provider_candidates_include_neutral_route_facts(route_order):
+    candidates = MockRouteProvider().get_candidates(route_order)
+
+    assert all(
+        candidate.route_facts.provider == RouteOption.Provider.MOCK
+        for candidate in candidates
+    )
+    assert all(
+        candidate.route_facts.to_json()["toll_cost_rub"] == "0.00"
+        for candidate in candidates
+    )
 
 
 @pytest.mark.django_db
@@ -240,6 +315,22 @@ def test_graphhopper_client_wraps_network_errors_without_real_call():
         client.route([[37.6173, 55.7558], [37.5447, 55.4312]])
 
 
+def test_graphhopper_route_provider_exposes_phase_10_capabilities():
+    capabilities = GraphHopperRouteProvider.capabilities
+
+    assert capabilities.provider == RouteOption.Provider.GRAPHHOPPER
+    assert capabilities.is_demo_provider is False
+    assert capabilities.supports_real_geometry is True
+    assert capabilities.supports_alternatives is True
+    assert capabilities.supports_traffic is False
+    assert capabilities.supports_truck_routing is False
+    assert capabilities.supports_tolls is False
+    assert capabilities.supports_toll_costs is False
+    assert capabilities.supports_road_incidents is False
+    assert capabilities.supports_low_emission_zones is False
+    assert capabilities.supports_road_details is False
+
+
 class StubGraphHopperClient:
     def __init__(self, response, *extra_responses):
         self.responses = [response, *extra_responses]
@@ -284,6 +375,8 @@ def test_graphhopper_provider_returns_one_candidate_for_one_path(route_order):
     assert candidates[0].duration_minutes == 2
     assert candidates[0].fuel_multiplier == Decimal("1.00")
     assert candidates[0].geometry_json == [[55.7558, 37.6173], [55.4312, 37.5447]]
+    assert candidates[0].route_facts.provider == RouteOption.Provider.GRAPHHOPPER
+    assert candidates[0].route_facts.to_json()["has_tolls"] is False
 
 
 @pytest.mark.django_db
@@ -314,6 +407,10 @@ def test_graphhopper_provider_returns_two_candidates_without_padding(route_order
     ]
     assert all(candidate.provider == RouteOption.Provider.GRAPHHOPPER for candidate in candidates)
     assert all(candidate.fuel_multiplier == Decimal("1.00") for candidate in candidates)
+    assert all(
+        candidate.route_facts.provider == RouteOption.Provider.GRAPHHOPPER
+        for candidate in candidates
+    )
 
 
 @pytest.mark.django_db

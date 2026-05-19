@@ -3,11 +3,24 @@ from math import atan2, cos, radians, sin, sqrt
 
 from apps.routing.models import RouteOption
 
-from .providers import RouteCandidate
+from .providers import RouteCandidate, RouteFacts, RouteProviderCapabilities
 
 
 class MockRouteProvider:
     provider = RouteOption.Provider.MOCK
+    capabilities = RouteProviderCapabilities(
+        provider=provider,
+        supports_real_geometry=False,
+        supports_alternatives=True,
+        supports_traffic=False,
+        supports_truck_routing=False,
+        supports_tolls=False,
+        supports_toll_costs=False,
+        supports_road_incidents=False,
+        supports_low_emission_zones=False,
+        supports_road_details=False,
+        is_demo_provider=True,
+    )
 
     route_profiles = (
         {
@@ -115,6 +128,7 @@ class MockRouteProvider:
             duration_minutes=duration_minutes,
             fuel_multiplier=profile["fuel_multiplier"],
             geometry_json=geometry,
+            route_facts=RouteFacts.neutral(self.provider),
         )
 
     def _build_geometry(self, points, coordinates, profile):

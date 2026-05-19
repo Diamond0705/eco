@@ -17,6 +17,7 @@ class RouteOptionAdmin(admin.ModelAdmin):
         "is_selected",
         "created_at",
     )
+    readonly_fields = ("route_facts_json",)
     search_fields = ("id", "order__id", "order__cargo_name", "name")
     list_filter = ("provider", "is_selected", "created_at")
     ordering = ("-created_at",)

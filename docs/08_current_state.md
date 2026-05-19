@@ -1,6 +1,8 @@
 # Current MVP State
 
 EcoLogist MVP is complete through Phase 8.1. Phase 9 is a documentation/specification phase and does not change application behavior.
+Фаза 10 добавляет внутренний контракт capabilities/facts и JSON-снимок фактов маршрута; она не
+меняет пользовательский сценарий, формулы расчета, отчеты, PDF или аналитику.
 
 This file is the current implementation snapshot. Docs `00` through `07` are historical and
 planning notes for earlier phases, so they may describe target behavior or old phase boundaries.

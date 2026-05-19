@@ -96,6 +96,12 @@ def test_route_calculation_service_creates_snapshots_and_updates_order_status(ro
     assert routing_order.status == ShipmentOrder.Status.CALCULATED
     assert all(option.calculation_settings == current_settings for option in route_options)
     assert all(option.is_selected is False for option in route_options)
+    assert all(option.route_facts_json["schema_version"] == 1 for option in route_options)
+    assert all(
+        option.route_facts_json["provider"] == RouteOption.Provider.MOCK
+        for option in route_options
+    )
+    assert all(option.route_facts_json["toll_cost_rub"] == "0.00" for option in route_options)
 
 
 @pytest.mark.django_db
@@ -141,6 +147,7 @@ def test_route_calculation_service_accepts_single_graphhopper_candidate(routing_
     assert RouteOption.objects.filter(order=routing_order).count() == 1
     assert route_options[0].provider == RouteOption.Provider.GRAPHHOPPER
     assert route_options[0].fuel_multiplier == Decimal("1.00")
+    assert route_options[0].route_facts_json["provider"] == RouteOption.Provider.GRAPHHOPPER
 
 
 @pytest.mark.django_db

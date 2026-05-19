@@ -216,6 +216,8 @@ eco_rating_v2 =
 
 - Все расчеты продолжают использовать `EcoCalculationSettings.get_current()`.
 - `RouteOption` хранит snapshot рассчитанных значений.
+- Начиная с фазы 10, `RouteOption` также хранит нормализованный `route_facts_json` как
+  подготовку к будущим провайдерам и расчетной модели v2.
 - Старые `RouteOption` не пересчитываются автоматически при смене настроек.
 - Trips, analytics, reports и PDF читают сохраненные значения из `RouteOption`.
 - Raw provider response нельзя передавать в UI, PDF, reports или analytics.
@@ -225,7 +227,8 @@ eco_rating_v2 =
 
 1. Фаза 9: только документы и спецификация.
 2. Фаза 10: capability-модель провайдеров и нормализованный route facts contract без нового
-   провайдера или с минимальным adapter-интерфейсом.
+   провайдера или с минимальным adapter-интерфейсом. Эта фаза сохраняет факты маршрута как JSON
+   snapshot, но не меняет формулы расчета.
 3. Фаза 11: экспериментальный Yandex provider для России с traffic/truck/alternatives, без
    замены GraphHopper.
 4. Фаза 12: расчет v2 в shadow mode: сохранить старый `eco_rating`, рядом считать breakdown для

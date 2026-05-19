@@ -1,5 +1,52 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
+
+
+@dataclass(frozen=True)
+class RouteProviderCapabilities:
+    provider: str
+    supports_real_geometry: bool
+    supports_alternatives: bool
+    supports_traffic: bool
+    supports_truck_routing: bool
+    supports_tolls: bool
+    supports_toll_costs: bool
+    supports_road_incidents: bool
+    supports_low_emission_zones: bool
+    supports_road_details: bool
+    is_demo_provider: bool
+
+
+@dataclass(frozen=True)
+class RouteFacts:
+    schema_version: int = 1
+    provider: str = ""
+    supports_traffic: bool = False
+    traffic_delay_minutes: int = 0
+    has_tolls: bool = False
+    toll_cost_rub: Decimal = Decimal("0.00")
+    has_restriction_warnings: bool = False
+    restriction_warnings: list[str] = field(default_factory=list)
+    road_details: dict = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
+
+    @classmethod
+    def neutral(cls, provider=""):
+        return cls(provider=provider)
+
+    def to_json(self):
+        return {
+            "schema_version": self.schema_version,
+            "provider": self.provider,
+            "supports_traffic": self.supports_traffic,
+            "traffic_delay_minutes": self.traffic_delay_minutes,
+            "has_tolls": self.has_tolls,
+            "toll_cost_rub": str(self.toll_cost_rub.quantize(Decimal("0.01"))),
+            "has_restriction_warnings": self.has_restriction_warnings,
+            "restriction_warnings": list(self.restriction_warnings),
+            "road_details": dict(self.road_details),
+            "warnings": list(self.warnings),
+        }
 
 
 @dataclass(frozen=True)
@@ -10,6 +57,11 @@ class RouteCandidate:
     duration_minutes: int
     fuel_multiplier: Decimal
     geometry_json: list[list[float]]
+    route_facts: RouteFacts | None = None
+
+    def __post_init__(self):
+        if self.route_facts is None:
+            object.__setattr__(self, "route_facts", RouteFacts.neutral(self.provider))
 
 
 @dataclass(frozen=True)
