@@ -247,7 +247,101 @@ def test_emission_calculator_v2_includes_time_cost_and_unknown_toll_warning(rout
         candidate,
         settings,
     )["cost_rub"]
-    assert "Платные участки обнаружены, но стоимость проезда не рассчитана." in details["warnings"]
+    assert (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    ) in details["warnings"]
+
+
+@pytest.mark.django_db
+def test_emission_calculator_rejects_unknown_model_version():
+    with pytest.raises(ValueError, match="Неподдерживаемая версия расчетной модели"):
+        EmissionCalculator(model_version="v3")
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v21_saves_intensity_fields_and_deduplicates_warnings(
+    routing_order,
+):
+    settings = EcoCalculationSettings.get_current()
+    warning = (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    )
+    candidate = RouteCandidate(
+        name="Маршрут GraphHopper",
+        provider=RouteOption.Provider.GRAPHHOPPER,
+        distance_km=Decimal("1500.00"),
+        duration_minutes=1200,
+        fuel_multiplier=Decimal("1.00"),
+        geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        route_facts=RouteFacts(
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            has_tolls=True,
+            toll_cost_rub=Decimal("0.00"),
+            warnings=[warning, warning],
+        ),
+    )
+
+    result = EmissionCalculator(model_version="v2.1").calculate(
+        routing_order,
+        candidate,
+        settings,
+    )
+    details = result["calculation_details_json"]
+
+    assert result["calculation_model_version"] == "v2.1"
+    assert result["co2_kg"] > 0
+    assert result["nox_g"] > 0
+    assert result["pm_g"] > 0
+    assert result["eco_rating"] > 0
+    assert details["co2_kg_per_km"] != "0.000"
+    assert details["nox_g_per_km"] != "0.000"
+    assert details["pm_g_per_km"] != "0.0000"
+    assert "co2_kg_per_ton_km" in details
+    assert "nox_g_per_ton_km" in details
+    assert "pm_g_per_ton_km" in details
+    assert "emissions_score" in details
+    assert details["route_risk_penalty"] == "0.00"
+    assert details["eco_rating_method"] == "v2.1_intensity_plus_route_risk"
+    assert details["warnings"].count(warning) == 1
+    assert "Провайдер не предоставляет данные о пробках, traffic_factor=1.00." in details[
+        "warnings"
+    ]
+
+
+@pytest.mark.django_db
+def test_emission_calculator_v21_long_routes_do_not_all_collapse_to_zero(routing_order):
+    settings = EcoCalculationSettings.get_current()
+    candidates = [
+        RouteCandidate(
+            name="Вариант 1",
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            distance_km=Decimal("1800.00"),
+            duration_minutes=1440,
+            fuel_multiplier=Decimal("1.00"),
+            geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        ),
+        RouteCandidate(
+            name="Вариант 2",
+            provider=RouteOption.Provider.GRAPHHOPPER,
+            distance_km=Decimal("1900.00"),
+            duration_minutes=1520,
+            fuel_multiplier=Decimal("1.00"),
+            geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        ),
+    ]
+
+    ratings = [
+        EmissionCalculator(model_version="v2.1").calculate(
+            routing_order,
+            candidate,
+            settings,
+        )["eco_rating"]
+        for candidate in candidates
+    ]
+
+    assert all(rating > 0 for rating in ratings)
 
 
 @pytest.mark.django_db
@@ -261,11 +355,12 @@ def test_route_calculation_service_creates_snapshots_and_updates_order_status(ro
     assert routing_order.status == ShipmentOrder.Status.CALCULATED
     assert all(option.calculation_settings == current_settings for option in route_options)
     assert all(option.is_selected is False for option in route_options)
-    assert all(option.calculation_model_version == "v2" for option in route_options)
+    assert all(option.calculation_model_version == "v2.1" for option in route_options)
     assert all(
-        option.calculation_details_json["calculation_model_version"] == "v2"
+        option.calculation_details_json["calculation_model_version"] == "v2.1"
         for option in route_options
     )
+    assert all("co2_kg_per_km" in option.calculation_details_json for option in route_options)
     assert all(option.route_facts_json["schema_version"] == 1 for option in route_options)
     assert all(
         option.route_facts_json["provider"] == RouteOption.Provider.MOCK
@@ -307,6 +402,46 @@ class FailingGraphHopperProvider:
         raise RoutingProviderResponseError("GraphHopper failed in test.")
 
 
+class MixedDistanceProvider:
+    provider = RouteOption.Provider.GRAPHHOPPER
+
+    def get_candidates(self, order):
+        return [
+            RouteCandidate(
+                name="В пределах лимита",
+                provider=RouteOption.Provider.GRAPHHOPPER,
+                distance_km=Decimal("1999.00"),
+                duration_minutes=1200,
+                fuel_multiplier=Decimal("1.00"),
+                geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+            ),
+            RouteCandidate(
+                name="За пределами лимита",
+                provider=RouteOption.Provider.GRAPHHOPPER,
+                distance_km=Decimal("2001.00"),
+                duration_minutes=1300,
+                fuel_multiplier=Decimal("1.00"),
+                geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+            ),
+        ]
+
+
+class OverLimitProvider:
+    provider = RouteOption.Provider.GRAPHHOPPER
+
+    def get_candidates(self, order):
+        return [
+            RouteCandidate(
+                name="За пределами лимита",
+                provider=RouteOption.Provider.GRAPHHOPPER,
+                distance_km=Decimal("2001.00"),
+                duration_minutes=1300,
+                fuel_multiplier=Decimal("1.00"),
+                geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+            )
+        ]
+
+
 class StubGraphHopperClient:
     def __init__(self, response):
         self.response = response
@@ -343,8 +478,35 @@ def test_route_calculation_service_accepts_single_graphhopper_candidate(routing_
     assert RouteOption.objects.filter(order=routing_order).count() == 1
     assert route_options[0].provider == RouteOption.Provider.GRAPHHOPPER
     assert route_options[0].fuel_multiplier == Decimal("1.15")
-    assert route_options[0].calculation_model_version == "v2"
+    assert route_options[0].calculation_model_version == "v2.1"
     assert route_options[0].route_facts_json["provider"] == RouteOption.Provider.GRAPHHOPPER
+
+
+@pytest.mark.django_db
+def test_route_calculation_service_filters_over_limit_candidates(routing_order):
+    service = RouteCalculationService(provider=MixedDistanceProvider())
+
+    route_options = service.calculate_for_order(routing_order)
+
+    assert len(route_options) == 1
+    assert route_options[0].name == "В пределах лимита"
+    assert route_options[0].distance_km == Decimal("1999.00")
+    assert "превышает поддерживаемую область расчета 2000 км" in service.last_warning
+    assert service.last_found_count == 1
+
+
+@pytest.mark.django_db
+def test_route_calculation_service_rejects_all_over_limit_candidates_before_delete(
+    routing_order,
+):
+    RouteCalculationService(provider=MockRouteProvider()).calculate_for_order(routing_order)
+    old_ids = set(RouteOption.objects.filter(order=routing_order).values_list("id", flat=True))
+
+    with pytest.raises(ValueError, match="Маршрут превышает поддерживаемую область расчета"):
+        RouteCalculationService(provider=OverLimitProvider()).calculate_for_order(routing_order)
+
+    new_ids = set(RouteOption.objects.filter(order=routing_order).values_list("id", flat=True))
+    assert new_ids == old_ids
 
 
 @pytest.mark.django_db
@@ -375,11 +537,14 @@ def test_route_calculation_service_stores_enriched_graphhopper_route_facts(
 
     assert len(route_options) == 1
     assert facts["provider"] == RouteOption.Provider.GRAPHHOPPER
-    assert route_options[0].calculation_details_json["calculation_model_version"] == "v2"
+    assert route_options[0].calculation_details_json["calculation_model_version"] == "v2.1"
     assert facts["has_tolls"] is True
     assert facts["road_details"]["requested_details"] == ["road_class", "toll"]
     assert "motorway" in facts["road_details"]["road_class_summary"]
-    assert any("стоимость проезда не рассчитывается" in warning for warning in facts["warnings"])
+    assert any(
+        "не включена в итоговую стоимость перевозки" in warning
+        for warning in facts["warnings"]
+    )
 
 
 @pytest.mark.django_db

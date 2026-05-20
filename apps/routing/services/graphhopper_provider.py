@@ -17,6 +17,12 @@ from .providers import (
 class GraphHopperRouteProvider:
     provider = RouteOption.Provider.GRAPHHOPPER
     fuel_multiplier = Decimal("1.00")
+    TOLL_WARNING = (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    )
+    UNKNOWN_SPEED_WARNING = "Для части маршрута ограничение скорости неизвестно."
+    UNKNOWN_SPEED_WARNING_SHARE = Decimal("25.00")
 
     def __init__(
         self,
@@ -168,16 +174,16 @@ class GraphHopperRouteProvider:
 
         has_tolls = self._has_tolls(road_details.get("toll_summary", {}))
         if has_tolls:
-            warnings.append(
-                "Маршрут содержит платные участки, но стоимость проезда не рассчитывается."
-            )
+            warnings.append(self.TOLL_WARNING)
+        if self._has_meaningful_unknown_speed(road_details.get("max_speed_summary", {})):
+            warnings.append(self.UNKNOWN_SPEED_WARNING)
 
         return RouteFacts(
             provider=self.provider,
             has_tolls=has_tolls,
             toll_cost_rub=Decimal("0.00"),
             road_details=road_details,
-            warnings=warnings,
+            warnings=self._deduplicate_warnings(warnings),
         )
 
     def _summarize_detail_ranges(self, geometry, ranges):
@@ -287,6 +293,23 @@ class GraphHopperRouteProvider:
             if item.get("count", 0) > 0:
                 return True
         return False
+
+    def _has_meaningful_unknown_speed(self, max_speed_summary):
+        unknown_speed = max_speed_summary.get("unknown")
+        if not isinstance(unknown_speed, dict):
+            return False
+        share_percent = Decimal(str(unknown_speed.get("share_percent", "0")))
+        return share_percent >= self.UNKNOWN_SPEED_WARNING_SHARE
+
+    def _deduplicate_warnings(self, warnings):
+        unique_warnings = []
+        seen = set()
+        for warning in warnings:
+            if not warning or warning in seen:
+                continue
+            seen.add(warning)
+            unique_warnings.append(warning)
+        return unique_warnings
 
     def _extract_valid_paths(self, response):
         paths = response.get("paths")

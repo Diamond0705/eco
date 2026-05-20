@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Phase 13 - Calculation Model v2.1
+
+- Added route distance scope with `MAX_ROUTE_DISTANCE_KM=2000` for new calculations.
+- Added Calculation Model v2.1 with intensity-based educational eco-rating and saved intensity details.
+- Added deduplicated calculation warnings for traffic gaps, toll cost gaps and unknown speed data.
+- Updated route comparison to show calculation details and deterministic best eco badge handling.
+- Kept GraphHopper, MockRouteProvider, existing snapshots, reports, PDFs, analytics and migrations stable.
+
 ## Reference Data Expansion
 
 - Added `seed_reference_expansion` command for additional route-testing reference data.

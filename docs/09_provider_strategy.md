@@ -91,6 +91,8 @@ PTV, HERE и TomTom лучше рассматривать как последу�
 ## Что отложить
 
 - Реальную интеграцию Yandex/HERE/TomTom/PTV.
+- Дополнительное исследование GraphHopper path details вроде `max_weight`, `max_width`,
+  `road_access`, `hazmat`, `lanes` и `smoothness`: в фазе 13 набор details не расширяется.
 - Изменение моделей и миграции.
 - PostGIS, Celery/Redis, background jobs, production deploy.
 - Строгую официальную методику EN 16258 / EMEP / EEA.

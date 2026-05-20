@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
@@ -8,6 +10,11 @@ from apps.routing.models import RouteOption
 
 from .services.provider_factory import EXTENDED_MODE, STANDARD_MODE
 from .services.route_calculation_service import RouteCalculationService
+
+TOLL_WARNING = (
+    "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+    "и не включена в итоговую стоимость перевозки."
+)
 
 
 def _manager_orders_queryset(request):
@@ -119,6 +126,17 @@ def _route_option_rows(route_options):
     min_duration = min(route.duration_minutes for route in route_options)
     min_distance = min(route.distance_km for route in route_options)
     max_eco_rating = max(route.eco_rating for route in route_options)
+    best_eco_route = min(
+        route_options,
+        key=lambda route: (
+            -route.eco_rating,
+            route.co2_kg,
+            route.fuel_liters,
+            route.distance_km,
+            route.duration_minutes,
+            route.id,
+        ),
+    )
 
     rows = []
     for route in route_options:
@@ -127,7 +145,81 @@ def _route_option_rows(route_options):
             badges.append("Самый быстрый")
         if route.distance_km == min_distance:
             badges.append("Самый короткий")
-        if route.eco_rating == max_eco_rating:
+        if route == best_eco_route:
             badges.append("Лучший по эко-рейтингу")
-        rows.append({"option": route, "badges": badges})
+        elif route.eco_rating == max_eco_rating:
+            badges.append("Одинаковый эко-рейтинг")
+        rows.append(
+            {
+                "option": route,
+                "badges": badges,
+                "calculation_details": _calculation_details(route),
+                "warnings": _calculation_warnings(route),
+                "has_unpriced_tolls": _has_unpriced_tolls(route),
+            }
+        )
     return rows
+
+
+def _calculation_details(route):
+    details = route.calculation_details_json
+    if not isinstance(details, dict):
+        details = {}
+    return {
+        "calculation_model_version": details.get(
+            "calculation_model_version",
+            route.calculation_model_version,
+        ),
+        "final_fuel_multiplier": details.get("final_fuel_multiplier", route.fuel_multiplier),
+        "average_speed_kmh": details.get("average_speed_kmh", "—"),
+        "road_class_factor": details.get("road_class_factor", "—"),
+        "surface_factor": details.get("surface_factor", "—"),
+        "traffic_factor": details.get("traffic_factor", "—"),
+    }
+
+
+def _calculation_warnings(route):
+    route_facts = route.route_facts_json
+    if not isinstance(route_facts, dict):
+        route_facts = {}
+    details = route.calculation_details_json
+    if not isinstance(details, dict):
+        details = {}
+
+    warnings = []
+    route_fact_warnings = route_facts.get("warnings", [])
+    if isinstance(route_fact_warnings, list):
+        warnings.extend(route_fact_warnings)
+    detail_warnings = details.get("warnings", [])
+    if isinstance(detail_warnings, list):
+        warnings.extend(detail_warnings)
+    if _has_unpriced_tolls(route):
+        warnings.append(TOLL_WARNING)
+    return _deduplicate_items(warnings)
+
+
+def _has_unpriced_tolls(route):
+    route_facts = route.route_facts_json
+    if not isinstance(route_facts, dict):
+        return False
+    return route_facts.get("has_tolls") and _decimal_from_json(
+        route_facts.get("toll_cost_rub", "0.00")
+    ) == Decimal("0.00")
+
+
+def _decimal_from_json(value):
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal("0.00")
+
+
+def _deduplicate_items(items):
+    unique_items = []
+    seen = set()
+    for item in items:
+        if not item or item in seen:
+            continue
+        seen.add(item)
+        unique_items.append(item)
+    return unique_items

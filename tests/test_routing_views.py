@@ -108,7 +108,18 @@ def create_order(manager, transport, locations):
     return order
 
 
-def create_route_option(order, name, distance_km, duration_minutes, eco_rating):
+def create_route_option(
+    order,
+    name,
+    distance_km,
+    duration_minutes,
+    eco_rating,
+    *,
+    fuel_liters=Decimal("3.00"),
+    co2_kg=Decimal("8.00"),
+    calculation_details_json=None,
+    route_facts_json=None,
+):
     return RouteOption.objects.create(
         order=order,
         name=name,
@@ -116,13 +127,15 @@ def create_route_option(order, name, distance_km, duration_minutes, eco_rating):
         distance_km=distance_km,
         duration_minutes=duration_minutes,
         fuel_multiplier=Decimal("1.00"),
-        fuel_liters=Decimal("3.00"),
+        fuel_liters=fuel_liters,
         cost_rub=Decimal("1500.00"),
-        co2_kg=Decimal("8.00"),
+        co2_kg=co2_kg,
         nox_g=Decimal("2.00"),
         pm_g=Decimal("0.020"),
         eco_rating=eco_rating,
         geometry_json=[[55.7558, 37.6173], [55.4312, 37.5447]],
+        route_facts_json=route_facts_json or {},
+        calculation_details_json=calculation_details_json or {},
         calculation_settings=EcoCalculationSettings.get_current(),
     )
 
@@ -362,3 +375,151 @@ def test_route_comparison_page_handles_multiple_graphhopper_routes(
     assert "Самый быстрый" in content
     assert "Самый короткий" in content
     assert "Лучший по эко-рейтингу" in content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_shows_calculation_details_for_new_and_old_snapshots(
+    client,
+    manager,
+    transport,
+    locations,
+):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(
+        order,
+        "Маршрут GraphHopper",
+        Decimal("12.35"),
+        18,
+        Decimal("82.00"),
+        calculation_details_json={
+            "calculation_model_version": "v2.1",
+            "final_fuel_multiplier": "1.15",
+            "average_speed_kmh": "41.17",
+            "road_class_factor": "1.00",
+            "surface_factor": "1.00",
+            "traffic_factor": "1.00",
+            "warnings": ["Провайдер не предоставляет данные о пробках, traffic_factor=1.00."],
+        },
+    )
+    create_route_option(
+        order,
+        "Старый снимок",
+        Decimal("13.00"),
+        20,
+        Decimal("80.00"),
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Как рассчитан маршрут" in content
+    assert "<details" in content
+    assert "<summary>Как рассчитан маршрут</summary>" in content
+    assert "Модель: v2.1" in content
+    assert "итоговый множитель расхода: 1.15" in content
+    assert "Провайдер не предоставляет данные о пробках, traffic_factor=1.00." in content
+    assert "Старый снимок" in content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_marks_unpriced_tolls(client, manager, transport, locations):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(
+        order,
+        "Маршрут GraphHopper",
+        Decimal("12.35"),
+        18,
+        Decimal("82.00"),
+        route_facts_json={"has_tolls": True, "toll_cost_rub": "0.00"},
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Платная дорога без стоимости" in content
+    assert (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    ) in content
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_shows_duplicate_toll_warning_once(
+    client,
+    manager,
+    transport,
+    locations,
+):
+    warning = (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    )
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(
+        order,
+        "Маршрут GraphHopper",
+        Decimal("12.35"),
+        18,
+        Decimal("82.00"),
+        route_facts_json={
+            "has_tolls": True,
+            "toll_cost_rub": "0.00",
+            "warnings": [warning],
+        },
+        calculation_details_json={"warnings": [warning]},
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert content.count(warning) == 1
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_uses_single_deterministic_best_eco_badge(
+    client,
+    manager,
+    transport,
+    locations,
+):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(
+        order,
+        "Победитель",
+        Decimal("12.00"),
+        20,
+        Decimal("80.00"),
+        fuel_liters=Decimal("4.00"),
+        co2_kg=Decimal("9.00"),
+    )
+    create_route_option(
+        order,
+        "Такой же рейтинг",
+        Decimal("11.00"),
+        15,
+        Decimal("80.00"),
+        fuel_liters=Decimal("5.00"),
+        co2_kg=Decimal("10.00"),
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert content.count("Лучший по эко-рейтингу") == 1
+    assert "Одинаковый эко-рейтинг" in content

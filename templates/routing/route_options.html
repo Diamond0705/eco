@@ -84,6 +84,9 @@
                                 {% for badge in row.badges %}
                                     <span class="status-badge">{{ badge }}</span>
                                 {% endfor %}
+                                {% if row.has_unpriced_tolls %}
+                                    <span class="status-badge">Платная дорога без стоимости</span>
+                                {% endif %}
                                 {% if option.is_selected %}
                                     <span class="status-badge">Выбран</span>
                                 {% endif %}
@@ -115,6 +118,28 @@
                                 {% else %}
                                     <span class="muted">Недоступно</span>
                                 {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="12">
+                                <details class="form-note">
+                                    <summary>Как рассчитан маршрут</summary>
+                                    <div>
+                                        Модель: {{ row.calculation_details.calculation_model_version }};
+                                        итоговый множитель расхода: {{ row.calculation_details.final_fuel_multiplier }};
+                                        средняя скорость: {{ row.calculation_details.average_speed_kmh }} км/ч;
+                                        фактор класса дороги: {{ row.calculation_details.road_class_factor }};
+                                        фактор покрытия: {{ row.calculation_details.surface_factor }};
+                                        фактор пробок: {{ row.calculation_details.traffic_factor }}.
+                                    </div>
+                                    {% if row.warnings %}
+                                        <ul>
+                                            {% for warning in row.warnings %}
+                                                <li>{{ warning }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </details>
                             </td>
                         </tr>
                         {% endwith %}

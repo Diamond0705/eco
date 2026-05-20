@@ -48,6 +48,12 @@ planning notes for earlier phases, so they may describe target behavior or old p
   responses are still not stored or exposed.
 - New calculations use Calculation Model v2 by default and store `calculation_model_version` and
   `calculation_details_json` as part of the route snapshot.
+- Phase 13 updates new calculations to Calculation Model v2.1. Routes above
+  `MAX_ROUTE_DISTANCE_KM=2000` are filtered or rejected before replacing old options.
+- v2.1 stores emissions intensity fields in `calculation_details_json` and uses them for an
+  educational comparative eco-rating while keeping absolute CO2/NOx/PM snapshot values unchanged.
+- Route comparison shows compact Russian calculation details, deduplicated warnings and one
+  deterministic best eco route badge.
 - Existing saved `RouteOption` rows remain historical snapshots and are not recalculated
   automatically.
 

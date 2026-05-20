@@ -8,6 +8,13 @@ from apps.routing.models import RouteOption
 class EmissionCalculator:
     MODEL_V1 = "v1"
     MODEL_V2 = "v2"
+    MODEL_V21 = "v2.1"
+    SUPPORTED_MODELS = {MODEL_V1, MODEL_V2, MODEL_V21}
+    TOLL_WARNING = (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    )
+    NO_TRAFFIC_WARNING = "Провайдер не предоставляет данные о пробках, traffic_factor=1.00."
     ROAD_CLASS_FACTORS = {
         "motorway": Decimal("0.98"),
         "trunk": Decimal("1.00"),
@@ -32,6 +39,10 @@ class EmissionCalculator:
 
     def __init__(self, model_version=None):
         self.model_version = (model_version or django_settings.CALCULATION_MODEL).lower()
+        if self.model_version not in self.SUPPORTED_MODELS:
+            raise ValueError(
+                "Неподдерживаемая версия расчетной модели. Поддерживаются: v1, v2, v2.1."
+            )
 
     def calculate(self, order, candidate, settings):
         if self.model_version == self.MODEL_V1:
@@ -147,10 +158,24 @@ class EmissionCalculator:
         if toll_cost <= 0:
             toll_cost = Decimal("0.00")
         if route_facts.get("has_tolls") and toll_cost == 0:
-            warnings.append("Платные участки обнаружены, но стоимость проезда не рассчитана.")
+            warnings.append(self.TOLL_WARNING)
         cost_rub = fuel_cost + distance_service_cost + time_cost + toll_cost
 
-        emissions_rating = self._eco_rating(co2_kg, nox_g, pm_g, settings)
+        if self.model_version == self.MODEL_V21 and not route_facts.get("supports_traffic"):
+            warnings.append(self.NO_TRAFFIC_WARNING)
+
+        intensity_details = {}
+        if self.model_version == self.MODEL_V21:
+            emissions_rating, intensity_details = self._eco_rating_v21(
+                order,
+                candidate.distance_km,
+                co2_kg,
+                nox_g,
+                pm_g,
+                settings,
+            )
+        else:
+            emissions_rating = self._eco_rating(co2_kg, nox_g, pm_g, settings)
         route_risk_penalty = self._route_risk_penalty(
             road_details.get("surface_summary", {}),
             average_speed_kmh,
@@ -170,9 +195,9 @@ class EmissionCalculator:
             "pm_g": self._round(pm_g, "0.001"),
             "eco_rating": self._round(eco_rating, "0.01"),
             "fuel_multiplier": self._round(final_fuel_multiplier, "0.01"),
-            "calculation_model_version": self.MODEL_V2,
+            "calculation_model_version": self.model_version,
             "calculation_details_json": {
-                "calculation_model_version": self.MODEL_V2,
+                "calculation_model_version": self.model_version,
                 "load_ratio": self._json_decimal(load_ratio),
                 "load_factor": self._json_decimal(load_factor),
                 "average_speed_kmh": self._json_decimal(average_speed_kmh),
@@ -189,13 +214,17 @@ class EmissionCalculator:
                 "time_cost_rub": self._json_decimal(self._round(time_cost, "0.01")),
                 "toll_cost_rub": self._json_decimal(self._round(toll_cost, "0.01")),
                 "route_risk_penalty": self._json_decimal(self._round(route_risk_penalty, "0.01")),
-                "warnings": warnings,
+                **intensity_details,
+                "warnings": self._deduplicate_warnings(warnings),
                 "formula_notes": [
-                    "Модель v2 использует сохраненные route_facts_json без raw-ответов провайдера.",
-                    "CO2 считается по литрам дизельного топлива.",
-                    "NOx и PM остаются упрощенной оценкой через работу двигателя и экостандарт.",
-                    "Пробки, стоимость платных дорог и ограничения учитываются только "
-                    "при наличии нормализованных фактов.",
+                    f"Модель {self.model_version} использует сохраненные route_facts_json "
+                    "без raw-ответов провайдера.",
+                    "CO2 рассчитывается по объему израсходованного дизельного топлива.",
+                    "NOx и PM рассчитываются упрощенно через работу двигателя и "
+                    "экологический стандарт транспорта.",
+                    "Эко-рейтинг является приближенной учебной оценкой для сравнения "
+                    "вариантов внутри одной заявки и не является сертифицированной "
+                    "методикой EMEP/EEA/COPERT.",
                 ],
             },
         }
@@ -280,6 +309,55 @@ class EmissionCalculator:
         )
         return max(Decimal("0"), Decimal("100") * (Decimal("1") - weighted_impact))
 
+    def _eco_rating_v21(self, order, distance_km, co2_kg, nox_g, pm_g, settings):
+        if distance_km <= 0:
+            co2_kg_per_km = Decimal("0.00")
+            nox_g_per_km = Decimal("0.00")
+            pm_g_per_km = Decimal("0.00")
+        else:
+            co2_kg_per_km = co2_kg / distance_km
+            nox_g_per_km = nox_g / distance_km
+            pm_g_per_km = pm_g / distance_km
+
+        weighted_impact = (
+            settings.co2_weight * min(co2_kg_per_km / Decimal("1.20"), Decimal("1"))
+            + settings.nox_weight * min(nox_g_per_km / Decimal("6.00"), Decimal("1"))
+            + settings.pm_weight * min(pm_g_per_km / Decimal("0.20"), Decimal("1"))
+        )
+        emissions_score = self._clamp(
+            Decimal("100") * (Decimal("1") - weighted_impact),
+            Decimal("0.00"),
+            Decimal("100.00"),
+        )
+        details = {
+            "co2_kg_per_km": self._json_decimal(co2_kg_per_km, "0.001"),
+            "nox_g_per_km": self._json_decimal(nox_g_per_km, "0.001"),
+            "pm_g_per_km": self._json_decimal(pm_g_per_km, "0.0001"),
+            "emissions_score": self._json_decimal(emissions_score),
+            "eco_rating_method": "v2.1_intensity_plus_route_risk",
+        }
+        cargo_weight_tons = order.cargo_weight_kg / Decimal("1000")
+        ton_km = cargo_weight_tons * distance_km
+        if ton_km > 0:
+            details.update(
+                {
+                    "co2_kg_per_ton_km": self._json_decimal(co2_kg / ton_km, "0.0001"),
+                    "nox_g_per_ton_km": self._json_decimal(nox_g / ton_km, "0.0001"),
+                    "pm_g_per_ton_km": self._json_decimal(pm_g / ton_km, "0.00001"),
+                }
+            )
+        return emissions_score, details
+
+    def _deduplicate_warnings(self, warnings):
+        unique_warnings = []
+        seen = set()
+        for warning in warnings:
+            if not warning or warning in seen:
+                continue
+            seen.add(warning)
+            unique_warnings.append(warning)
+        return unique_warnings
+
     def _round(self, value, quantizer):
         return value.quantize(Decimal(quantizer), rounding=ROUND_HALF_UP)
 
@@ -292,5 +370,5 @@ class EmissionCalculator:
         except Exception:
             return Decimal("0.00")
 
-    def _json_decimal(self, value):
-        return str(self._round(value, "0.01"))
+    def _json_decimal(self, value, quantizer="0.01"):
+        return str(self._round(value, quantizer))

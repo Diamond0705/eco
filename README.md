@@ -18,7 +18,9 @@ The MVP is completed through Phase 7:
 
 Routing defaults to deterministic mock data. Phase 8 adds optional GraphHopper routing behind
 the existing provider boundary so orders, trips, reports and analytics continue to consume saved
-`RouteOption` snapshots.
+`RouteOption` snapshots. Phase 13 adds Calculation Model v2.1 for new calculations: routes above
+`MAX_ROUTE_DISTANCE_KM` are filtered or rejected, eco-rating uses educational emissions intensity,
+and absolute emissions remain saved as route snapshots.
 
 ## Stack
 
@@ -50,6 +52,8 @@ Routing provider settings:
 
 ```powershell
 ROUTE_PROVIDER=mock
+CALCULATION_MODEL=v2.1
+MAX_ROUTE_DISTANCE_KM=2000
 GRAPHHOPPER_API_KEY=
 GRAPHHOPPER_BASE_URL=https://graphhopper.com/api/1
 GRAPHHOPPER_PROFILE=car

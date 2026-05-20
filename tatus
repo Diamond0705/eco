@@ -1,0 +1,32 @@
+warning: in the working copy of '.env.example', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CHANGELOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/routing/services/emission_calculator.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/routing/services/graphhopper_provider.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/routing/services/route_calculation_service.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/routing/views.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'config/settings.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/08_current_state.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/09_provider_strategy.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/10_calculation_model_v2.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'templates/routing/route_options.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/conftest.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_routing_provider.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_routing_services.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_routing_views.py', LF will be replaced by CRLF the next time Git touches it
+M	.env.example
+M	CHANGELOG.md
+M	README.md
+M	apps/routing/services/emission_calculator.py
+M	apps/routing/services/graphhopper_provider.py
+M	apps/routing/services/route_calculation_service.py
+M	apps/routing/views.py
+M	config/settings.py
+M	docs/08_current_state.md
+M	docs/09_provider_strategy.md
+M	docs/10_calculation_model_v2.md
+M	templates/routing/route_options.html
+M	tests/conftest.py
+M	tests/test_routing_provider.py
+M	tests/test_routing_services.py
+M	tests/test_routing_views.py

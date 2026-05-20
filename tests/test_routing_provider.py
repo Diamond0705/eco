@@ -524,7 +524,49 @@ def test_graphhopper_provider_parses_path_detail_summaries(route_order):
     assert "true" in road_details["toll_summary"]
     assert facts["has_tolls"] is True
     assert facts["toll_cost_rub"] == "0.00"
-    assert any("стоимость проезда не рассчитывается" in warning for warning in facts["warnings"])
+    assert any(
+        "не включена в итоговую стоимость перевозки" in warning
+        for warning in facts["warnings"]
+    )
+
+
+@pytest.mark.django_db
+def test_graphhopper_provider_warns_when_unknown_speed_share_is_meaningful(route_order):
+    details = {
+        "max_speed": [[0, 1, None], [1, 2, 60]],
+    }
+    client = StubGraphHopperClient(
+        {
+            "paths": [
+                _graphhopper_path(
+                    20000,
+                    1200000,
+                    [[37.6173, 55.7558], [37.6000, 55.6000], [37.5447, 55.4312]],
+                    details=details,
+                )
+            ]
+        }
+    )
+    options = RouteCalculationOptions(
+        enable_path_details=True,
+        path_details=("max_speed",),
+    )
+
+    candidates = GraphHopperRouteProvider(client, options=options).get_candidates(route_order)
+    facts = candidates[0].route_facts.to_json()
+
+    assert "Для части маршрута ограничение скорости неизвестно." in facts["warnings"]
+
+
+def test_graphhopper_provider_unknown_speed_warning_threshold():
+    provider = GraphHopperRouteProvider(StubGraphHopperClient({"paths": []}))
+
+    assert provider._has_meaningful_unknown_speed(
+        {"unknown": {"share_percent": "24.99"}}
+    ) is False
+    assert provider._has_meaningful_unknown_speed(
+        {"unknown": {"share_percent": "25.00"}}
+    ) is True
 
 
 @pytest.mark.django_db

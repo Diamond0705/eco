@@ -16,6 +16,11 @@ from .providers import RoutingProviderError, RoutingProviderResponseError
 
 
 class RouteCalculationService:
+    DISTANCE_LIMIT_MESSAGE = (
+        "Маршрут превышает поддерживаемую область расчета 2000 км. "
+        "В учебной версии EcoLogist такие маршруты не рассчитываются."
+    )
+
     def __init__(self, provider=None, calculator=None, calculation_mode="standard"):
         self.provider = provider
         self.calculator = calculator or EmissionCalculator()
@@ -38,6 +43,7 @@ class RouteCalculationService:
 
         calculation_settings = EcoCalculationSettings.get_current()
         candidates = self._get_candidates(order)
+        candidates = self._filter_candidates_by_distance(candidates)
         order.route_options.filter(is_selected=False).delete()
 
         route_options = []
@@ -89,6 +95,28 @@ class RouteCalculationService:
         self.last_found_count = len(candidates)
         self.last_used_provider = getattr(provider, "provider", "") or candidates[0].provider
         return candidates
+
+    def _filter_candidates_by_distance(self, candidates):
+        max_distance_km = settings.MAX_ROUTE_DISTANCE_KM
+        valid_candidates = [
+            candidate for candidate in candidates if candidate.distance_km <= max_distance_km
+        ]
+        filtered_count = len(candidates) - len(valid_candidates)
+        if not valid_candidates:
+            raise ValueError(self.DISTANCE_LIMIT_MESSAGE)
+        if filtered_count:
+            self._append_warning(
+                f"{filtered_count} вариант(а) маршрута превышает поддерживаемую область "
+                f"расчета {max_distance_km} км и не был сохранен."
+            )
+        self.last_found_count = len(valid_candidates)
+        return valid_candidates
+
+    def _append_warning(self, warning):
+        if not self.last_warning:
+            self.last_warning = warning
+        elif warning not in self.last_warning:
+            self.last_warning = f"{self.last_warning} {warning}"
 
     def _should_fallback_to_mock(self):
         return (
