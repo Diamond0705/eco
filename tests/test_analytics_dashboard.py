@@ -217,7 +217,7 @@ def test_admin_dashboard_contains_company_wide_data(
     assert "Груз другого менеджера" in content
     assert "Суммарные выбросы" in content
     assert "Средний эко-рейтинг" in content
-    assert "Платные участки" in content
+    assert "<h2>Платные участки</h2>" not in content
 
 
 @pytest.mark.django_db

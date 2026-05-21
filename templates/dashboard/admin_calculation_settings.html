@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки экологического расчета - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Настройки экологического расчета</h1>
+        </div>
+        <a class="button-primary" href="{% url 'dashboard:admin_calculation_settings_create' %}">Добавить настройки</a>
+    </div>
+
+    <p class="form-note">Изменение настроек расчета применяется только к новым расчетам маршрутов.</p>
+
+    <div class="placeholder-grid">
+        <div class="placeholder-card">
+            <h2>Активная версия</h2>
+            <p class="settings-summary-name">{{ current_settings.name }}</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Топливо</h2>
+            <p class="settings-summary-note">{{ current_settings.fuel_price_rub_per_liter }} руб/л</p>
+            <p class="settings-summary-note">CO2 дизеля: {{ current_settings.diesel_co2_kg_per_liter }} кг/л</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Тарифы</h2>
+            <p class="settings-summary-note">{{ current_settings.service_tariff_rub_per_km }} руб/км</p>
+            <p class="settings-summary-note">Время водителя: {{ current_settings.driver_time_tariff_rub_per_hour }} руб/ч</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Статус</th>
+                    <th>Топливо</th>
+                    <th>Сервисный тариф</th>
+                    <th>Тариф времени</th>
+                    <th>Обновлена</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for settings_version in settings_versions %}
+                    <tr>
+                        <td>{{ settings_version.name }}</td>
+                        <td>{% if settings_version.is_active %}Активна{% else %}Неактивна{% endif %}</td>
+                        <td>{{ settings_version.fuel_price_rub_per_liter }} руб/л</td>
+                        <td>{{ settings_version.service_tariff_rub_per_km }} руб/км</td>
+                        <td>{{ settings_version.driver_time_tariff_rub_per_hour }} руб/ч</td>
+                        <td>{{ settings_version.updated_at|date:"d.m.Y H:i" }}</td>
+                        <td><a href="{% url 'dashboard:admin_calculation_settings_edit' settings_version.pk %}">Изменить</a></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">Настройки экологического расчета не найдены.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

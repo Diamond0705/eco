@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_create %}Добавление настроек{% else %}Редактирование настроек{% endif %} - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>{% if is_create %}Добавление настроек{% else %}Редактирование настроек{% endif %}</h1>
+            <p class="muted">Настройки экологического расчета применяются только к новым расчетам маршрутов.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'dashboard:admin_calculation_settings' %}">К списку</a>
+    </div>
+
+    <form method="post" class="form-card settings-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="settings-fieldset">
+            <h2>Версия</h2>
+            {% for field in form %}
+                {% if field.name == "name" or field.name == "is_active" %}
+                    <div class="form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="settings-fieldset">
+            <h2>Тарифы и топливо</h2>
+            {% for field in form %}
+                {% if field.name == "fuel_price_rub_per_liter" or field.name == "service_tariff_rub_per_km" or field.name == "driver_time_tariff_rub_per_hour" or field.name == "full_load_fuel_increase_percent" %}
+                    <div class="form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="settings-fieldset">
+            <h2>Константы выбросов</h2>
+            {% for field in form %}
+                {% if field.name == "diesel_co2_kg_per_liter" or field.name == "engine_work_kwh_per_km" %}
+                    <div class="form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="settings-fieldset">
+            <h2>Весовые коэффициенты и критические значения</h2>
+            {% for field in form %}
+                {% if field.name == "co2_weight" or field.name == "nox_weight" or field.name == "pm_weight" or field.name == "co2_critical_kg" or field.name == "nox_critical_g" or field.name == "pm_critical_g" %}
+                    <div class="form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="button-primary">Сохранить</button>
+            <a class="button-secondary" href="{% url 'dashboard:admin_calculation_settings' %}">Отмена</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

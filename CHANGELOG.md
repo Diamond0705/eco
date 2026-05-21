@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Phase 15 - In-App Admin Panel CRUD
+
+- Added in-application administrator pages for users, transport, locations, eco standards and calculation settings.
+- Cleaned up the admin dashboard KPI grid and added admin-panel navigation.
+- Kept Django Admin available for extended editing.
+- Kept providers, calculation formulas, dependencies, migrations and old `RouteOption` snapshots unchanged.
+
 ## Phase 14 - Reports Explainability
 
 - Added compact route calculation summaries to waybill PDFs from saved `RouteOption` snapshots.

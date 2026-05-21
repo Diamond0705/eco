@@ -16,7 +16,13 @@
             <div class="site-links">
                 {% if user.is_authenticated %}
                     <a href="{% url 'dashboard:dashboard' %}">Панель</a>
-                    {% if user.role == "manager" and not user.is_superuser %}
+                    {% if user.role == "admin" or user.is_superuser %}
+                        <a href="{% url 'dashboard:admin_users' %}">Пользователи</a>
+                        <a href="{% url 'dashboard:admin_transports' %}">Транспорт</a>
+                        <a href="{% url 'dashboard:admin_locations' %}">Локации</a>
+                        <a href="{% url 'dashboard:admin_eco_standards' %}">Экостандарты</a>
+                        <a href="{% url 'dashboard:admin_calculation_settings' %}">Экорасчет</a>
+                    {% elif user.role == "manager" and not user.is_superuser %}
                         <a href="{% url 'orders:list' %}">Заявки</a>
                         <a href="{% url 'orders:create' %}">Создать заявку</a>
                         <a href="{% url 'trips:list' %}">Рейсы</a>

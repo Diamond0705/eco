@@ -58,6 +58,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
   metrics from saved `RouteOption` snapshots and `calculation_details_json`.
 - Reports now show average CO2 intensity, average eco-rating, toll-route counts and vehicle Euro
   class where relevant, without recalculating old route options.
+- Phase 15 expands the in-application administrator panel with CRUD pages for common reference
+  data and calculation settings while keeping Django Admin available for extended editing.
 - Existing saved `RouteOption` rows remain historical snapshots and are not recalculated
   automatically.
 

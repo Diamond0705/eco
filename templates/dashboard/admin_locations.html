@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Локации - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Локации</h1>
+        </div>
+        <a class="button-primary" href="{% url 'dashboard:admin_location_create' %}">Создать</a>
+    </div>
+
+    <form method="get" class="filter-form">
+        <label for="q">Поиск</label>
+        <input id="q" name="q" type="search" value="{{ search_query }}" placeholder="Название или адрес">
+        <label for="active">Активность</label>
+        <select id="active" name="active">
+            <option value="">Все</option>
+            <option value="1"{% if selected_active == "1" %} selected{% endif %}>Активные</option>
+            <option value="0"{% if selected_active == "0" %} selected{% endif %}>Отключенные</option>
+        </select>
+        <button type="submit" class="button-secondary">Показать</button>
+    </form>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Адрес</th>
+                    <th>Широта</th>
+                    <th>Долгота</th>
+                    <th>Активность</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for location in locations %}
+                    <tr>
+                        <td>{{ location.name }}</td>
+                        <td>{{ location.address|default:"—" }}</td>
+                        <td>{{ location.latitude }}</td>
+                        <td>{{ location.longitude }}</td>
+                        <td>{% if location.is_active %}Активна{% else %}Отключена{% endif %}</td>
+                        <td><a href="{% url 'dashboard:admin_location_edit' location.pk %}">Изменить</a></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">Локации не найдены.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователь - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel admin-edit-page">
+    <div class="page-heading">
+        <div>
+            <h1>Пользователь {{ edited_user.username }}</h1>
+            <p class="muted">Просмотр учетной записи и управление активностью менеджера.</p>
+        </div>
+        <a class="button-secondary" href="{% url 'dashboard:admin_users' %}">К списку</a>
+    </div>
+
+    <dl class="details-list">
+        <dt>Имя пользователя</dt>
+        <dd>{{ edited_user.username }}</dd>
+        <dt>Фамилия</dt>
+        <dd>{{ edited_user.last_name|default:"Не указано" }}</dd>
+        <dt>Имя</dt>
+        <dd>{{ edited_user.first_name|default:"Не указано" }}</dd>
+        <dt>Отчество</dt>
+        <dd>{{ edited_user.middle_name|default:"Не указано" }}</dd>
+        <dt>Email</dt>
+        <dd>{{ edited_user.email|default:"Не указано" }}</dd>
+        <dt>Телефон</dt>
+        <dd>{{ edited_user.phone|default:"Не указано" }}</dd>
+        <dt>Роль</dt>
+        <dd>{{ edited_user.get_role_display }}</dd>
+        <dt>Активность</dt>
+        <dd>{% if edited_user.is_active %}Активен{% else %}Неактивен{% endif %}</dd>
+    </dl>
+
+    {% if can_edit_activity %}
+        <form method="post" class="form-card compact-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-row">
+                <label for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                {{ form.is_active }}
+                {% if form.is_active.errors %}
+                    <div class="field-errors">{{ form.is_active.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Сохранить</button>
+                <a class="button-secondary" href="{% url 'dashboard:admin_users' %}">Отмена</a>
+            </div>
+        </form>
+    {% else %}
+        <p class="form-note">Роль и активность администратора изменяются только в расширенных настройках Django Admin.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load dashboard_extras %}
 
 {% block title %}Панель администратора - EcoLogist{% endblock %}
 
@@ -7,7 +8,7 @@
     <div class="page-heading">
         <div>
             <h1>Панель администратора</h1>
-            <p class="muted">Сводные показатели по пользователям, транспорту, заявкам и рейсам компании.</p>
+            <p class="muted">Сводные показатели по пользователям, транспорту, заявкам и рейсам компании</p>
         </div>
         <a class="button-secondary" href="{% url 'admin:index' %}">Django Admin</a>
     </div>
@@ -21,12 +22,12 @@
         <div class="placeholder-card">
             <h2>Транспорт</h2>
             <p class="stat-value">{{ analytics.transports.total }}</p>
-            <p>Справочник доступен в Django Admin.</p>
+            <p>Количество добавленного транспорта.</p>
         </div>
         <div class="placeholder-card">
             <h2>Заявки</h2>
             <p class="stat-value">{{ analytics.orders.total }}</p>
-            <p>Все заявки компании.</p>
+            <p>Все заявки компании</p>
         </div>
         <div class="placeholder-card">
             <h2>Рейсы</h2>
@@ -36,12 +37,12 @@
         <div class="placeholder-card">
             <h2>Выбросы CO2</h2>
             <p class="stat-value">{{ analytics.company.co2_kg }} кг</p>
-            <p>По доставленным рейсам компании.</p>
+            <p>По доставленным рейсам компании</p>
         </div>
         <div class="placeholder-card">
             <h2>Стоимость</h2>
             <p class="stat-value">{{ analytics.company.cost_rub }} руб.</p>
-            <p>Топливо и сервисный тариф по доставленным рейсам.</p>
+            <p>Суммарная стоимость по доставленным рейсам.</p>
         </div>
         <div class="placeholder-card">
             <h2>Суммарные выбросы</h2>
@@ -51,28 +52,23 @@
         <div class="placeholder-card">
             <h2>Средний эко-рейтинг</h2>
             <p class="stat-value">{{ analytics.company.average_eco_rating }}</p>
-            <p>По доставленным рейсам компании.</p>
+            <p>По доставленным рейсам компании</p>
         </div>
         <div class="placeholder-card">
             <h2>CO2 на км</h2>
             <p class="stat-value">{{ analytics.company.average_co2_kg_per_km }}</p>
-            <p>Среднее по сохраненным расчетным деталям.</p>
+            <p>Среднее по сохраненным расчетным деталям</p>
         </div>
         <div class="placeholder-card">
             <h2>CO2 на тонно-км</h2>
             <p class="stat-value">{{ analytics.company.average_co2_kg_per_ton_km }}</p>
-            <p>Показатель доступен для рейсов с весом груза.</p>
-        </div>
-        <div class="placeholder-card">
-            <h2>Платные участки</h2>
-            <p class="stat-value">{{ analytics.company.toll_routes_count }}</p>
-            <p>Маршруты, где отмечены платные участки.</p>
+            <p>Показатель доступен для рейсов с весом груза</p>
         </div>
     </div>
 
     <div class="placeholder-grid">
         <div class="placeholder-card">
-            <h2>Топ менеджеров</h2>
+            <h2>Топ менеджеров по завершенным рейсам</h2>
             {% if analytics.top_managers %}
                 <ol class="compact-list">
                     {% for row in analytics.top_managers %}
@@ -81,24 +77,24 @@
                             {% if not row.order__manager__last_name and not row.order__manager__first_name %}
                                 {{ row.order__manager__username }}
                             {% endif %}
-                            — {{ row.delivered_count }}
+                            — {{ row.delivered_count|trips_count }}
                         </li>
                     {% endfor %}
                 </ol>
             {% else %}
-                <p>Доставленных рейсов пока нет.</p>
+                <p>Доставленных рейсов пока нет</p>
             {% endif %}
         </div>
         <div class="placeholder-card">
-            <h2>Топ транспорта</h2>
+            <h2>Топ транспорта по завершенным рейсам</h2>
             {% if analytics.top_transports %}
                 <ol class="compact-list">
                     {% for row in analytics.top_transports %}
-                        <li>{{ row.order__transport__plate_number }} — {{ row.order__transport__model }}: {{ row.delivered_count }}</li>
+                        <li>{{ row.order__transport__plate_number }} — {{ row.order__transport__model }}: {{ row.delivered_count|trips_count }}</li>
                     {% endfor %}
                 </ol>
             {% else %}
-                <p>Доставленных рейсов пока нет.</p>
+                <p>Доставленных рейсов пока нет</p>
             {% endif %}
         </div>
     </div>
@@ -128,7 +124,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6">Рейсов пока нет.</td>
+                        <td colspan="6">Рейсов пока нет</td>
                     </tr>
                 {% endfor %}
             </tbody>

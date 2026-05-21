@@ -20,7 +20,8 @@ Routing defaults to deterministic mock data. Phase 8 adds optional GraphHopper r
 the existing provider boundary so orders, trips, reports and analytics continue to consume saved
 `RouteOption` snapshots. Phase 13 adds Calculation Model v2.1 for new calculations: routes above
 `MAX_ROUTE_DISTANCE_KM` are filtered or rejected, eco-rating uses educational emissions intensity,
-and absolute emissions remain saved as route snapshots.
+and absolute emissions remain saved as route snapshots. Phase 15 adds in-application administrator
+CRUD pages for common management tasks while keeping Django Admin available for extended editing.
 
 ## Stack
 
