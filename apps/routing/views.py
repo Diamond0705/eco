@@ -12,9 +12,13 @@ from .services.provider_factory import EXTENDED_MODE, STANDARD_MODE
 from .services.route_calculation_service import RouteCalculationService
 
 TOLL_WARNING = (
+    "На маршруте есть платные участки. Их стоимость не включена в итоговую стоимость перевозки."
+)
+LEGACY_TOLL_WARNING = (
     "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
     "и не включена в итоговую стоимость перевозки."
 )
+NO_TRAFFIC_WARNING = "Провайдер не предоставляет данные о пробках, traffic_factor=1.00."
 
 
 def _manager_orders_queryset(request):
@@ -55,13 +59,13 @@ def route_options(request, pk):
     map_routes = [
         {
             "index": index,
-            "name": route.name,
-            "provider": route.provider,
-            "provider_display": route.get_provider_display(),
-            "eco_rating": str(route.eco_rating),
-            "geometry_json": route.geometry_json,
+            "name": row["display_name"],
+            "provider": row["option"].provider,
+            "provider_display": row["option"].get_provider_display(),
+            "eco_rating": str(row["option"].eco_rating),
+            "geometry_json": row["option"].geometry_json,
         }
-        for index, route in enumerate(route_options_list)
+        for index, row in enumerate(route_option_rows)
     ]
     return render(
         request,
@@ -139,7 +143,7 @@ def _route_option_rows(route_options):
     )
 
     rows = []
-    for route in route_options:
+    for index, route in enumerate(route_options, start=1):
         badges = []
         if route.duration_minutes == min_duration:
             badges.append("Самый быстрый")
@@ -152,6 +156,7 @@ def _route_option_rows(route_options):
         rows.append(
             {
                 "option": route,
+                "display_name": f"Маршрут {index}",
                 "badges": badges,
                 "calculation_details": _calculation_details(route),
                 "warnings": _calculation_warnings(route),
@@ -219,6 +224,12 @@ def _deduplicate_items(items):
     seen = set()
     for item in items:
         if not item or item in seen:
+            continue
+        if item == LEGACY_TOLL_WARNING:
+            item = TOLL_WARNING
+            if item in seen:
+                continue
+        if item == NO_TRAFFIC_WARNING:
             continue
         seen.add(item)
         unique_items.append(item)

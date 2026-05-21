@@ -15,6 +15,11 @@ from apps.trips.services import TripLifecycleService
 
 User = get_user_model()
 
+TOLL_WARNING = (
+    "На маршруте есть платные участки. "
+    "Их стоимость не включена в итоговую стоимость перевозки."
+)
+
 
 @pytest.fixture
 def manager():
@@ -229,10 +234,7 @@ def test_waybill_pdf_handles_old_snapshot_without_calculation_details(
 def test_waybill_pdf_shows_toll_notice_once(manager, transport, locations):
     trip = create_trip(manager, transport, locations)
     route = trip.route_option
-    duplicate_warning = (
-        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
-        "и не включена в итоговую стоимость перевозки."
-    )
+    duplicate_warning = TOLL_WARNING
     route.route_facts_json = {
         "has_tolls": True,
         "toll_cost_rub": "0.00",
@@ -251,13 +253,13 @@ def test_waybill_pdf_shows_toll_notice_once(manager, transport, locations):
 
     assert (
         "Платные участки",
-        "Маршрут содержит платные участки. Стоимость проезда не включена в расчет.",
+        TOLL_WARNING,
     ) in captured_rows
     assert (
         captured_rows.count(
             (
                 "Платные участки",
-                "Маршрут содержит платные участки. Стоимость проезда не включена в расчет.",
+                TOLL_WARNING,
             )
         )
         == 1

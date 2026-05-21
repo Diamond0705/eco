@@ -9,7 +9,7 @@
             <h1>Экологические стандарты</h1>
             <p class="muted">Нормативы Euro для расчета выбросов</p>
         </div>
-        <a class="button-primary" href="{% url 'dashboard:admin_eco_standard_create' %}">Добавить стандарт</a>
+        <a class="button-primary" href="{% url 'dashboard:admin_eco_standard_create' %}">Добавить</a>
     </div>
 
     <p class="form-note">Изменение экологических нормативов влияет только на новые расчеты маршрутов</p>
@@ -44,7 +44,11 @@
                         <td>{{ standard.nox_limit_g_per_kwh }}</td>
                         <td>{{ standard.pm_limit_mg_per_kwh }}</td>
                         <td>{% if standard.is_active %}Активен{% else %}Отключен{% endif %}</td>
-                        <td><a href="{% url 'dashboard:admin_eco_standard_edit' standard.pk %}">Изменить</a></td>
+                        <td>
+                            <a class="button-primary table-action-button" href="{% url 'dashboard:admin_eco_standard_edit' standard.pk %}">
+                                Редактировать
+                            </a>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>

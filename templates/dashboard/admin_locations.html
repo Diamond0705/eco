@@ -7,8 +7,9 @@
     <div class="page-heading">
         <div>
             <h1>Локации</h1>
+            <p class="muted">Справочник точек отправления и доставки</p>
         </div>
-        <a class="button-primary" href="{% url 'dashboard:admin_location_create' %}">Создать</a>
+        <a class="button-primary" href="{% url 'dashboard:admin_location_create' %}">Добавить</a>
     </div>
 
     <form method="get" class="filter-form">
@@ -43,7 +44,11 @@
                         <td>{{ location.latitude }}</td>
                         <td>{{ location.longitude }}</td>
                         <td>{% if location.is_active %}Активна{% else %}Отключена{% endif %}</td>
-                        <td><a href="{% url 'dashboard:admin_location_edit' location.pk %}">Изменить</a></td>
+                        <td>
+                            <a class="button-primary table-action-button" href="{% url 'dashboard:admin_location_edit' location.pk %}">
+                                Редактировать
+                            </a>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>

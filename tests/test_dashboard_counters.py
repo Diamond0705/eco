@@ -82,6 +82,8 @@ def test_manager_dashboard_shows_real_counters(client, manager, transport, locat
     assert analytics["delivered"]["co2_kg"] == delivered_trip.route_option.co2_kg
     assert "Мои заявки" in content
     assert "CO2 доставленных" in content
+    assert content.count(reverse("dashboard:manager_analytics")) == 2
+    assert "Подробнее" not in content
 
 
 @pytest.mark.django_db

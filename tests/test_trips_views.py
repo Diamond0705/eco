@@ -212,6 +212,9 @@ def test_trip_list_shows_only_current_manager_trips(
     assert f"№{own_trip.id}" in content
     assert f"№{other_trip.id}" not in content
     assert "Чужой груз" not in content
+    assert "Москва — Подольск" in content
+    assert own_trip.route_option.name not in content
+    assert 'class="button-primary table-action-button"' in content
 
 
 @pytest.mark.django_db
@@ -308,6 +311,8 @@ def test_trip_detail_displays_metrics_history_and_waybill_link(
 
     assert response.status_code == 200
     assert "Стоимость" in content
+    assert "Москва — Подольск" in content
+    assert trip.route_option.name not in content
     assert "История статусов" in content
     assert "Скачать путевой лист" in content
     assert not trip.waybill_pdf

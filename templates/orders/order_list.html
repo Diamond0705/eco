@@ -7,7 +7,7 @@
     <div class="page-heading">
         <div>
             <h1>Заявки</h1>
-            <p class="muted">Заявки на перевозку текущего менеджера.</p>
+            <p class="muted">Заявки на перевозку текущего менеджера</p>
         </div>
         <a class="button-primary" href="{% url 'orders:create' %}">Создать заявку</a>
     </div>
@@ -48,7 +48,11 @@
                             <td>{{ order.transport }}</td>
                             <td>{{ order.desired_delivery_date|date:"d.m.Y" }}</td>
                             <td>{{ order.get_status_display }}</td>
-                            <td><a href="{% url 'orders:detail' order.pk %}">Открыть</a></td>
+                            <td>
+                                <a class="button-primary table-action-button" href="{% url 'orders:detail' order.pk %}">
+                                    Открыть
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

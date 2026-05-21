@@ -26,6 +26,17 @@
             </div>
         {% endfor %}
 
+        <datalist id="cargo-type-suggestions">
+            {% for suggestion in cargo_type_suggestions %}
+                <option value="{{ suggestion }}"></option>
+            {% endfor %}
+        </datalist>
+        <datalist id="cargo-name-suggestions">
+            {% for suggestion in cargo_name_suggestions %}
+                <option value="{{ suggestion }}"></option>
+            {% endfor %}
+        </datalist>
+
         <div class="form-actions">
             <button type="submit" class="button-primary">Сохранить</button>
             <a class="button-secondary" href="{% url 'orders:detail' order.pk %}">Отмена</a>

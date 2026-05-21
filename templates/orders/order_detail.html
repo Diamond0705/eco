@@ -12,6 +12,8 @@
         <div class="form-actions">
             {% if order.status == "new" %}
                 <a class="button-secondary" href="{% url 'orders:edit' order.pk %}">Редактировать</a>
+            {% endif %}
+            {% if can_cancel_order %}
                 <form method="post" action="{% url 'orders:cancel' order.pk %}" class="inline-form">
                     {% csrf_token %}
                     <button
@@ -62,9 +64,9 @@
     <div class="message route-actions">
         {% if order.trip %}
             <a class="button-primary" href="{% url 'trips:detail' order.trip.pk %}">Открыть рейс</a>
-        {% elif order.route_options.exists %}
-            <a class="button-primary" href="{% url 'routing:options' order.pk %}">Сравнить маршруты</a>
-            {% if order.status == "new" or order.status == "calculated" %}
+        {% elif order.status == "new" or order.status == "calculated" %}
+            {% if order.route_options.exists %}
+                <a class="button-primary" href="{% url 'routing:options' order.pk %}">Сравнить маршруты</a>
                 <form method="post" action="{% url 'routing:calculate' order.pk %}" class="inline-form">
                     {% csrf_token %}
                     <input type="hidden" name="route_calculation_mode" value="extended">
@@ -72,28 +74,28 @@
                         Найти дополнительные альтернативы
                     </button>
                 </form>
+            {% else %}
+                <form method="post" action="{% url 'routing:calculate' order.pk %}" class="route-calc-form">
+                    {% csrf_token %}
+                    <fieldset>
+                        <legend>Режим расчета маршрутов:</legend>
+                        <label>
+                            <input type="radio" name="route_calculation_mode" value="standard" checked>
+                            Стандартный — до 3 вариантов
+                        </label>
+                        <label>
+                            <input type="radio" name="route_calculation_mode" value="extended">
+                            Расширенный — до 5 вариантов
+                        </label>
+                    </fieldset>
+                    <button type="submit" class="button-primary">Рассчитать маршруты</button>
+                </form>
             {% endif %}
-        {% elif order.status == "new" or order.status == "calculated" %}
-            <form method="post" action="{% url 'routing:calculate' order.pk %}" class="route-calc-form">
-                {% csrf_token %}
-                <fieldset>
-                    <legend>Режим расчета маршрутов:</legend>
-                    <label>
-                        <input type="radio" name="route_calculation_mode" value="standard" checked>
-                        Стандартный — до 3 вариантов
-                    </label>
-                    <label>
-                        <input type="radio" name="route_calculation_mode" value="extended">
-                        Расширенный — до 5 вариантов
-                    </label>
-                </fieldset>
-                <button type="submit" class="button-primary">Рассчитать маршруты</button>
-            </form>
         {% else %}
             <span>Маршруты можно рассчитать только для новой или рассчитанной заявки.</span>
         {% endif %}
         {% if not order.trip %}
-            <span>Утверждение маршрута создает рейс.</span>
+            <span>Утверждение маршрута создает рейс</span>
         {% endif %}
     </div>
 </section>

@@ -65,7 +65,6 @@
                         <th>Источник</th>
                         <th>Расстояние</th>
                         <th>Время</th>
-                        <th>Множитель расхода</th>
                         <th>Топливо</th>
                         <th>Стоимость</th>
                         <th>CO2</th>
@@ -80,12 +79,12 @@
                         {% with option=row.option %}
                         <tr>
                             <td>
-                                {{ option.name }}
+                                {{ row.display_name }}
                                 {% for badge in row.badges %}
                                     <span class="status-badge">{{ badge }}</span>
                                 {% endfor %}
                                 {% if row.has_unpriced_tolls %}
-                                    <span class="status-badge">Платная дорога без стоимости</span>
+                                    <span class="status-badge">Платная дорога</span>
                                 {% endif %}
                                 {% if option.is_selected %}
                                     <span class="status-badge">Выбран</span>
@@ -94,7 +93,6 @@
                             <td>{{ option.get_provider_display }}</td>
                             <td>{{ option.distance_km }} км</td>
                             <td>{{ option.duration_minutes }} мин</td>
-                            <td>{{ option.fuel_multiplier }}</td>
                             <td>{{ option.fuel_liters }} л</td>
                             <td>{{ option.cost_rub }} руб.</td>
                             <td>{{ option.co2_kg }} кг</td>
@@ -121,12 +119,11 @@
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="12">
+                            <td colspan="11">
                                 <details class="form-note">
                                     <summary>Как рассчитан маршрут</summary>
                                     <div>
-                                        Модель: {{ row.calculation_details.calculation_model_version }};
-                                        итоговый множитель расхода: {{ row.calculation_details.final_fuel_multiplier }};
+                                        множитель расхода: {{ row.calculation_details.final_fuel_multiplier }};
                                         средняя скорость: {{ row.calculation_details.average_speed_kmh }} км/ч;
                                         фактор класса дороги: {{ row.calculation_details.road_class_factor }};
                                         фактор покрытия: {{ row.calculation_details.surface_factor }};

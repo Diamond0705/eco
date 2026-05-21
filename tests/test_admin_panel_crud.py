@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 import pytest
@@ -159,6 +160,21 @@ def calculation_settings_form_data(**overrides):
     return values
 
 
+def assert_admin_radio_frame(content, active_label="Активен", inactive_label="Неактивен"):
+    assert 'class="admin-radio-frame"' in content
+    assert 'class="admin-radio-list"' in content
+    assert 'class="admin-radio-option"' in content
+    assert 'type="radio"' in content
+    assert 'name="is_active"' in content
+    assert f"<span>{active_label}</span>" in content
+    assert f"<span>{inactive_label}</span>" in content
+
+
+def assert_checked_active_radio(content, value):
+    pattern = rf'<input[^>]+type="radio"[^>]+name="is_active"[^>]+value="{value}"[^>]+checked'
+    assert re.search(pattern, content)
+
+
 @pytest.mark.django_db
 def test_admin_dashboard_phase15_cleanup_and_navigation(
     client, admin_user, manager_user, transport, locations
@@ -221,6 +237,43 @@ def test_admin_navigation_is_in_header_and_hidden_from_manager(client, admin_use
     assert "Экостандарты" not in content
     assert "Экорасчет" not in content
     assert "Django Admin" not in content
+
+
+@pytest.mark.django_db
+def test_admin_activity_fields_render_as_framed_radio_groups(
+    client, admin_user, manager_user, transport, locations, eco_standard
+):
+    location = locations[0]
+    location.is_active = False
+    location.save(update_fields=["is_active"])
+    settings_version = EcoCalculationSettings.get_current()
+    client.force_login(admin_user)
+
+    for url in [
+        reverse("dashboard:admin_user_edit", args=[manager_user.pk]),
+        reverse("dashboard:admin_transport_edit", args=[transport.pk]),
+        reverse("dashboard:admin_location_edit", args=[location.pk]),
+        reverse("dashboard:admin_eco_standard_edit", args=[eco_standard.pk]),
+    ]:
+        response = client.get(url)
+        content = response.content.decode()
+
+        assert response.status_code == 200
+        assert_admin_radio_frame(content)
+
+    response = client.get(reverse("dashboard:admin_user_edit", args=[manager_user.pk]))
+    assert_checked_active_radio(response.content.decode(), "1")
+
+    response = client.get(reverse("dashboard:admin_location_edit", args=[location.pk]))
+    assert_checked_active_radio(response.content.decode(), "0")
+
+    response = client.get(
+        reverse("dashboard:admin_calculation_settings_edit", args=[settings_version.pk])
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert_admin_radio_frame(content, active_label="Активны", inactive_label="Неактивны")
 
 
 @pytest.mark.django_db

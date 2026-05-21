@@ -5,8 +5,22 @@ from django.views.decorators.http import require_http_methods
 
 from apps.core.permissions import manager_required
 
-from .forms import ShipmentOrderCreateForm, ShipmentOrderEditForm
+from .forms import (
+    CARGO_NAME_SUGGESTIONS,
+    CARGO_TYPE_SUGGESTIONS,
+    ShipmentOrderCreateForm,
+    ShipmentOrderEditForm,
+)
 from .models import ShipmentOrder
+
+
+def _order_form_context(form, **extra):
+    return {
+        "form": form,
+        "cargo_name_suggestions": CARGO_NAME_SUGGESTIONS,
+        "cargo_type_suggestions": CARGO_TYPE_SUGGESTIONS,
+        **extra,
+    }
 
 
 def _manager_orders_queryset(request):
@@ -14,6 +28,13 @@ def _manager_orders_queryset(request):
         ShipmentOrder.objects.filter(manager=request.user)
         .select_related("transport", "manager", "trip")
         .prefetch_related("points__location", "route_options")
+    )
+
+
+def _can_cancel_order(order):
+    return (
+        order.status in {ShipmentOrder.Status.NEW, ShipmentOrder.Status.CALCULATED}
+        and not hasattr(order, "trip")
     )
 
 
@@ -51,7 +72,7 @@ def order_create(request):
     else:
         form = ShipmentOrderCreateForm()
 
-    return render(request, "orders/order_create.html", {"form": form})
+    return render(request, "orders/order_create.html", _order_form_context(form))
 
 
 @manager_required
@@ -74,7 +95,11 @@ def order_edit(request, pk):
     else:
         form = ShipmentOrderEditForm(instance=order, points_instance=points[:2])
 
-    return render(request, "orders/order_edit.html", {"form": form, "order": order})
+    return render(
+        request,
+        "orders/order_edit.html",
+        _order_form_context(form, order=order),
+    )
 
 
 @manager_required
@@ -82,14 +107,18 @@ def order_edit(request, pk):
 def order_detail(request, pk):
     order = get_object_or_404(_manager_orders_queryset(request), pk=pk)
     points = order.points.all().order_by("sequence")
-    return render(request, "orders/order_detail.html", {"order": order, "points": points})
+    return render(
+        request,
+        "orders/order_detail.html",
+        {"order": order, "points": points, "can_cancel_order": _can_cancel_order(order)},
+    )
 
 
 @manager_required
 @require_http_methods(["POST"])
 def order_cancel(request, pk):
     order = get_object_or_404(_manager_orders_queryset(request), pk=pk)
-    if order.status != ShipmentOrder.Status.NEW:
+    if not _can_cancel_order(order):
         raise PermissionDenied
 
     order.status = ShipmentOrder.Status.CANCELLED

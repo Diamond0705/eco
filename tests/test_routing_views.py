@@ -244,9 +244,12 @@ def test_route_comparison_page_displays_route_options(client, manager, transport
 
     assert response.status_code == 200
     assert "Сравнение маршрутов" in content
-    assert "Быстрый" in content
-    assert "Короткий" in content
-    assert "Экологичный" in content
+    assert "Маршрут 1" in content
+    assert "Маршрут 2" in content
+    assert "Маршрут 3" in content
+    assert "Быстрый" not in content
+    assert "Короткий" not in content
+    assert "Экологичный" not in content
     assert "Утвердить маршрут" in content
 
 
@@ -310,7 +313,8 @@ def test_route_comparison_page_handles_one_graphhopper_route(
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Маршрут GraphHopper" in content
+    assert "Маршрут 1" in content
+    assert "Маршрут GraphHopper" not in content
     assert "GraphHopper" in content
     assert "Количество вариантов зависит от выбранного провайдера маршрутизации" in content
     assert "Самый быстрый" in content
@@ -369,9 +373,10 @@ def test_route_comparison_page_handles_multiple_graphhopper_routes(
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Короткий" in content
-    assert "Быстрый" in content
-    assert "Альтернативный маршрут 1" in content
+    assert "Маршрут 1" in content
+    assert "Маршрут 2" in content
+    assert "Маршрут 3" in content
+    assert "Альтернативный маршрут 1" not in content
     assert "Самый быстрый" in content
     assert "Самый короткий" in content
     assert "Лучший по эко-рейтингу" in content
@@ -400,7 +405,10 @@ def test_route_comparison_page_shows_calculation_details_for_new_and_old_snapsho
             "road_class_factor": "1.00",
             "surface_factor": "1.00",
             "traffic_factor": "1.00",
-            "warnings": ["Провайдер не предоставляет данные о пробках, traffic_factor=1.00."],
+            "warnings": [
+                "Провайдер не предоставляет данные о пробках, traffic_factor=1.00.",
+                "Для части маршрута ограничение скорости неизвестно.",
+            ],
         },
     )
     create_route_option(
@@ -419,10 +427,13 @@ def test_route_comparison_page_shows_calculation_details_for_new_and_old_snapsho
     assert "Как рассчитан маршрут" in content
     assert "<details" in content
     assert "<summary>Как рассчитан маршрут</summary>" in content
-    assert "Модель: v2.1" in content
-    assert "итоговый множитель расхода: 1.15" in content
-    assert "Провайдер не предоставляет данные о пробках, traffic_factor=1.00." in content
-    assert "Старый снимок" in content
+    assert "Модель: v2.1" not in content
+    assert "множитель расхода: 1.15" in content
+    assert "Множитель расхода" not in content
+    assert "Провайдер не предоставляет данные о пробках, traffic_factor=1.00." not in content
+    assert "Для части маршрута ограничение скорости неизвестно." in content
+    assert "Маршрут 2" in content
+    assert "Старый снимок" not in content
 
 
 @pytest.mark.django_db
@@ -444,11 +455,15 @@ def test_route_comparison_page_marks_unpriced_tolls(client, manager, transport, 
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Платная дорога без стоимости" in content
+    assert "Платная дорога" in content
+    assert "Платная дорога без стоимости" not in content
+    assert (
+        "На маршруте есть платные участки. Их стоимость не включена в итоговую стоимость перевозки."
+    ) in content
     assert (
         "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
         "и не включена в итоговую стоимость перевозки."
-    ) in content
+    ) not in content
 
 
 @pytest.mark.django_db
@@ -459,6 +474,10 @@ def test_route_comparison_page_shows_duplicate_toll_warning_once(
     locations,
 ):
     warning = (
+        "На маршруте есть платные участки. "
+        "Их стоимость не включена в итоговую стоимость перевозки."
+    )
+    legacy_warning = (
         "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
         "и не включена в итоговую стоимость перевозки."
     )
@@ -474,9 +493,9 @@ def test_route_comparison_page_shows_duplicate_toll_warning_once(
         route_facts_json={
             "has_tolls": True,
             "toll_cost_rub": "0.00",
-            "warnings": [warning],
+            "warnings": [legacy_warning],
         },
-        calculation_details_json={"warnings": [warning]},
+        calculation_details_json={"warnings": [legacy_warning]},
     )
     client.force_login(manager)
 
@@ -485,6 +504,7 @@ def test_route_comparison_page_shows_duplicate_toll_warning_once(
 
     assert response.status_code == 200
     assert content.count(warning) == 1
+    assert legacy_warning not in content
 
 
 @pytest.mark.django_db

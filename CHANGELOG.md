@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Phase 15.1 - UI Polish And Safe Demo Cleanup
+
+- Added `clear_operational_data --yes` for local/demo cleanup of obsolete orders, points, route options, trips and trip status events.
+- Kept users, transport, locations, eco standards, calculation settings, groups, permissions, migrations and tables unchanged.
+- Polished small admin-panel labels, helper text and action wording without changing providers, formulas or dependencies.
+
 ## Phase 15 - In-App Admin Panel CRUD
 
 - Added in-application administrator pages for users, transport, locations, eco standards and calculation settings.

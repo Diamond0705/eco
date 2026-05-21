@@ -8,6 +8,34 @@ from apps.locations.models import Location
 
 from .models import OrderPoint, ShipmentOrder
 
+CARGO_TYPE_SUGGESTIONS = (
+    "Строительные материалы",
+    "Металлоизделия",
+    "Лесоматериалы",
+    "Промышленные товары",
+    "Продовольственные товары",
+    "Сборный груз",
+    "Легкий объемный груз",
+    "Тяжеловесный груз",
+    "Электротехнические товары",
+    "Непродовольственные товары",
+)
+
+CARGO_NAME_SUGGESTIONS = (
+    "Металлопрокат",
+    "Арматура строительная",
+    "Стальные трубы",
+    "Кирпич строительный",
+    "Бетонные блоки",
+    "Цемент в мешках",
+    "Сухие строительные смеси",
+    "Пиломатериалы",
+    "Паллетированный товар",
+    "Бытовая техника",
+    "Запчасти для оборудования",
+    "Кабельная продукция",
+)
+
 
 class ShipmentOrderForm(forms.ModelForm):
     origin_location = forms.ModelChoiceField(
@@ -38,6 +66,18 @@ class ShipmentOrderForm(forms.ModelForm):
             "notes": "Примечания",
         }
         widgets = {
+            "cargo_name": forms.TextInput(
+                attrs={
+                    "autocomplete": "off",
+                    "list": "cargo-name-suggestions",
+                }
+            ),
+            "cargo_type": forms.TextInput(
+                attrs={
+                    "autocomplete": "off",
+                    "list": "cargo-type-suggestions",
+                }
+            ),
             "desired_delivery_date": forms.DateInput(
                 attrs={"type": "date"},
                 format="%Y-%m-%d",

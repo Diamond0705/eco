@@ -7,9 +7,9 @@
     <div class="page-heading">
         <div>
             <h1>Транспорт</h1>
-            <p class="muted">Справочник транспортных средств для заявок и расчетов.</p>
+            <p class="muted">Справочник транспортных средств для заявок и расчетов</p>
         </div>
-        <a class="button-primary" href="{% url 'dashboard:admin_transport_create' %}">Добавить транспорт</a>
+        <a class="button-primary" href="{% url 'dashboard:admin_transport_create' %}">Добавить</a>
     </div>
 
     <form method="get" class="filter-form">
@@ -51,7 +51,11 @@
                         <td>{{ transport.fuel_consumption_l_per_100km }} л/100 км</td>
                         <td>{{ transport.eco_standard }}</td>
                         <td>{% if transport.is_active %}Активен{% else %}Отключен{% endif %}</td>
-                        <td><a href="{% url 'dashboard:admin_transport_edit' transport.pk %}">Изменить</a></td>
+                        <td>
+                            <a class="button-primary table-action-button" href="{% url 'dashboard:admin_transport_edit' transport.pk %}">
+                                Редактировать
+                            </a>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>

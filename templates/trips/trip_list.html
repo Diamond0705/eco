@@ -7,7 +7,7 @@
     <div class="page-heading">
         <div>
             <h1>Рейсы</h1>
-            <p class="muted">Список рейсов по утвержденным маршрутам.</p>
+            <p class="muted">Список рейсов по утвержденным маршрутам</p>
         </div>
         <a class="button-secondary" href="{% url 'orders:list' %}">К заявкам</a>
     </div>
@@ -19,16 +19,6 @@
             {% for value, label in status_choices %}
                 <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>
                     {{ label }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <label for="route_name">Маршрут</label>
-        <select id="route_name" name="route_name">
-            <option value="">Все маршруты</option>
-            {% for route_name in route_name_choices %}
-                <option value="{{ route_name }}"{% if selected_route_name == route_name %} selected{% endif %}>
-                    {{ route_name }}
                 </option>
             {% endfor %}
         </select>
@@ -57,11 +47,15 @@
                         <td>№{{ trip.id }}</td>
                         <td>№{{ trip.order_id }}</td>
                         <td>{{ trip.order.cargo_name }}</td>
-                        <td>{{ trip.route_option.name }}</td>
+                        <td>{{ trip.display_route_name }}</td>
                         <td>{{ trip.get_status_display }}</td>
                         <td>{{ trip.actual_start_at|date:"d.m.Y H:i"|default:"-" }}</td>
                         <td>{{ trip.actual_finish_at|date:"d.m.Y H:i"|default:"-" }}</td>
-                        <td><a href="{% url 'trips:detail' trip.pk %}">Открыть</a></td>
+                        <td>
+                            <a class="button-primary table-action-button" href="{% url 'trips:detail' trip.pk %}">
+                                Открыть
+                            </a>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>

@@ -23,8 +23,22 @@
             {% for field in form %}
                 {% if field.name == "name" or field.name == "is_active" %}
                     <div class="form-row">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
+                        {% if field.name == "is_active" %}
+                            <fieldset class="admin-radio-frame">
+                                <legend>{{ field.label }}</legend>
+                                <div class="admin-radio-list">
+                                    {% for choice in field %}
+                                        <label class="admin-radio-option" for="{{ choice.id_for_label }}">
+                                            {{ choice.tag }}
+                                            <span>{{ choice.choice_label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                        {% else %}
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                        {% endif %}
                         {% if field.errors %}
                             <div class="field-errors">{{ field.errors }}</div>
                         {% endif %}

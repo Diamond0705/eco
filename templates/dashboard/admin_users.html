@@ -7,7 +7,7 @@
     <div class="page-heading">
         <div>
             <h1>Пользователи</h1>
-            <p class="muted">Управление ролями и активностью учетных записей.</p>
+            <p class="muted">Управление ролями и активностью учетных записей</p>
         </div>
     </div>
 
@@ -45,7 +45,11 @@
                         <td>{{ account.phone|default:"—" }}</td>
                         <td>{% if account.role == "admin" %}Администратор{% else %}Менеджер{% endif %}</td>
                         <td>{% if account.is_active %}Активен{% else %}Отключен{% endif %}</td>
-                        <td><a href="{% url 'dashboard:admin_user_edit' account.pk %}">Изменить</a></td>
+                        <td>
+                            <a class="button-primary table-action-button" href="{% url 'dashboard:admin_user_edit' account.pk %}">
+                                Редактировать
+                            </a>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>

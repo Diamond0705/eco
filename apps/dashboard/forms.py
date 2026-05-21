@@ -14,7 +14,7 @@ def active_status_field():
         label="Активность",
         choices=(("1", "Активен"), ("0", "Неактивен")),
         coerce=lambda value: value == "1",
-        widget=forms.RadioSelect(attrs={"class": "status-radio-list"}),
+        widget=forms.RadioSelect(attrs={"class": "status-radio-input"}),
     )
 
 
@@ -23,15 +23,15 @@ def active_status_select_field():
         label="Активность",
         choices=(("1", "Активен"), ("0", "Неактивен")),
         coerce=lambda value: value == "1",
+        widget=forms.RadioSelect(attrs={"class": "status-radio-input"}),
     )
 
 
 def set_active_initial(form):
     if form.is_bound or "is_active" not in form.fields:
         return
-    if "is_active" in form.initial:
-        return
-    form.initial["is_active"] = "1" if getattr(form.instance, "is_active", True) else "0"
+    is_active = form.initial.get("is_active", getattr(form.instance, "is_active", True))
+    form.initial["is_active"] = "1" if is_active else "0"
 
 
 class AdminUserForm(forms.ModelForm):
@@ -122,6 +122,7 @@ class EcoCalculationSettingsForm(forms.ModelForm):
         label="Активность",
         choices=(("1", "Активны"), ("0", "Неактивны")),
         coerce=lambda value: value == "1",
+        widget=forms.RadioSelect(attrs={"class": "status-radio-input"}),
     )
 
     def __init__(self, *args, **kwargs):

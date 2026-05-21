@@ -7,16 +7,15 @@
     <div class="page-heading">
         <div>
             <h1>Панель менеджера</h1>
-            <p class="muted">Ключевые показатели по вашим заявкам, рейсам и выбросам.</p>
+            <p class="muted">Ключевые показатели по вашим заявкам, рейсам и выбросам</p>
         </div>
-        <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
     </div>
 
     <div class="placeholder-grid">
         <div class="placeholder-card">
             <h2>Мои заявки</h2>
             <p class="stat-value">{{ analytics.orders.total }}</p>
-            <p>Новые: {{ analytics.orders.by_status.new }} · рассчитанные: {{ analytics.orders.by_status.calculated }}</p>
+            <p>Новые: {{ analytics.orders.by_status.new }} &nbsp; Рассчитанные: {{ analytics.orders.by_status.calculated }}</p>
             <div class="card-actions">
                 <a class="button-secondary" href="{% url 'orders:list' %}">Заявки</a>
                 <a class="button-secondary" href="{% url 'orders:create' %}">Создать заявку</a>
@@ -25,7 +24,7 @@
         <div class="placeholder-card">
             <h2>Активные рейсы</h2>
             <p class="stat-value">{{ analytics.trips.active }}</p>
-            <p>План: {{ analytics.trips.planned }} · в пути: {{ analytics.trips.in_progress }}</p>
+            <p>План: {{ analytics.trips.planned }} &nbsp; В пути: {{ analytics.trips.in_progress }}</p>
             <div class="card-actions">
                 <a class="button-secondary" href="{% url 'trips:list' %}">Рейсы</a>
             </div>
@@ -33,7 +32,7 @@
         <div class="placeholder-card">
             <h2>Доставленные рейсы</h2>
             <p class="stat-value">{{ analytics.trips.delivered }}</p>
-            <p>{{ analytics.delivered.distance_km }} км · {{ analytics.delivered.fuel_liters }} л топлива</p>
+            <p>{{ analytics.delivered.distance_km }} км &nbsp; {{ analytics.delivered.fuel_liters }} л топлива</p>
             <div class="card-actions">
                 <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчет по выбросам</a>
             </div>
@@ -43,7 +42,7 @@
             <p class="stat-value">{{ analytics.delivered.co2_kg }} кг</p>
             <p>Средний эко-рейтинг: {{ analytics.delivered.average_eco_rating }}</p>
             <div class="card-actions">
-                <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Подробнее</a>
+                <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
             </div>
         </div>
     </div>
@@ -58,7 +57,6 @@
             <p>Смотрите суммарные выбросы по доставленным рейсам и скачивайте PDF.</p>
             <div class="card-actions">
                 <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчеты</a>
-                <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
             </div>
         </div>
     </div>

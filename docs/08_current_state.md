@@ -14,6 +14,15 @@ planning notes for earlier phases, so they may describe target behavior or old p
 Фаза 9 является исследовательской и спецификационной: она описывает стратегию провайдеров и
 расчетную модель v2, но сама по себе не меняет поведение приложения.
 
+## Phase 15.1
+
+- Added `clear_operational_data --yes` for local/demo cleanup of obsolete operational data:
+  shipment orders, order points, route options, trips and trip status events.
+- The cleanup command does not delete users, transport, locations, eco standards,
+  calculation settings, groups or permissions.
+- Small admin-panel UI labels and helper texts were polished without changing routing
+  providers, calculation formulas, dependencies or migrations.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.

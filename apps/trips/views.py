@@ -10,8 +10,6 @@ from .forms import TripDeliverForm, TripStartForm, datetime_local_initial
 from .models import Trip
 from .services import TripLifecycleService
 
-ROUTE_NAME_CHOICES = ("Быстрый", "Короткий", "Экологичный")
-
 
 def _manager_orders_queryset(request):
     return (
@@ -30,7 +28,7 @@ def _manager_trips_queryset(request):
             "route_option",
             "route_option__calculation_settings",
         )
-        .prefetch_related("status_events__changed_by")
+        .prefetch_related("order__points__location", "status_events__changed_by")
     )
 
 
@@ -64,12 +62,8 @@ def trip_list(request):
         trips = trips.filter(status=selected_status)
     else:
         selected_status = ""
-
-    selected_route_name = request.GET.get("route_name", "")
-    if selected_route_name in ROUTE_NAME_CHOICES:
-        trips = trips.filter(route_option__name=selected_route_name)
-    else:
-        selected_route_name = ""
+    trips = list(trips)
+    _attach_route_display_names(trips)
 
     return render(
         request,
@@ -77,9 +71,7 @@ def trip_list(request):
         {
             "trips": trips,
             "status_choices": Trip.Status.choices,
-            "route_name_choices": ROUTE_NAME_CHOICES,
             "selected_status": selected_status,
-            "selected_route_name": selected_route_name,
         },
     )
 
@@ -88,6 +80,7 @@ def trip_list(request):
 @require_GET
 def trip_detail(request, pk):
     trip = get_object_or_404(_manager_trips_queryset(request), pk=pk)
+    _attach_route_display_names([trip])
     status_events = trip.status_events.all().order_by("changed_at")
     start_form = None
     deliver_form = None
@@ -129,6 +122,15 @@ def trip_start(request, pk):
 
     messages.success(request, "Рейс начат.")
     return redirect("trips:detail", pk=trip.pk)
+
+
+def _attach_route_display_names(trips):
+    for trip in trips:
+        points = sorted(trip.order.points.all(), key=lambda point: point.sequence)
+        if len(points) >= 2:
+            trip.display_route_name = f"{points[0].location.name} — {points[-1].location.name}"
+        else:
+            trip.display_route_name = trip.route_option.name
 
 
 @manager_required

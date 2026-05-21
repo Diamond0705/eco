@@ -248,8 +248,7 @@ def test_emission_calculator_v2_includes_time_cost_and_unknown_toll_warning(rout
         settings,
     )["cost_rub"]
     assert (
-        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
-        "и не включена в итоговую стоимость перевозки."
+        "На маршруте есть платные участки. Их стоимость не включена в итоговую стоимость перевозки."
     ) in details["warnings"]
 
 
@@ -265,8 +264,8 @@ def test_emission_calculator_v21_saves_intensity_fields_and_deduplicates_warning
 ):
     settings = EcoCalculationSettings.get_current()
     warning = (
-        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
-        "и не включена в итоговую стоимость перевозки."
+        "На маршруте есть платные участки. "
+        "Их стоимость не включена в итоговую стоимость перевозки."
     )
     candidate = RouteCandidate(
         name="Маршрут GraphHopper",

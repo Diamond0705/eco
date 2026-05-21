@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 import pytest
@@ -8,8 +9,10 @@ from django.urls import reverse
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.admin import OrderPointInline, ShipmentOrderAdmin
+from apps.orders.forms import CARGO_NAME_SUGGESTIONS, CARGO_TYPE_SUGGESTIONS
 from apps.orders.models import OrderPoint, ShipmentOrder
 from apps.routing.services.route_calculation_service import RouteCalculationService
+from apps.trips.services import TripLifecycleService
 
 User = get_user_model()
 
@@ -119,6 +122,24 @@ def _create_order(
     return order
 
 
+def assert_cargo_entry_polish(content):
+    cargo_name_input = re.search(r'<input[^>]+name="cargo_name"[^>]*>', content)
+    cargo_type_input = re.search(r'<input[^>]+name="cargo_type"[^>]*>', content)
+
+    assert cargo_name_input is not None
+    assert cargo_type_input is not None
+    assert 'autocomplete="off"' in cargo_name_input.group(0)
+    assert 'list="cargo-name-suggestions"' in cargo_name_input.group(0)
+    assert 'autocomplete="off"' in cargo_type_input.group(0)
+    assert 'list="cargo-type-suggestions"' in cargo_type_input.group(0)
+    assert '<datalist id="cargo-type-suggestions">' in content
+    assert '<datalist id="cargo-name-suggestions">' in content
+    for suggestion in CARGO_TYPE_SUGGESTIONS:
+        assert f'<option value="{suggestion}"></option>' in content
+    for suggestion in CARGO_NAME_SUGGESTIONS:
+        assert f'<option value="{suggestion}"></option>' in content
+
+
 @pytest.mark.django_db
 def test_manager_can_create_order_and_is_redirected_to_detail(
     client, manager, transport, locations
@@ -152,6 +173,19 @@ def test_manager_can_create_order_and_is_redirected_to_detail(
 
 
 @pytest.mark.django_db
+def test_order_create_form_renders_cargo_suggestions_and_disables_autocomplete(
+    client, manager, transport, locations
+):
+    client.force_login(manager)
+
+    response = client.get(reverse("orders:create"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert_cargo_entry_polish(content)
+
+
+@pytest.mark.django_db
 def test_manager_sees_own_orders_only(client, manager, other_manager, transport, locations):
     own_order = _create_order(manager, transport, locations, cargo_name="Свой груз")
     _other_order = _create_order(other_manager, transport, locations, cargo_name="Чужой груз")
@@ -164,6 +198,7 @@ def test_manager_sees_own_orders_only(client, manager, other_manager, transport,
     assert f"Заявка №{own_order.pk}" not in content
     assert "Свой груз" in content
     assert "Чужой груз" not in content
+    assert 'class="button-primary table-action-button"' in content
 
 
 @pytest.mark.django_db
@@ -264,7 +299,7 @@ def test_order_detail_displays_points_ordered_by_sequence(client, manager, trans
     assert "Режим расчета маршрутов:" in content
     assert "Стандартный — до 3 вариантов" in content
     assert "Расширенный — до 5 вариантов" in content
-    assert "Утверждение маршрута создает рейс." in content
+    assert "Утверждение маршрута создает рейс" in content
 
 
 @pytest.mark.django_db
@@ -316,15 +351,34 @@ def test_calculated_order_with_route_options_shows_compare_link(
 
 
 @pytest.mark.django_db
+def test_calculated_order_with_route_options_shows_cancel_button(
+    client, manager, transport, locations
+):
+    order = _create_order(manager, transport, locations)
+    RouteCalculationService().calculate_for_order(order)
+    client.force_login(manager)
+
+    response = client.get(reverse("orders:detail", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Отменить заявку" in content
+    assert reverse("orders:cancel", kwargs={"pk": order.pk}) in content
+    assert "Редактировать" not in content
+
+
+@pytest.mark.django_db
 def test_manager_can_open_edit_page_for_own_new_order(client, manager, transport, locations):
     order = _create_order(manager, transport, locations)
     client.force_login(manager)
 
     response = client.get(reverse("orders:edit", kwargs={"pk": order.pk}))
+    content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Редактирование заявки" in response.content.decode()
-    assert 'value="2026-06-01"' in response.content.decode()
+    assert "Редактирование заявки" in content
+    assert 'value="2026-06-01"' in content
+    assert_cargo_entry_polish(content)
 
 
 @pytest.mark.django_db
@@ -428,6 +482,46 @@ def test_manager_can_cancel_own_new_order(client, manager, transport, locations)
     assert response.status_code == 302
     order.refresh_from_db()
     assert order.status == ShipmentOrder.Status.CANCELLED
+
+
+@pytest.mark.django_db
+def test_manager_can_cancel_own_calculated_order_without_deleting_route_options(
+    client, manager, transport, locations
+):
+    order = _create_order(manager, transport, locations)
+    RouteCalculationService().calculate_for_order(order)
+    route_option_ids = set(order.route_options.values_list("id", flat=True))
+    client.force_login(manager)
+
+    response = client.post(reverse("orders:cancel", kwargs={"pk": order.pk}))
+
+    assert response.status_code == 302
+    order.refresh_from_db()
+    assert order.status == ShipmentOrder.Status.CANCELLED
+    assert set(order.route_options.values_list("id", flat=True)) == route_option_ids
+
+    detail_response = client.get(reverse("orders:detail", kwargs={"pk": order.pk}))
+    detail_content = detail_response.content.decode()
+    assert "Сравнить маршруты" not in detail_content
+    assert "Найти дополнительные альтернативы" not in detail_content
+    assert "К списку" in detail_content
+
+
+@pytest.mark.django_db
+def test_manager_cannot_cancel_order_after_trip_is_created(
+    client, manager, transport, locations
+):
+    order = _create_order(manager, transport, locations)
+    RouteCalculationService().calculate_for_order(order)
+    route_option = order.route_options.first()
+    TripLifecycleService().approve_route(order, route_option, manager)
+    client.force_login(manager)
+
+    response = client.post(reverse("orders:cancel", kwargs={"pk": order.pk}))
+
+    assert response.status_code == 403
+    order.refresh_from_db()
+    assert order.status == ShipmentOrder.Status.PLANNED
 
 
 @pytest.mark.django_db

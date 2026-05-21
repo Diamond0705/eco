@@ -145,7 +145,9 @@ def test_trip_list_filters_by_status(client, manager, transport, locations):
 
 
 @pytest.mark.django_db
-def test_trip_list_filters_by_route_name(client, manager, transport, locations):
+def test_trip_list_filters_show_status_filter_without_route_name_filter(
+    client, manager, transport, locations
+):
     fast_trip = approve_trip(manager, transport, locations, "Быстрый груз", "Быстрый")
     eco_trip = approve_trip(manager, transport, locations, "Экологичный груз", "Экологичный")
     client.force_login(manager)
@@ -154,8 +156,15 @@ def test_trip_list_filters_by_route_name(client, manager, transport, locations):
     content = response.content.decode()
 
     assert response.status_code == 200
+    assert 'select id="status" name="status"' in content
+    assert 'select id="route_name" name="route_name"' not in content
+    assert "Все статусы" in content
+    assert "Запланирован" in content
+    assert "В пути" in content
+    assert "Доставлен" in content
+    assert "Отменен" in content
     assert f"№{eco_trip.pk}" in content
-    assert f"№{fast_trip.pk}" not in content
+    assert f"№{fast_trip.pk}" in content
 
 
 @pytest.mark.django_db

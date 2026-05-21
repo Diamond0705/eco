@@ -18,8 +18,7 @@ class GraphHopperRouteProvider:
     provider = RouteOption.Provider.GRAPHHOPPER
     fuel_multiplier = Decimal("1.00")
     TOLL_WARNING = (
-        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
-        "и не включена в итоговую стоимость перевозки."
+        "На маршруте есть платные участки. Их стоимость не включена в итоговую стоимость перевозки."
     )
     UNKNOWN_SPEED_WARNING = "Для части маршрута ограничение скорости неизвестно."
     UNKNOWN_SPEED_WARNING_SHARE = Decimal("25.00")
