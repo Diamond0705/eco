@@ -63,6 +63,22 @@
             <h2>NOx / PM</h2>
             <p>{{ report.summary.nox_g }} г / {{ report.summary.pm_g }} г</p>
         </div>
+        <div class="placeholder-card">
+            <h2>CO2 на км</h2>
+            <p>{{ report.summary.average_co2_kg_per_km }} кг/км</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>CO2 на тонно-км</h2>
+            <p>{{ report.summary.average_co2_kg_per_ton_km }} кг/тонно-км</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Эко-рейтинг</h2>
+            <p>{{ report.summary.average_eco_rating }}</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Платные участки</h2>
+            <p>{{ report.summary.toll_routes_count }}</p>
+        </div>
     </div>
 
     <div class="table-wrap">
@@ -73,6 +89,7 @@
                     <th>Дата доставки</th>
                     <th>Груз</th>
                     <th>Транспорт</th>
+                    <th>Евро-класс</th>
                     <th>Маршрут</th>
                     <th>Расстояние</th>
                     <th>Топливо</th>
@@ -90,6 +107,7 @@
                         <td>{{ row.finish_date|date:"d.m.Y H:i" }}</td>
                         <td>{{ row.cargo }}</td>
                         <td>{{ row.transport }}</td>
+                        <td>{{ row.euro_class }}</td>
                         <td>{{ row.route_name }}</td>
                         <td>{{ row.distance_km }} км</td>
                         <td>{{ row.fuel_liters }} л</td>
@@ -101,7 +119,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="12">Доставленных рейсов за выбранный период нет.</td>
+                        <td colspan="13">Доставленных рейсов за выбранный период нет.</td>
                     </tr>
                 {% endfor %}
             </tbody>

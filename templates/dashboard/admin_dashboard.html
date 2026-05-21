@@ -43,6 +43,31 @@
             <p class="stat-value">{{ analytics.company.cost_rub }} руб.</p>
             <p>Топливо и сервисный тариф по доставленным рейсам.</p>
         </div>
+        <div class="placeholder-card">
+            <h2>Суммарные выбросы</h2>
+            <p class="stat-value">{{ analytics.company.co2_kg }} кг CO2</p>
+            <p>NOx: {{ analytics.company.nox_g }} г · PM: {{ analytics.company.pm_g }} г</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Средний эко-рейтинг</h2>
+            <p class="stat-value">{{ analytics.company.average_eco_rating }}</p>
+            <p>По доставленным рейсам компании.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>CO2 на км</h2>
+            <p class="stat-value">{{ analytics.company.average_co2_kg_per_km }}</p>
+            <p>Среднее по сохраненным расчетным деталям.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>CO2 на тонно-км</h2>
+            <p class="stat-value">{{ analytics.company.average_co2_kg_per_ton_km }}</p>
+            <p>Показатель доступен для рейсов с весом груза.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Платные участки</h2>
+            <p class="stat-value">{{ analytics.company.toll_routes_count }}</p>
+            <p>Маршруты, где отмечены платные участки.</p>
+        </div>
     </div>
 
     <div class="placeholder-grid">

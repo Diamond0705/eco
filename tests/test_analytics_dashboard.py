@@ -120,6 +120,13 @@ def test_manager_analytics_scopes_to_current_manager(
         create_trip(manager, transport, locations, "Свой доставленный груз"),
         manager,
     )
+    own_route = own_trip.route_option
+    own_route.calculation_details_json = {
+        "co2_kg_per_km": "0.500",
+        "co2_kg_per_ton_km": "0.1000",
+    }
+    own_route.route_facts_json = {"has_tolls": True, "toll_cost_rub": "0.00"}
+    own_route.save(update_fields=["calculation_details_json", "route_facts_json"])
     create_trip(manager, transport, locations, "Свой плановый груз")
     deliver_trip(
         create_trip(other_manager, transport, locations, "Чужой доставленный груз"),
@@ -136,8 +143,14 @@ def test_manager_analytics_scopes_to_current_manager(
     assert analytics["trips"]["delivered"] == 1
     assert analytics["delivered"]["trips_count"] == 1
     assert analytics["delivered"]["co2_kg"] == own_trip.route_option.co2_kg
+    assert analytics["delivered"]["average_co2_kg_per_km"] == "0.500"
+    assert analytics["delivered"]["average_co2_kg_per_ton_km"] == "0.1000"
+    assert analytics["delivered"]["toll_routes_count"] == 1
     assert "Свой доставленный груз" in content
     assert "Чужой доставленный груз" not in content
+    assert "CO2 на км" in content
+    assert "CO2 на тонно-км" in content
+    assert "Платные участки" in content
 
 
 @pytest.mark.django_db
@@ -149,6 +162,8 @@ def test_manager_analytics_empty_state(client, manager):
 
     assert response.status_code == 200
     assert "Доставленных рейсов за выбранный период пока нет." in content
+    assert response.context["analytics"]["delivered"]["average_co2_kg_per_km"] == "—"
+    assert response.context["analytics"]["delivered"]["average_co2_kg_per_ton_km"] == "—"
 
 
 @pytest.mark.django_db
@@ -166,11 +181,25 @@ def test_manager_analytics_access_rules(client, manager, admin_user):
 def test_admin_dashboard_contains_company_wide_data(
     client, admin_user, manager, other_manager, transport, locations
 ):
-    deliver_trip(create_trip(manager, transport, locations, "Груз менеджера"), manager)
-    deliver_trip(
+    first_trip = deliver_trip(create_trip(manager, transport, locations, "Груз менеджера"), manager)
+    second_trip = deliver_trip(
         create_trip(other_manager, transport, locations, "Груз другого менеджера"),
         other_manager,
     )
+    first_route = first_trip.route_option
+    second_route = second_trip.route_option
+    first_route.calculation_details_json = {
+        "co2_kg_per_km": "0.500",
+        "co2_kg_per_ton_km": "0.1000",
+    }
+    first_route.route_facts_json = {"has_tolls": True, "toll_cost_rub": "0.00"}
+    first_route.save(update_fields=["calculation_details_json", "route_facts_json"])
+    second_route.calculation_details_json = {
+        "co2_kg_per_km": "1.000",
+        "co2_kg_per_ton_km": "0.2000",
+    }
+    second_route.route_facts_json = {}
+    second_route.save(update_fields=["calculation_details_json", "route_facts_json"])
     client.force_login(admin_user)
 
     response = client.get(reverse("dashboard:admin_dashboard"))
@@ -181,8 +210,14 @@ def test_admin_dashboard_contains_company_wide_data(
     assert analytics["users"]["managers"] == 2
     assert analytics["trips"]["delivered"] == 2
     assert analytics["company"]["trips_count"] == 2
+    assert analytics["company"]["average_co2_kg_per_km"] == "0.750"
+    assert analytics["company"]["average_co2_kg_per_ton_km"] == "0.1500"
+    assert analytics["company"]["toll_routes_count"] == 1
     assert "Груз менеджера" in content
     assert "Груз другого менеджера" in content
+    assert "Суммарные выбросы" in content
+    assert "Средний эко-рейтинг" in content
+    assert "Платные участки" in content
 
 
 @pytest.mark.django_db

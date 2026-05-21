@@ -5,6 +5,17 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
+from apps.routing.services.route_snapshot_metrics import (
+    TOLL_WITHOUT_COST_NOTICE,
+    average_speed_kmh,
+    calculation_model_version,
+    co2_kg_per_km,
+    co2_kg_per_ton_km,
+    display_decimal,
+    final_fuel_multiplier,
+    has_unpriced_tolls,
+)
+
 from .pdf_fonts import register_pdf_font
 from .pdf_layout import (
     LEFT,
@@ -62,7 +73,7 @@ class WaybillPdfService:
                     ("Тип груза", order.cargo_type),
                     ("Вес груза, кг", order.cargo_weight_kg),
                     ("Транспорт", f"{transport.plate_number}, {transport.model}"),
-                    ("Экостандарт", standard.name),
+                    ("Евро-класс", standard.name),
                 ],
             ),
             (
@@ -85,10 +96,37 @@ class WaybillPdfService:
                     ("Эко-рейтинг", route.eco_rating),
                 ],
             ),
+            (
+                "Краткий расчет",
+                [
+                    ("Модель расчета", calculation_model_version(route)),
+                    (
+                        "Итоговый множитель расхода",
+                        display_decimal(final_fuel_multiplier(route), "0.01"),
+                    ),
+                    ("Средняя скорость, км/ч", display_decimal(average_speed_kmh(route), "0.01")),
+                    ("Эко-рейтинг", route.eco_rating),
+                    ("CO2, кг/км", display_decimal(co2_kg_per_km(route), "0.001")),
+                    ("CO2, кг/тонно-км", display_decimal(co2_kg_per_ton_km(route), "0.0001")),
+                ],
+            ),
         ]
 
+        if has_unpriced_tolls(route):
+            sections.append(
+                ("Особенности маршрута", [("Платные участки", TOLL_WITHOUT_COST_NOTICE)])
+            )
+
         for section_title, rows in sections:
-            y = ensure_space(pdf, y, width, height, font_name, document_title, 22 * mm)
+            y = ensure_space(
+                pdf,
+                y,
+                width,
+                height,
+                font_name,
+                document_title,
+                self._section_height(rows),
+            )
             y = draw_section_title(pdf, section_title, LEFT, y, font_name)
             y = draw_key_value_table(pdf, LEFT, y, width - 30 * mm, rows, font_name)
 
@@ -101,3 +139,6 @@ class WaybillPdfService:
         if not value:
             return "-"
         return timezone.localtime(value).strftime("%d.%m.%Y %H:%M")
+
+    def _section_height(self, rows):
+        return (len(rows) * 7 + 11) * mm

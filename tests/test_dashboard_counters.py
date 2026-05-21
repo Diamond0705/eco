@@ -98,7 +98,12 @@ def test_admin_dashboard_shows_real_counters(client, admin_user, manager, transp
     assert analytics["trips"]["total"] == 1
     assert analytics["trips"]["delivered"] == 1
     assert analytics["company"]["trips_count"] == 1
+    assert "average_co2_kg_per_km" in analytics["company"]
+    assert "average_co2_kg_per_ton_km" in analytics["company"]
+    assert "toll_routes_count" in analytics["company"]
     assert "Панель администратора" in content
+    assert "Суммарные выбросы" in content
+    assert "CO2 на км" in content
 
 
 @pytest.mark.django_db

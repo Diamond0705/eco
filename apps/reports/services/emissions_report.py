@@ -7,6 +7,13 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
+from apps.routing.services.route_snapshot_metrics import (
+    average_decimal,
+    co2_kg_per_km,
+    co2_kg_per_ton_km,
+    display_decimal,
+    has_tolls,
+)
 from apps.trips.models import Trip
 
 from .pdf_fonts import register_pdf_font
@@ -53,7 +60,12 @@ class EmissionsReportService:
         filters = filters or ReportFilters()
         trips = (
             Trip.objects.filter(order__manager=manager, status=Trip.Status.DELIVERED)
-            .select_related("order", "order__transport", "route_option")
+            .select_related(
+                "order",
+                "order__transport",
+                "order__transport__eco_standard",
+                "route_option",
+            )
             .order_by("-actual_finish_at", "-created_at")
         )
         if filters.date_from:
@@ -71,6 +83,26 @@ class EmissionsReportService:
             "nox_g": sum((row["nox_g"] for row in rows), Decimal("0.00")),
             "pm_g": sum((row["pm_g"] for row in rows), Decimal("0.000")),
         }
+        summary.update(
+            {
+                "average_co2_kg_per_km": display_decimal(
+                    average_decimal((row["co2_kg_per_km"] for row in rows), "0.001"),
+                    "0.001",
+                ),
+                "average_co2_kg_per_ton_km": display_decimal(
+                    average_decimal(
+                        (row["co2_kg_per_ton_km"] for row in rows),
+                        "0.0001",
+                    ),
+                    "0.0001",
+                ),
+                "average_eco_rating": display_decimal(
+                    average_decimal((row["eco_rating"] for row in rows), "0.01"),
+                    "0.01",
+                ),
+                "toll_routes_count": sum(1 for row in rows if row["has_tolls"]),
+            }
+        )
         return {"filters": filters, "summary": summary, "rows": rows}
 
     def _row_for_trip(self, trip):
@@ -80,6 +112,7 @@ class EmissionsReportService:
             "finish_date": trip.actual_finish_at,
             "cargo": trip.order.cargo_name,
             "transport": trip.order.transport,
+            "euro_class": trip.order.transport.eco_standard.name,
             "route_name": route.name,
             "distance_km": route.distance_km,
             "fuel_liters": route.fuel_liters,
@@ -88,6 +121,9 @@ class EmissionsReportService:
             "nox_g": route.nox_g,
             "pm_g": route.pm_g,
             "eco_rating": route.eco_rating,
+            "co2_kg_per_km": co2_kg_per_km(route),
+            "co2_kg_per_ton_km": co2_kg_per_ton_km(route),
+            "has_tolls": has_tolls(route),
         }
 
 
@@ -136,18 +172,25 @@ class EmissionsReportPdfService:
                 ("CO2, кг", summary["co2_kg"]),
                 ("NOx, г", summary["nox_g"]),
                 ("PM, г", summary["pm_g"]),
+                ("Средний CO2 на км", summary["average_co2_kg_per_km"]),
+                ("Средний CO2 на тонно-км", summary["average_co2_kg_per_ton_km"]),
+                ("Средний эко-рейтинг", summary["average_eco_rating"]),
+                ("Маршруты с платными участками", summary["toll_routes_count"]),
             ],
             font_name,
-            label_width=35 * mm,
+            label_width=70 * mm,
         )
 
-        y = ensure_space(pdf, y, width, height, font_name, title, 30 * mm)
+        draw_footer(pdf, width, font_name)
+        pdf.showPage()
+        y = draw_header(pdf, width, height, font_name, title)
         y = draw_section_title(pdf, "Таблица рейсов", LEFT, y, font_name)
         headers = [
             "Рейс",
             "Дата",
             "Груз",
             "Транспорт",
+            "Евро",
             "Маршрут",
             "км",
             "л",
@@ -155,7 +198,7 @@ class EmissionsReportPdfService:
             "CO2",
             "Рейтинг",
         ]
-        column_widths = [13, 24, 34, 38, 30, 18, 18, 24, 20, 20]
+        column_widths = [13, 24, 32, 45, 24, 28, 18, 18, 24, 20, 20]
         widths = [value * mm for value in column_widths]
         table_rows = [self._pdf_row(row) for row in report["rows"]]
 
@@ -187,6 +230,7 @@ class EmissionsReportPdfService:
             timezone.localtime(row["finish_date"]).strftime("%d.%m.%Y"),
             str(row["cargo"])[:20],
             str(row["transport"])[:22],
+            str(row["euro_class"])[:8],
             str(row["route_name"])[:16],
             row["distance_km"],
             row["fuel_liters"],

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Phase 14 - Reports Explainability
+
+- Added compact route calculation summaries to waybill PDFs from saved `RouteOption` snapshots.
+- Added emissions intensity, average eco-rating and toll-route indicators to reports and analytics.
+- Added vehicle Euro class to waybill and emissions report outputs.
+- Kept formulas, providers, dependencies, migrations and old route snapshots unchanged.
+
 ## Phase 13 - Calculation Model v2.1
 
 - Added route distance scope with `MAX_ROUTE_DISTANCE_KM=2000` for new calculations.

@@ -1,12 +1,15 @@
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from reportlab.lib.units import mm
 
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.reports.services.waybill_pdf import WaybillPdfService
 from apps.routing.services.route_calculation_service import RouteCalculationService
 from apps.trips.services import TripLifecycleService
 
@@ -154,3 +157,114 @@ def test_waybill_admin_and_superuser_get_403(
     for user in (admin_user, superuser):
         client.force_login(user)
         assert client.get(reverse("trips:waybill", kwargs={"pk": trip.pk})).status_code == 403
+
+
+@pytest.mark.django_db
+def test_waybill_pdf_includes_calculation_summary_and_euro_class(
+    manager, transport, locations
+):
+    trip = create_trip(manager, transport, locations)
+    route = trip.route_option
+    route.calculation_model_version = "v2.1"
+    route.calculation_details_json = {
+        "calculation_model_version": "v2.1",
+        "final_fuel_multiplier": "1.15",
+        "average_speed_kmh": "41.17",
+        "co2_kg_per_km": "0.987",
+        "co2_kg_per_ton_km": "0.1234",
+    }
+    route.save(update_fields=["calculation_model_version", "calculation_details_json"])
+    captured_rows = []
+
+    def capture_table(pdf, x, y, width, rows, font_name, label_width=55):
+        captured_rows.extend(rows)
+        return y - 1
+
+    with patch("apps.reports.services.waybill_pdf.draw_key_value_table", capture_table):
+        pdf_bytes = WaybillPdfService().build(trip)
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert ("Евро-класс", "Euro VI") in captured_rows
+    assert ("Модель расчета", "v2.1") in captured_rows
+    assert ("Итоговый множитель расхода", "1.15") in captured_rows
+    assert ("Средняя скорость, км/ч", "41.17") in captured_rows
+    assert ("CO2, кг/км", "0.987") in captured_rows
+    assert ("CO2, кг/тонно-км", "0.1234") in captured_rows
+
+
+@pytest.mark.django_db
+def test_waybill_pdf_handles_old_snapshot_without_calculation_details(
+    manager, transport, locations
+):
+    trip = create_trip(manager, transport, locations)
+    route = trip.route_option
+    route.calculation_model_version = "v1"
+    route.calculation_details_json = {}
+    route.route_facts_json = {}
+    route.save(
+        update_fields=[
+            "calculation_model_version",
+            "calculation_details_json",
+            "route_facts_json",
+        ]
+    )
+    captured_rows = []
+
+    def capture_table(pdf, x, y, width, rows, font_name, label_width=55):
+        captured_rows.extend(rows)
+        return y - 1
+
+    with patch("apps.reports.services.waybill_pdf.draw_key_value_table", capture_table):
+        pdf_bytes = WaybillPdfService().build(trip)
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert ("Модель расчета", "v1") in captured_rows
+    assert ("Итоговый множитель расхода", "—") in captured_rows
+    assert ("Средняя скорость, км/ч", "—") in captured_rows
+    assert ("CO2, кг/км", "—") in captured_rows
+    assert ("CO2, кг/тонно-км", "—") in captured_rows
+
+
+@pytest.mark.django_db
+def test_waybill_pdf_shows_toll_notice_once(manager, transport, locations):
+    trip = create_trip(manager, transport, locations)
+    route = trip.route_option
+    duplicate_warning = (
+        "Маршрут содержит платные участки, но стоимость проезда не рассчитана провайдером "
+        "и не включена в итоговую стоимость перевозки."
+    )
+    route.route_facts_json = {
+        "has_tolls": True,
+        "toll_cost_rub": "0.00",
+        "warnings": [duplicate_warning],
+    }
+    route.calculation_details_json = {"warnings": [duplicate_warning]}
+    route.save(update_fields=["route_facts_json", "calculation_details_json"])
+    captured_rows = []
+
+    def capture_table(pdf, x, y, width, rows, font_name, label_width=55):
+        captured_rows.extend(rows)
+        return y - 1
+
+    with patch("apps.reports.services.waybill_pdf.draw_key_value_table", capture_table):
+        WaybillPdfService().build(trip)
+
+    assert (
+        "Платные участки",
+        "Маршрут содержит платные участки. Стоимость проезда не включена в расчет.",
+    ) in captured_rows
+    assert (
+        captured_rows.count(
+            (
+                "Платные участки",
+                "Маршрут содержит платные участки. Стоимость проезда не включена в расчет.",
+            )
+        )
+        == 1
+    )
+
+
+def test_waybill_pdf_reserves_space_for_all_rows_in_section():
+    service = WaybillPdfService()
+
+    assert service._section_height([("Показатель", "Значение")] * 6) == 53 * mm

@@ -7,6 +7,13 @@ from django.utils import timezone
 
 from apps.fleet.models import Transport
 from apps.orders.models import ShipmentOrder
+from apps.routing.services.route_snapshot_metrics import (
+    average_decimal,
+    co2_kg_per_km,
+    co2_kg_per_ton_km,
+    display_decimal,
+    has_tolls,
+)
 from apps.trips.models import Trip
 
 
@@ -99,12 +106,29 @@ class ManagerAnalyticsService:
             "nox_g": sum((trip.route_option.nox_g for trip in trips), Decimal("0.00")),
             "pm_g": sum((trip.route_option.pm_g for trip in trips), Decimal("0.000")),
             "average_eco_rating": Decimal("0.00"),
+            "average_co2_kg_per_km": "—",
+            "average_co2_kg_per_ton_km": "—",
+            "toll_routes_count": sum(1 for trip in trips if has_tolls(trip.route_option)),
         }
         if trips:
             summary["average_eco_rating"] = (
                 sum((trip.route_option.eco_rating for trip in trips), Decimal("0.00"))
                 / Decimal(len(trips))
             ).quantize(Decimal("0.01"))
+            summary["average_co2_kg_per_km"] = display_decimal(
+                average_decimal(
+                    (co2_kg_per_km(trip.route_option) for trip in trips),
+                    "0.001",
+                ),
+                "0.001",
+            )
+            summary["average_co2_kg_per_ton_km"] = display_decimal(
+                average_decimal(
+                    (co2_kg_per_ton_km(trip.route_option) for trip in trips),
+                    "0.0001",
+                ),
+                "0.0001",
+            )
         return summary
 
 

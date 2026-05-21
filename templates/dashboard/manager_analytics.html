@@ -75,6 +75,21 @@
             <p class="stat-value">{{ analytics.delivered.average_eco_rating }}</p>
             <p>Среднее значение по доставленным рейсам.</p>
         </div>
+        <div class="placeholder-card">
+            <h2>CO2 на км</h2>
+            <p class="stat-value">{{ analytics.delivered.average_co2_kg_per_km }}</p>
+            <p>Среднее по сохраненным расчетным деталям.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>CO2 на тонно-км</h2>
+            <p class="stat-value">{{ analytics.delivered.average_co2_kg_per_ton_km }}</p>
+            <p>Показатель доступен для рейсов с весом груза.</p>
+        </div>
+        <div class="placeholder-card">
+            <h2>Платные участки</h2>
+            <p class="stat-value">{{ analytics.delivered.toll_routes_count }}</p>
+            <p>Маршруты, где отмечены платные участки.</p>
+        </div>
     </div>
 
     <h2>Последние доставленные рейсы</h2>

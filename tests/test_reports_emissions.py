@@ -1,13 +1,16 @@
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from reportlab.lib.units import mm
 
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.reports.services.emissions_report import EmissionsReportPdfService, EmissionsReportService
 from apps.routing.services.route_calculation_service import RouteCalculationService
 from apps.trips.services import TripLifecycleService
 
@@ -175,6 +178,124 @@ def test_emissions_pdf_returns_pdf(client, manager, transport, locations):
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
     assert response.content.startswith(b"%PDF")
+
+
+@pytest.mark.django_db
+def test_emissions_report_aggregates_snapshot_intensity_metrics(
+    client, manager, transport, locations
+):
+    first_trip = deliver_trip(create_trip(manager, transport, locations, "Первый груз"), manager)
+    second_trip = deliver_trip(create_trip(manager, transport, locations, "Второй груз"), manager)
+    first_route = first_trip.route_option
+    second_route = second_trip.route_option
+    first_route.co2_kg = Decimal("100.00")
+    first_route.nox_g = Decimal("10.00")
+    first_route.pm_g = Decimal("1.000")
+    first_route.eco_rating = Decimal("80.00")
+    first_route.calculation_details_json = {
+        "co2_kg_per_km": "0.500",
+        "co2_kg_per_ton_km": "0.1000",
+    }
+    first_route.route_facts_json = {"has_tolls": True, "toll_cost_rub": "0.00"}
+    first_route.save(
+        update_fields=[
+            "co2_kg",
+            "nox_g",
+            "pm_g",
+            "eco_rating",
+            "calculation_details_json",
+            "route_facts_json",
+        ]
+    )
+    second_route.co2_kg = Decimal("50.00")
+    second_route.nox_g = Decimal("5.00")
+    second_route.pm_g = Decimal("0.500")
+    second_route.eco_rating = Decimal("60.00")
+    second_route.calculation_details_json = {"co2_kg_per_km": "1.000"}
+    second_route.route_facts_json = {}
+    second_route.save(
+        update_fields=[
+            "co2_kg",
+            "nox_g",
+            "pm_g",
+            "eco_rating",
+            "calculation_details_json",
+            "route_facts_json",
+        ]
+    )
+    client.force_login(manager)
+
+    response = client.get(reverse("reports:emissions"))
+    summary = response.context["report"]["summary"]
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert summary["co2_kg"] == Decimal("150.00")
+    assert summary["nox_g"] == Decimal("15.00")
+    assert summary["pm_g"] == Decimal("1.500")
+    assert summary["average_co2_kg_per_km"] == "0.750"
+    assert summary["average_co2_kg_per_ton_km"] == "0.1000"
+    assert summary["average_eco_rating"] == "70.00"
+    assert summary["toll_routes_count"] == 1
+    assert "CO2 на км" in content
+    assert "CO2 на тонно-км" in content
+    assert "Платные участки" in content
+    assert "Euro VI" in content
+
+
+@pytest.mark.django_db
+def test_emissions_report_pdf_includes_new_summary_and_euro_class(
+    manager, transport, locations
+):
+    deliver_trip(create_trip(manager, transport, locations, "PDF показатели"), manager)
+    report = EmissionsReportService().build(manager)
+    captured_summary_rows = []
+    captured_table_headers = []
+    captured_table_rows = []
+    captured_label_widths = []
+    header_calls = []
+
+    def capture_key_value_table(pdf, x, y, width, rows, font_name, label_width=35):
+        captured_summary_rows.extend(rows)
+        captured_label_widths.append(label_width)
+        return y - 1
+
+    def capture_simple_table(pdf, x, y, widths, headers, rows, font_name, row_height=7):
+        captured_table_headers.extend(headers)
+        captured_table_rows.extend(rows)
+        return y - 1
+
+    def capture_header(pdf, width, height, font_name, title):
+        header_calls.append(title)
+        return height - 30 * mm
+
+    with (
+        patch("apps.reports.services.emissions_report.draw_header", capture_header),
+        patch(
+            "apps.reports.services.emissions_report.draw_key_value_table",
+            capture_key_value_table,
+        ),
+        patch("apps.reports.services.emissions_report.draw_simple_table", capture_simple_table),
+    ):
+        pdf_bytes = EmissionsReportPdfService().build(manager, report)
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert (
+        "Средний CO2 на км",
+        report["summary"]["average_co2_kg_per_km"],
+    ) in captured_summary_rows
+    assert (
+        "Средний CO2 на тонно-км",
+        report["summary"]["average_co2_kg_per_ton_km"],
+    ) in captured_summary_rows
+    assert (
+        "Маршруты с платными участками",
+        report["summary"]["toll_routes_count"],
+    ) in captured_summary_rows
+    assert 70 * mm in captured_label_widths
+    assert header_calls == ["Отчет по выбросам", "Отчет по выбросам"]
+    assert "Евро" in captured_table_headers
+    assert any("Euro VI" in str(row) for table_row in captured_table_rows for row in table_row)
 
 
 @pytest.mark.django_db

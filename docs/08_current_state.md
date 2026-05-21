@@ -54,6 +54,10 @@ planning notes for earlier phases, so they may describe target behavior or old p
   educational comparative eco-rating while keeping absolute CO2/NOx/PM snapshot values unchanged.
 - Route comparison shows compact Russian calculation details, deduplicated warnings and one
   deterministic best eco route badge.
+- Phase 14 extends waybill PDFs, emissions reports and analytics with compact explainability
+  metrics from saved `RouteOption` snapshots and `calculation_details_json`.
+- Reports now show average CO2 intensity, average eco-rating, toll-route counts and vehicle Euro
+  class where relevant, without recalculating old route options.
 - Existing saved `RouteOption` rows remain historical snapshots and are not recalculated
   automatically.
 
