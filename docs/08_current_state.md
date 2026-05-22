@@ -36,6 +36,19 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Routing providers, calculation formulas, REST/JWT/MinIO/Celery/PostGIS implementation scope and
   migrations remain unchanged.
 
+## Phase 17
+
+- Added a private document archive for generated PDF and Excel files.
+- Archive files are saved through Django storage: local media by default, optional private
+  MinIO/S3-compatible storage when `USE_S3_STORAGE=True`.
+- Managers see only their own archived documents; admins and superusers see the company archive.
+- Archived documents are downloaded only through authorized Django views, not through public
+  MinIO/S3 URLs.
+- Existing direct PDF/XLSX downloads remain available and do not automatically create archive
+  records.
+- User avatars, company logo upload, REST API, JWT, Celery/Redis, PostGIS, production deployment,
+  routing providers and calculation formulas remain out of this phase.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -47,6 +60,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Trip lifecycle: planned, in progress, delivered.
 - PDF waybill and emissions PDF through ReportLab.
 - Excel exports for emissions reports, company analytics and trip lists.
+- Private archive for generated PDF/XLSX documents.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -100,8 +114,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Mock routes remain the default for local demos.
 - GraphHopper is optional and requires an API key.
 - Traffic, roadworks, truck restrictions and GPS tracking are out of scope.
-- Excel export is implemented synchronously for practical reports; background exports and object
-  storage remain out of scope.
+- Excel export is implemented synchronously for practical reports; generated files can now be
+  saved manually to the private document archive, while background exports remain out of scope.
 - Production deployment is not implemented.
 - Environmental calculations are intentionally simplified for educational use.
 

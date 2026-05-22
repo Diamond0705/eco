@@ -33,6 +33,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - Leaflet
 - ReportLab
 - openpyxl for synchronous `.xlsx` exports
+- django-storages with S3 support for the optional private document archive
 - pytest + pytest-django
 - ruff
 
@@ -49,6 +50,19 @@ python manage.py migrate
 python manage.py seed_demo
 python manage.py runserver
 ```
+
+Optional local MinIO for the private document archive:
+
+```powershell
+docker compose up -d minio
+```
+
+Open `http://localhost:9001`, log in with `AWS_ACCESS_KEY_ID` /
+`AWS_SECRET_ACCESS_KEY` from `.env`, and create the private bucket
+`ecologist-documents`. Keep `USE_S3_STORAGE=False` for plain local file storage,
+or set it to `True` to store archived documents in MinIO. Archived PDF/XLSX files
+are still downloaded through authorized Django views and are not exposed as public
+MinIO URLs.
 
 Routing provider settings:
 
@@ -107,6 +121,7 @@ The `seed_demo` command creates:
   5 routes and may try best-effort strategy requests.
 - The best eco route is determined after calculation from stored route facts and settings.
 - Excel exports are generated synchronously from saved route snapshots and are not stored.
+- Generated PDF/XLSX files can optionally be saved to the private document archive.
 - No real traffic, roadworks, truck restrictions or GPS tracking.
 - No production deployment setup.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
@@ -132,4 +147,4 @@ phase boundaries.
 
 ## MVP Boundaries
 
-Do not add FastAPI, React, Celery, Redis, MinIO, S3, PostGIS, Nginx, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. Excel export is limited to the approved Phase 16 synchronous `.xlsx` downloads.
+Do not add FastAPI, React, Celery, Redis, PostGIS, Nginx, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. MinIO/S3-compatible storage is limited to the approved Phase 17 private document archive. Excel export is limited to the approved synchronous `.xlsx` downloads.

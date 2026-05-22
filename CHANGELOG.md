@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Phase 17 - Private Document Archive
+
+- Added private archive records for generated PDF/XLSX documents with authorized Django downloads.
+- Added local-by-default document storage with optional MinIO/S3-compatible backend through `django-storages[s3]`.
+- Added archive save actions for emissions PDF/XLSX, trip list XLSX, trip waybill PDF and admin analytics XLSX.
+- Kept direct PDF/XLSX downloads, routing providers, calculation formulas, REST/JWT/Celery/Redis/PostGIS scope and static files unchanged.
+
 ## Phase 16 - Excel Export And Technical Roadmap
 
 - Added synchronous `.xlsx` exports for manager emissions reports, admin company analytics and manager trip lists.

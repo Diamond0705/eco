@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Архив документов - EcoLogist{% endblock %}
+
+{% block content %}
+<section class="page-panel-wide">
+    <div class="page-heading">
+        <div>
+            <h1>Архив документов</h1>
+        </div>
+        <div class="form-actions">
+            <a class="button-secondary" href="{% url 'reports:emissions' %}">К отчетам</a>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Название</th>
+                    <th>Тип</th>
+                    <th>Владелец</th>
+                    <th>Формат</th>
+                    <th>Размер</th>
+                    <th>Период</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in documents %}
+                    <tr>
+                        <td>{{ document.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ document.title }}</td>
+                        <td>{{ document.get_document_type_display }}</td>
+                        <td>{{ document.owner|default:"Компания" }}</td>
+                        <td>{{ document.file_format|upper }}</td>
+                        <td>{{ document.file_size_bytes }} байт</td>
+                        <td>
+                            {% if document.date_from or document.date_to %}
+                                {{ document.date_from|date:"d.m.Y"|default:"..." }} - {{ document.date_to|date:"d.m.Y"|default:"..." }}
+                            {% else %}
+                                Весь период
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="button-primary table-action-button" href="{% url 'reports:archive_download' document.pk %}">
+                                Скачать
+                            </a>
+                            <form
+                                method="post"
+                                action="{% url 'reports:archive_delete' document.pk %}"
+                                class="inline-form"
+                                onsubmit="return confirm('Удалить документ из архива?')"
+                            >
+                                {% csrf_token %}
+                                <button type="submit" class="button-secondary">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8">В архиве пока нет документов.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

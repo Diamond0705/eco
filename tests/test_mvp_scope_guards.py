@@ -19,12 +19,15 @@ def test_only_approved_dependencies_are_used():
         "django-environ",
         "reportlab",
         "openpyxl>=3.1,<4",
+        "django-storages[s3]>=1.14,<2",
         "pytest",
         "pytest-django",
         "ruff",
     }
     # openpyxl is the only approved Phase 16 reporting dependency: it writes .xlsx exports
     # without bringing in heavier analytics stacks.
+    # django-storages[s3] is the only approved Phase 17 storage dependency: it connects
+    # the private document archive to MinIO/S3-compatible storage.
     assert "pandas" not in requirements
     assert "numpy" not in requirements
 
@@ -45,7 +48,6 @@ def test_graphhopper_added_without_forbidden_external_http_dependencies():
     assert "celery" not in combined_source.lower()
     assert "rest_framework" not in combined_source
     assert "jwt" not in combined_source.lower()
-    assert "minio" not in combined_source.lower()
     assert "postgis" not in combined_source.lower()
     assert "redis" not in combined_source.lower()
 

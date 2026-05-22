@@ -10,6 +10,11 @@ urlpatterns = [
     path("analytics/", views.manager_analytics, name="manager_analytics"),
     path("admin-panel/dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("admin-panel/dashboard/xlsx/", views.admin_dashboard_xlsx, name="admin_dashboard_xlsx"),
+    path(
+        "admin-panel/dashboard/xlsx/archive/",
+        views.admin_dashboard_xlsx_archive,
+        name="admin_dashboard_xlsx_archive",
+    ),
     path("admin-panel/users/", views.admin_users, name="admin_users"),
     path("admin-panel/users/<int:pk>/edit/", views.admin_user_edit, name="admin_user_edit"),
     path("admin-panel/transports/", views.admin_transports, name="admin_transports"),

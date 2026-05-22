@@ -17,6 +17,7 @@
                 {% if user.is_authenticated %}
                     <a href="{% url 'dashboard:dashboard' %}">Панель</a>
                     {% if user.role == "admin" or user.is_superuser %}
+                        <a href="{% url 'reports:archive' %}">Архив</a>
                         <a href="{% url 'dashboard:admin_users' %}">Пользователи</a>
                         <a href="{% url 'dashboard:admin_transports' %}">Транспорт</a>
                         <a href="{% url 'dashboard:admin_locations' %}">Локации</a>
@@ -28,6 +29,7 @@
                         <a href="{% url 'trips:list' %}">Рейсы</a>
                         <a href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
                         <a href="{% url 'reports:emissions' %}">Отчеты</a>
+                        <a href="{% url 'reports:archive' %}">Архив</a>
                     {% endif %}
                     <a href="{% url 'accounts:profile' %}">Профиль</a>
                     <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">

@@ -13,6 +13,10 @@
             <a class="button-secondary" href="{% url 'orders:detail' trip.order.pk %}">К заявке</a>
             <a class="button-secondary" href="{% url 'trips:list' %}">К рейсам</a>
             <a class="button-secondary" href="{% url 'trips:waybill' trip.pk %}">Скачать путевой лист</a>
+            <form method="post" action="{% url 'trips:waybill_archive' trip.pk %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="button-secondary">Сохранить в архив</button>
+            </form>
         </div>
     </div>
 

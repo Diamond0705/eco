@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "storages",
     "apps.accounts.apps.AccountsConfig",
     "apps.fleet.apps.FleetConfig",
     "apps.locations.apps.LocationsConfig",
@@ -135,6 +136,19 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+USE_S3_STORAGE = env.bool("USE_S3_STORAGE", default=False)
+DOCUMENT_ARCHIVE_ENABLED = env.bool("DOCUMENT_ARCHIVE_ENABLED", default=True)
+DOCUMENT_ARCHIVE_LOCATION = env("DOCUMENT_ARCHIVE_LOCATION", default="document_archive")
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="ecologist")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="ecologist-password")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="ecologist-documents")
+AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="http://localhost:9000")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="us-east-1")
+AWS_S3_ADDRESSING_STYLE = env("AWS_S3_ADDRESSING_STYLE", default="path")
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_FILE_OVERWRITE = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
