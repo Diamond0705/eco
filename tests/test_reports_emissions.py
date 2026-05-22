@@ -334,6 +334,7 @@ def test_no_new_dependencies_added_for_reports():
         "openpyxl>=3.1,<4",
         "django-storages[s3]>=1.14,<2",
         "waitress>=3,<4",
+        "djangorestframework>=3.15,<4",
         "pytest",
         "pytest-django",
         "ruff",
@@ -341,3 +342,7 @@ def test_no_new_dependencies_added_for_reports():
     assert "pandas" not in requirements
     assert "numpy" not in requirements
     assert "gunicorn" not in requirements
+    assert "django-cors-headers" not in requirements
+    assert "drf-spectacular" not in requirements
+    assert "drf-yasg" not in requirements
+    assert "djangorestframework-simplejwt" not in requirements

@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Phase 19 - Read-Only REST API
+
+- Added a session-authenticated read-only Django REST Framework API under `/api/v1/`.
+- Added locations, transports, orders, order detail, trips and analytics summary endpoints.
+- Kept API responses limited to safe snapshot data; raw provider payloads, storage paths and full
+  calculation details are not exposed.
+- Kept existing HTML views, business workflows, routing providers, calculation formulas, JWT,
+  CORS, Swagger/OpenAPI UI, Celery/Redis/PostGIS and migrations unchanged.
+
 ## Phase 18 - Security, Waitress And Nginx Deploy Prep
 
 - Added deployment-oriented security settings for secure cookies, HSTS, proxy SSL headers,

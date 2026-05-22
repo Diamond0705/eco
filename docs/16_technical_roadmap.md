@@ -41,11 +41,15 @@ production-grade improvements that should be implemented later as separate phase
 - Why useful: an API would support integrations, mobile clients and future external dashboards.
 - What it gives EcoLogist: stable machine-readable endpoints for orders, trips, route snapshots
   and reports.
+- Phase 19 status: a read-only session-authenticated API is available under `/api/v1/` for
+  locations, transports, orders, trips and analytics summary. It does not include write endpoints,
+  JWT, CORS or Swagger/OpenAPI UI.
 - Why not Phase 16: the current product is a Django template monolith and this phase explicitly
   avoids introducing REST API or JWT scope.
 - Risks/complexity: permission design, serializers, pagination, versioning, throttling and
   compatibility with existing role-based workflows.
-- Suggested future phase: Phase 19.
+- Suggested future phase: Phase 19 for read-only API; later phase for JWT, CORS, versioning,
+  pagination and write endpoints if product scope requires them.
 
 ## Celery And Redis For Background Reports
 

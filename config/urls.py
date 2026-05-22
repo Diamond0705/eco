@@ -10,6 +10,7 @@ urlpatterns = [
     path("healthz/", healthz, name="healthz"),
     path("", home, name="home"),
     path("", include("apps.accounts.urls")),
+    path("api/v1/", include("apps.api.urls")),
     path("", include("apps.dashboard.urls")),
     path("", include("apps.orders.urls")),
     path("", include("apps.routing.urls")),

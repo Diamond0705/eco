@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "storages",
     "apps.accounts.apps.AccountsConfig",
     "apps.fleet.apps.FleetConfig",
@@ -98,6 +99,7 @@ INSTALLED_APPS = [
     "apps.reports.apps.ReportsConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.core.apps.CoreConfig",
+    "apps.api.apps.ApiConfig",
 ]
 
 MIDDLEWARE = [
@@ -195,6 +197,18 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "dashboard:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+}
 
 LOGGING = {
     "version": 1,

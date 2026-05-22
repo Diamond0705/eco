@@ -62,6 +62,18 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Gunicorn, REST API, JWT, Celery/Redis, PostGIS, provider changes, formula changes and scheduled
   backups remain out of this phase.
 
+## Phase 19
+
+- Added a read-only Django REST Framework API under `/api/v1/`.
+- API access uses Django session authentication and existing manager/admin data scoping.
+- Managers can read only their own orders, trips and analytics; admins and superusers can read
+  company-level data.
+- API route summaries expose saved `RouteOption` snapshot fields and safe intensity metrics only.
+- Full `calculation_details_json`, raw provider data, geometry, storage paths and detailed personal
+  manager data are not exposed.
+- JWT, CORS, Swagger/OpenAPI UI, write API, migrations, provider changes and formula changes remain
+  out of this phase.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -75,6 +87,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Excel exports for emissions reports, company analytics and trip lists.
 - Private archive for generated PDF/XLSX documents.
 - Production-style deployment preparation with Waitress, Nginx and env-driven security settings.
+- Read-only session-authenticated API for integrations.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -132,6 +145,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
   saved manually to the private document archive, while background exports remain out of scope.
 - Production-style deployment preparation is available, but full managed VPS/cloud operations,
   TLS certificate automation and scheduled backups are not implemented.
+- The REST API is read-only, session-authenticated and does not include JWT, CORS, Swagger/OpenAPI
+  UI or write endpoints.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

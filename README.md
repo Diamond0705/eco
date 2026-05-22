@@ -34,6 +34,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - ReportLab
 - openpyxl for synchronous `.xlsx` exports
 - django-storages with S3 support for the optional private document archive
+- Django REST Framework for the read-only session-authenticated API
 - Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
@@ -185,6 +186,21 @@ The `seed_demo` command creates:
 8. Open emissions reports and analytics.
 9. Download Excel exports for emissions, analytics or trip lists.
 
+## Read-Only API
+
+Phase 19 adds a small JSON API under `/api/v1/` for authenticated integrations:
+
+- `GET /api/v1/locations/`
+- `GET /api/v1/transports/`
+- `GET /api/v1/orders/`
+- `GET /api/v1/orders/<id>/`
+- `GET /api/v1/trips/`
+- `GET /api/v1/analytics/summary/`
+
+The API uses Django session authentication, not JWT or token auth. It is read-only: write methods
+return `405`. CORS and Swagger/OpenAPI UI are intentionally not added in this phase. See
+`docs/19_rest_api.md` for the endpoint and data exposure rules.
+
 ## Current Limitations
 
 - Mock routing returns three deterministic demo routes.
@@ -198,6 +214,8 @@ The `seed_demo` command creates:
 - No real traffic, roadworks, truck restrictions or GPS tracking.
 - Production-style Docker/Nginx deployment preparation is available; full managed hosting,
   TLS automation and scheduled backups are not implemented.
+- The REST API is read-only and session-authenticated; write API, JWT, CORS and Swagger/OpenAPI
+  UI are not implemented.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
@@ -222,3 +240,4 @@ phase boundaries.
 ## MVP Boundaries
 
 Do not add FastAPI, React, Celery, Redis, PostGIS, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. MinIO/S3-compatible storage is limited to the approved Phase 17 private document archive. Nginx and Waitress are limited to the approved Phase 18 deployment path. Excel export is limited to the approved synchronous `.xlsx` downloads.
+Django REST Framework is limited to the approved Phase 19 read-only session-authenticated API; JWT, CORS and Swagger/OpenAPI UI remain out of scope.
