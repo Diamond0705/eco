@@ -32,6 +32,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - Django templates + project CSS / Bootstrap-style layout
 - Leaflet
 - ReportLab
+- openpyxl for synchronous `.xlsx` exports
 - pytest + pytest-django
 - ruff
 
@@ -95,6 +96,7 @@ The `seed_demo` command creates:
 6. Start and deliver the Trip.
 7. Download the waybill PDF.
 8. Open emissions reports and analytics.
+9. Download Excel exports for emissions, analytics or trip lists.
 
 ## Current Limitations
 
@@ -104,8 +106,8 @@ The `seed_demo` command creates:
 - Standard GraphHopper calculation requests up to 3 routes; extended calculation requests up to
   5 routes and may try best-effort strategy requests.
 - The best eco route is determined after calculation from stored route facts and settings.
+- Excel exports are generated synchronously from saved route snapshots and are not stored.
 - No real traffic, roadworks, truck restrictions or GPS tracking.
-- No Excel export.
 - No production deployment setup.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
@@ -130,4 +132,4 @@ phase boundaries.
 
 ## MVP Boundaries
 
-Do not add FastAPI, React, Celery, Redis, MinIO, S3, PostGIS, Nginx, WebSocket, real GPS tracking, Excel export, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed.
+Do not add FastAPI, React, Celery, Redis, MinIO, S3, PostGIS, Nginx, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. Excel export is limited to the approved Phase 16 synchronous `.xlsx` downloads.

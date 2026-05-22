@@ -6,6 +6,7 @@ from apps.core.permissions import manager_required
 from apps.trips.models import Trip
 
 from .services.emissions_report import EmissionsReportPdfService, EmissionsReportService
+from .services.excel_export import TripExcelExportService, build_xlsx_response
 from .services.waybill_pdf import WaybillPdfService
 
 
@@ -61,3 +62,25 @@ def emissions_report_pdf(request):
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="emissions_report.pdf"'
     return response
+
+
+@manager_required
+@require_GET
+def emissions_report_xlsx(request):
+    service = EmissionsReportService()
+    filters = service.parse_filters(request.GET)
+    report = service.build(request.user, filters)
+    xlsx_bytes = TripExcelExportService().build_emissions_report(request.user, report)
+    return build_xlsx_response(xlsx_bytes, "emissions_report.xlsx")
+
+
+@manager_required
+@require_GET
+def trips_xlsx(request):
+    trips = _manager_trips_queryset(request)
+    selected_status = request.GET.get("status", "")
+    valid_statuses = {choice.value for choice in Trip.Status}
+    if selected_status in valid_statuses:
+        trips = trips.filter(status=selected_status)
+    xlsx_bytes = TripExcelExportService().build_trips_export(list(trips.order_by("-created_at")))
+    return build_xlsx_response(xlsx_bytes, "trips_export.xlsx")

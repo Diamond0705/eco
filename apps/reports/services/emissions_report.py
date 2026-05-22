@@ -14,6 +14,7 @@ from apps.routing.services.route_snapshot_metrics import (
     display_decimal,
     has_tolls,
 )
+from apps.trips.display import trip_route_display_name
 from apps.trips.models import Trip
 
 from .pdf_fonts import register_pdf_font
@@ -62,10 +63,12 @@ class EmissionsReportService:
             Trip.objects.filter(order__manager=manager, status=Trip.Status.DELIVERED)
             .select_related(
                 "order",
+                "order__manager",
                 "order__transport",
                 "order__transport__eco_standard",
                 "route_option",
             )
+            .prefetch_related("order__points__location")
             .order_by("-actual_finish_at", "-created_at")
         )
         if filters.date_from:
@@ -113,7 +116,7 @@ class EmissionsReportService:
             "cargo": trip.order.cargo_name,
             "transport": trip.order.transport,
             "euro_class": trip.order.transport.eco_standard.name,
-            "route_name": route.name,
+            "route_name": trip_route_display_name(trip),
             "distance_km": route.distance_km,
             "fuel_liters": route.fuel_liters,
             "cost_rub": route.cost_rub,

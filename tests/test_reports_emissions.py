@@ -141,6 +141,8 @@ def test_emissions_report_page_scopes_to_current_manager_delivered_trips(
     assert "Отчет по выбросам" in content
     assert "Свой доставленный груз" in content
     assert f"№{delivered_trip.pk}" in content
+    assert f"{locations[0].name} — {locations[1].name}" in content
+    assert delivered_trip.route_option.name not in content
     assert planned_trip.order.cargo_name not in content
     assert in_progress_trip.order.cargo_name not in content
     assert "Чужой груз" not in content
@@ -329,7 +331,10 @@ def test_no_new_dependencies_added_for_reports():
         "psycopg[binary]",
         "django-environ",
         "reportlab",
+        "openpyxl>=3.1,<4",
         "pytest",
         "pytest-django",
         "ruff",
     }
+    assert "pandas" not in requirements
+    assert "numpy" not in requirements

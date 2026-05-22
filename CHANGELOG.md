@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Phase 16 - Excel Export And Technical Roadmap
+
+- Added synchronous `.xlsx` exports for manager emissions reports, admin company analytics and manager trip lists.
+- Added `openpyxl` as the only approved Excel export dependency; no pandas or numpy reporting stack was introduced.
+- Added `docs/16_technical_roadmap.md` for production-grade future phases.
+- Kept routing providers, calculation formulas, old `RouteOption` snapshots, REST/JWT/MinIO/Celery/PostGIS scope and migrations unchanged.
+
 ## Phase 15.1 - UI Polish And Safe Demo Cleanup
 
 - Added `clear_operational_data --yes` for local/demo cleanup of obsolete orders, points, route options, trips and trip status events.

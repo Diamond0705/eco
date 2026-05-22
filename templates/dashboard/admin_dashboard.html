@@ -10,7 +10,10 @@
             <h1>Панель администратора</h1>
             <p class="muted">Сводные показатели по пользователям, транспорту, заявкам и рейсам компании</p>
         </div>
-        <a class="button-secondary" href="{% url 'admin:index' %}">Django Admin</a>
+        <div class="form-actions">
+            <a class="button-secondary" href="{% url 'dashboard:admin_dashboard_xlsx' %}">Скачать Excel</a>
+            <a class="button-secondary" href="{% url 'admin:index' %}">Django Admin</a>
+        </div>
     </div>
 
     <div class="placeholder-grid">

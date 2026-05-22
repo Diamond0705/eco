@@ -114,7 +114,7 @@
                         <td>{{ trip.actual_finish_at|date:"d.m.Y H:i" }}</td>
                         <td>{{ trip.order.cargo_name }}</td>
                         <td>{{ trip.order.transport }}</td>
-                        <td>{{ trip.route_option.name }}</td>
+                        <td>{{ trip.display_route_name }}</td>
                         <td>{{ trip.route_option.distance_km }} км</td>
                         <td>{{ trip.route_option.co2_kg }} кг</td>
                         <td>{{ trip.route_option.eco_rating }}</td>

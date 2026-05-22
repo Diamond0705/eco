@@ -9,7 +9,10 @@
             <h1>Рейсы</h1>
             <p class="muted">Список рейсов по утвержденным маршрутам</p>
         </div>
-        <a class="button-secondary" href="{% url 'orders:list' %}">К заявкам</a>
+        <div class="form-actions">
+            <a class="button-secondary" href="{% url 'trips:export_xlsx' %}?status={{ selected_status }}">Экспорт Excel</a>
+            <a class="button-secondary" href="{% url 'orders:list' %}">К заявкам</a>
+        </div>
     </div>
 
     <form method="get" class="filter-form">

@@ -25,6 +25,7 @@ from .pdf_layout import (
     draw_section_title,
     draw_title,
     ensure_space,
+    key_value_table_height,
 )
 
 
@@ -125,7 +126,7 @@ class WaybillPdfService:
                 height,
                 font_name,
                 document_title,
-                self._section_height(rows),
+                self._section_height(rows, pdf, width - 30 * mm, font_name),
             )
             y = draw_section_title(pdf, section_title, LEFT, y, font_name)
             y = draw_key_value_table(pdf, LEFT, y, width - 30 * mm, rows, font_name)
@@ -140,5 +141,7 @@ class WaybillPdfService:
             return "-"
         return timezone.localtime(value).strftime("%d.%m.%Y %H:%M")
 
-    def _section_height(self, rows):
-        return (len(rows) * 7 + 11) * mm
+    def _section_height(self, rows, pdf=None, table_width=None, font_name=None):
+        if pdf is None or table_width is None or font_name is None:
+            return (len(rows) * 7 + 11) * mm
+        return key_value_table_height(pdf, table_width, rows, font_name) + 11 * mm

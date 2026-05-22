@@ -148,6 +148,8 @@ def test_manager_analytics_scopes_to_current_manager(
     assert analytics["delivered"]["toll_routes_count"] == 1
     assert "Свой доставленный груз" in content
     assert "Чужой доставленный груз" not in content
+    assert f"{locations[0].name} — {locations[1].name}" in content
+    assert own_trip.route_option.name not in content
     assert "CO2 на км" in content
     assert "CO2 на тонно-км" in content
     assert "Платные участки" in content

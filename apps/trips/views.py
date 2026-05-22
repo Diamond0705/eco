@@ -6,6 +6,7 @@ from apps.core.permissions import manager_required
 from apps.orders.models import ShipmentOrder
 from apps.routing.models import RouteOption
 
+from .display import attach_route_display_names
 from .forms import TripDeliverForm, TripStartForm, datetime_local_initial
 from .models import Trip
 from .services import TripLifecycleService
@@ -63,7 +64,7 @@ def trip_list(request):
     else:
         selected_status = ""
     trips = list(trips)
-    _attach_route_display_names(trips)
+    attach_route_display_names(trips)
 
     return render(
         request,
@@ -80,7 +81,7 @@ def trip_list(request):
 @require_GET
 def trip_detail(request, pk):
     trip = get_object_or_404(_manager_trips_queryset(request), pk=pk)
-    _attach_route_display_names([trip])
+    attach_route_display_names([trip])
     status_events = trip.status_events.all().order_by("changed_at")
     start_form = None
     deliver_form = None
@@ -122,15 +123,6 @@ def trip_start(request, pk):
 
     messages.success(request, "Рейс начат.")
     return redirect("trips:detail", pk=trip.pk)
-
-
-def _attach_route_display_names(trips):
-    for trip in trips:
-        points = sorted(trip.order.points.all(), key=lambda point: point.sequence)
-        if len(points) >= 2:
-            trip.display_route_name = f"{points[0].location.name} — {points[-1].location.name}"
-        else:
-            trip.display_route_name = trip.route_option.name
 
 
 @manager_required

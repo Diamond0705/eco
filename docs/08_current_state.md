@@ -23,6 +23,19 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Small admin-panel UI labels and helper texts were polished without changing routing
   providers, calculation formulas, dependencies or migrations.
 
+## Phase 16
+
+- Added synchronous Excel `.xlsx` downloads for manager emissions reports, admin company
+  analytics and manager trip lists.
+- Excel exports are generated in memory with `openpyxl` and are not saved to media, database or
+  object storage.
+- Exports use saved `RouteOption` snapshot fields and `calculation_details_json`; old snapshots
+  without intensity metrics show `—` instead of being recalculated.
+- Added `docs/16_technical_roadmap.md` for later production-grade work: MinIO, production deploy,
+  REST API, Celery/Redis, PostGIS/geozones and security hardening.
+- Routing providers, calculation formulas, REST/JWT/MinIO/Celery/PostGIS implementation scope and
+  migrations remain unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -33,6 +46,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Route approval that creates one Trip per order.
 - Trip lifecycle: planned, in progress, delivered.
 - PDF waybill and emissions PDF through ReportLab.
+- Excel exports for emissions reports, company analytics and trip lists.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -86,7 +100,9 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Mock routes remain the default for local demos.
 - GraphHopper is optional and requires an API key.
 - Traffic, roadworks, truck restrictions and GPS tracking are out of scope.
-- Excel export and production deployment are not implemented.
+- Excel export is implemented synchronously for practical reports; background exports and object
+  storage remain out of scope.
+- Production deployment is not implemented.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

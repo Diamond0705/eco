@@ -1,14 +1,19 @@
 from decimal import Decimal
+from io import BytesIO
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
 
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.reports.services.pdf_fonts import register_pdf_font
+from apps.reports.services.pdf_layout import draw_key_value_table, key_value_table_height
 from apps.reports.services.waybill_pdf import WaybillPdfService
 from apps.routing.services.route_calculation_service import RouteCalculationService
 from apps.trips.services import TripLifecycleService
@@ -270,3 +275,27 @@ def test_waybill_pdf_reserves_space_for_all_rows_in_section():
     service = WaybillPdfService()
 
     assert service._section_height([("Показатель", "Значение")] * 6) == 53 * mm
+
+
+def test_waybill_key_value_table_wraps_long_values():
+    pdf = canvas.Canvas(BytesIO(), pagesize=A4)
+    font_name = register_pdf_font()
+    width = A4[0] - 30 * mm
+    rows = [("Платные участки", TOLL_WARNING)]
+    drawn_strings = []
+
+    original_draw_string = pdf.drawString
+
+    def capture_draw_string(x, y, text):
+        drawn_strings.append((x, y, text))
+        return original_draw_string(x, y, text)
+
+    pdf.drawString = capture_draw_string
+    height = key_value_table_height(pdf, width, rows, font_name)
+
+    draw_key_value_table(pdf, 15 * mm, 250 * mm, width, rows, font_name)
+
+    value_lines = [text for x, _y, text in drawn_strings if x == 15 * mm + 55 * mm]
+    assert height > 7 * mm
+    assert len(value_lines) >= 2
+    assert "".join(value_lines).replace(" ", "")

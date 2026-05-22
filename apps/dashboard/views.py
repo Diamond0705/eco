@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from apps.core.permissions import admin_required, is_admin, is_manager, manager_required
 from apps.fleet.models import EcoCalculationSettings, EcoStandard, Transport
 from apps.locations.models import Location
+from apps.reports.services.excel_export import TripExcelExportService, build_xlsx_response
 
 from .forms import (
     AdminUserForm,
@@ -51,6 +52,14 @@ def manager_dashboard(request):
 def admin_dashboard(request):
     analytics = AdminDashboardService().build()
     return render(request, "dashboard/admin_dashboard.html", {"analytics": analytics})
+
+
+@require_GET
+@admin_required
+def admin_dashboard_xlsx(request):
+    analytics = AdminDashboardService().build()
+    xlsx_bytes = TripExcelExportService().build_company_dashboard(analytics)
+    return build_xlsx_response(xlsx_bytes, "company_dashboard.xlsx")
 
 
 @require_GET

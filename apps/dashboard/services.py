@@ -14,6 +14,7 @@ from apps.routing.services.route_snapshot_metrics import (
     display_decimal,
     has_tolls,
 )
+from apps.trips.display import attach_route_display_names
 from apps.trips.models import Trip
 
 
@@ -56,10 +57,11 @@ class ManagerAnalyticsService:
         )
 
         delivered_rows = list(
-            delivered_trips.select_related("order", "order__transport", "route_option").order_by(
-                "-actual_finish_at", "-created_at"
-            )
+            delivered_trips.select_related("order", "order__transport", "route_option")
+            .prefetch_related("order__points__location")
+            .order_by("-actual_finish_at", "-created_at")
         )
+        attach_route_display_names(delivered_rows)
 
         return {
             "filters": filters,
@@ -141,9 +143,13 @@ class AdminDashboardService:
             "order",
             "order__manager",
             "order__transport",
+            "order__transport__eco_standard",
             "route_option",
-        )
+        ).prefetch_related("order__points__location")
         delivered_trips = list(trips.filter(status=Trip.Status.DELIVERED))
+        attach_route_display_names(delivered_trips)
+        recent_trips = list(trips.order_by("-created_at")[:10])
+        attach_route_display_names(recent_trips)
 
         return {
             "users": {
@@ -163,7 +169,8 @@ class AdminDashboardService:
             "company": ManagerAnalyticsService()._summary(delivered_trips),
             "top_managers": self._top_managers(),
             "top_transports": self._top_transports(),
-            "recent_trips": trips.order_by("-created_at")[:10],
+            "delivered_trips": delivered_trips,
+            "recent_trips": recent_trips,
         }
 
     def _top_managers(self):
