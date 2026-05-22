@@ -333,9 +333,11 @@ def test_no_new_dependencies_added_for_reports():
         "reportlab",
         "openpyxl>=3.1,<4",
         "django-storages[s3]>=1.14,<2",
+        "waitress>=3,<4",
         "pytest",
         "pytest-django",
         "ruff",
     }
     assert "pandas" not in requirements
     assert "numpy" not in requirements
+    assert "gunicorn" not in requirements

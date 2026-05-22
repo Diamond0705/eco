@@ -3,9 +3,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.views import healthz
 from apps.dashboard.views import home
 
 urlpatterns = [
+    path("healthz/", healthz, name="healthz"),
     path("", home, name="home"),
     path("", include("apps.accounts.urls")),
     path("", include("apps.dashboard.urls")),

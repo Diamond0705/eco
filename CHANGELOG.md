@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Phase 18 - Security, Waitress And Nginx Deploy Prep
+
+- Added deployment-oriented security settings for secure cookies, HSTS, proxy SSL headers,
+  trusted CSRF origins and console logging.
+- Added Waitress as the approved WSGI server for Windows-friendly deployment; Gunicorn is not used.
+- Added Docker, Nginx and deployment compose files for a production-style reverse-proxy setup.
+- Added `/healthz/` and deployment documentation with collectstatic and manual PostgreSQL backup
+  notes.
+- Kept local `runserver`, business logic, routing providers, calculation formulas, REST/JWT,
+  Celery/Redis/PostGIS and migrations unchanged.
+
 ## Phase 17 - Private Document Archive
 
 - Added private archive records for generated PDF/XLSX documents with authorized Django downloads.

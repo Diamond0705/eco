@@ -34,6 +34,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - ReportLab
 - openpyxl for synchronous `.xlsx` exports
 - django-storages with S3 support for the optional private document archive
+- Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
 
@@ -64,6 +65,13 @@ or set it to `True` to store archived documents in MinIO. Archived PDF/XLSX file
 are still downloaded through authorized Django views and are not exposed as public
 MinIO URLs.
 
+For normal test runs, keep `USE_S3_STORAGE=False` or rely on the test suite override:
+pytest uses local temporary file storage and does not require real MinIO/S3. Set
+`USE_S3_STORAGE=True` only for manual MinIO checks after starting the local MinIO service.
+When running Django from `.venv`, use `AWS_S3_ENDPOINT_URL=http://localhost:9000`.
+When running Django inside `docker-compose.deploy.yml`, the compose file overrides the endpoint to
+`http://minio:9000`.
+
 Routing provider settings:
 
 ```powershell
@@ -92,6 +100,71 @@ python manage.py makemigrations --check --dry-run
 pytest
 ruff check .
 ```
+
+## Deployment Prep
+
+Local Windows development still uses Django `runserver`. For production-style deployment, Phase 18
+adds a separate Docker/Nginx path:
+
+```powershell
+docker compose -f docker-compose.deploy.yml up -d --build
+docker compose -f docker-compose.deploy.yml exec web python manage.py migrate
+```
+
+The deploy stack uses Nginx + Waitress + Django + PostgreSQL + MinIO. Gunicorn is intentionally
+not used. The web container runs:
+
+```powershell
+waitress-serve --listen=0.0.0.0:8000 config.wsgi:application
+```
+
+Set production security variables in `.env` before `DEBUG=False`:
+
+```env
+SECRET_KEY=replace-with-a-long-random-secret
+ALLOWED_HOSTS=example.com,www.example.com
+CSRF_TRUSTED_ORIGINS=https://example.com,https://www.example.com
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SECURE_SSL_REDIRECT=True
+SECURE_HSTS_SECONDS=31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+SECURE_HSTS_PRELOAD=True
+USE_X_FORWARDED_PROTO=True
+```
+
+The deploy entrypoint runs `python manage.py collectstatic --noinput`. Nginx serves collected
+`/static/` files and proxies dynamic requests to Django. Private archived PDF/XLSX files are not
+served by Nginx or public MinIO URLs; downloads still go through authorized Django views.
+
+In `docker-compose.deploy.yml`, MinIO ports are published for local Phase 18 verification, so the
+console is available at `http://localhost:9001` after:
+
+```powershell
+docker compose -f docker-compose.deploy.yml up -d --build
+```
+
+Create the private bucket `ecologist-documents` manually before checking archive saves with
+`USE_S3_STORAGE=True`. Do not expose MinIO publicly in production unless a separate private
+network and access policy have been designed; close these ports or move them to a local-only
+override for real production use.
+
+Manual PostgreSQL backup:
+
+```powershell
+docker compose -f docker-compose.deploy.yml exec db pg_dump -U ecologist -d ecologist -Fc -f /tmp/ecologist.dump
+docker compose -f docker-compose.deploy.yml cp db:/tmp/ecologist.dump .\ecologist.dump
+```
+
+Manual restore:
+
+```powershell
+docker compose -f docker-compose.deploy.yml cp .\ecologist.dump db:/tmp/ecologist.dump
+docker compose -f docker-compose.deploy.yml exec db pg_restore -U ecologist -d ecologist --clean --if-exists /tmp/ecologist.dump
+```
+
+This is deployment preparation, not a full managed VPS/cloud setup: TLS automation, monitoring and
+scheduled backups remain future work.
 
 ## Demo Users
 
@@ -123,7 +196,8 @@ The `seed_demo` command creates:
 - Excel exports are generated synchronously from saved route snapshots and are not stored.
 - Generated PDF/XLSX files can optionally be saved to the private document archive.
 - No real traffic, roadworks, truck restrictions or GPS tracking.
-- No production deployment setup.
+- Production-style Docker/Nginx deployment preparation is available; full managed hosting,
+  TLS automation and scheduled backups are not implemented.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
@@ -147,4 +221,4 @@ phase boundaries.
 
 ## MVP Boundaries
 
-Do not add FastAPI, React, Celery, Redis, PostGIS, Nginx, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. MinIO/S3-compatible storage is limited to the approved Phase 17 private document archive. Excel export is limited to the approved synchronous `.xlsx` downloads.
+Do not add FastAPI, React, Celery, Redis, PostGIS, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. MinIO/S3-compatible storage is limited to the approved Phase 17 private document archive. Nginx and Waitress are limited to the approved Phase 18 deployment path. Excel export is limited to the approved synchronous `.xlsx` downloads.

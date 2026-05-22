@@ -25,12 +25,16 @@ production-grade improvements that should be implemented later as separate phase
 ## Production Deploy
 
 - Why useful: the current setup is local/demo oriented and uses Django development tooling.
-- What it gives EcoLogist: repeatable deployment with Dockerfile, Gunicorn, Nginx, static/media
+- What it gives EcoLogist: repeatable deployment with Dockerfile, Waitress, Nginx, static/media
   handling, secure settings and environment-based configuration.
+- Phase 18 status: EcoLogist now has deployment prep with Waitress, Nginx, collectstatic,
+  healthcheck and env-driven security settings. Gunicorn is intentionally not used for the
+  Windows-friendly deployment path.
 - Why not Phase 16: deployment hardening should not be mixed with user-facing export work.
 - Risks/complexity: secret management, HTTPS, proxy headers, static files, health checks,
   database backups and rollback procedures.
-- Suggested future phase: Phase 18.
+- Suggested future phase: Phase 18 for baseline deployment prep; later phase for managed
+  TLS automation, monitoring, scheduled backups and VPS/cloud hardening.
 
 ## REST API With Django REST Framework
 

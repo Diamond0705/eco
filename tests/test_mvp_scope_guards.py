@@ -20,6 +20,7 @@ def test_only_approved_dependencies_are_used():
         "reportlab",
         "openpyxl>=3.1,<4",
         "django-storages[s3]>=1.14,<2",
+        "waitress>=3,<4",
         "pytest",
         "pytest-django",
         "ruff",
@@ -28,8 +29,10 @@ def test_only_approved_dependencies_are_used():
     # without bringing in heavier analytics stacks.
     # django-storages[s3] is the only approved Phase 17 storage dependency: it connects
     # the private document archive to MinIO/S3-compatible storage.
+    # waitress is the approved Phase 18 WSGI server for Windows-friendly deployment.
     assert "pandas" not in requirements
     assert "numpy" not in requirements
+    assert "gunicorn" not in requirements
 
 
 def test_graphhopper_added_without_forbidden_external_http_dependencies():
@@ -50,6 +53,7 @@ def test_graphhopper_added_without_forbidden_external_http_dependencies():
     assert "jwt" not in combined_source.lower()
     assert "postgis" not in combined_source.lower()
     assert "redis" not in combined_source.lower()
+    assert "gunicorn" not in combined_source.lower()
 
 
 @pytest.mark.django_db

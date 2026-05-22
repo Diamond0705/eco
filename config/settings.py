@@ -1,19 +1,45 @@
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, True),
     SECRET_KEY=(str, "unsafe-local-dev-key"),
-    ALLOWED_HOSTS=(list, ["127.0.0.1", "localhost"]),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
+
+def env_bool(name, default=False):
+    value = env(name, default=None)
+    if value in (None, ""):
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def env_list(name, default=None):
+    default = default or []
+    raw_value = env(name, default="")
+    if isinstance(raw_value, list):
+        values = raw_value
+    else:
+        values = str(raw_value).split(",")
+    cleaned = [value.strip() for value in values if value and value.strip()]
+    return cleaned or default
+
+
 SECRET_KEY = env("SECRET_KEY")
-DEBUG = env("DEBUG")
-ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+DEBUG = env_bool("DEBUG", default=True)
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+if not DEBUG and SECRET_KEY in {"", "unsafe-local-dev-key", "change-me-for-local-development"}:
+    raise ImproperlyConfigured("SECRET_KEY must be set to a production value when DEBUG=False.")
 REPORTLAB_FONT_PATH = env("REPORTLAB_FONT_PATH", default="")
 ROUTE_PROVIDER = env("ROUTE_PROVIDER", default="mock")
 CALCULATION_MODEL = env("CALCULATION_MODEL", default="v2.1")
@@ -137,6 +163,18 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=False)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=False)
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+if env.bool("USE_X_FORWARDED_PROTO", default=False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 USE_S3_STORAGE = env.bool("USE_S3_STORAGE", default=False)
 DOCUMENT_ARCHIVE_ENABLED = env.bool("DOCUMENT_ARCHIVE_ENABLED", default=True)
 DOCUMENT_ARCHIVE_LOCATION = env("DOCUMENT_ARCHIVE_LOCATION", default="document_archive")
@@ -157,3 +195,24 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "dashboard:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": env("LOG_LEVEL", default="INFO"),
+    },
+    "loggers": {
+        "django.server": {
+            "handlers": ["console"],
+            "level": env("DJANGO_SERVER_LOG_LEVEL", default="INFO"),
+            "propagate": False,
+        },
+    },
+}
