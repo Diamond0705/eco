@@ -12,8 +12,9 @@ not replace the Russian server-rendered UI and does not introduce a write API.
 ## Authentication
 
 - API access uses Django session authentication.
+- Phase 20 also adds JWT authentication for external clients.
 - Anonymous requests are rejected by Django REST Framework permissions.
-- JWT, token authentication and SimpleJWT are intentionally not implemented in Phase 19.
+- Existing web UI pages continue to use Django sessions.
 - CORS is not configured in this phase.
 - Swagger/OpenAPI UI is not added in this phase.
 
@@ -68,7 +69,7 @@ no migration is introduced for this compatibility layer.
 ## Limitations
 
 - No write API.
-- No JWT or external API authentication.
 - No CORS policy for browser-based external clients.
 - No OpenAPI/Swagger UI dependency.
 - No pagination, throttling or public integration contract beyond the Phase 19 read-only endpoints.
+- JWT is limited to Phase 20 token endpoints and Bearer access for the same read-only API.

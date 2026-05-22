@@ -172,7 +172,7 @@ def create_trip(order, route, *, status=Trip.Status.DELIVERED, days_offset=0):
 def test_anonymous_api_access_is_rejected(client):
     response = client.get(reverse("api:locations"))
 
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

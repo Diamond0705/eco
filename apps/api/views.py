@@ -10,6 +10,7 @@ from apps.trips.models import Trip
 
 from .serializers import (
     AnalyticsSummarySerializer,
+    CurrentUserSerializer,
     LocationSerializer,
     OrderDetailSerializer,
     OrderListSerializer,
@@ -95,3 +96,8 @@ class AnalyticsSummaryAPIView(APIView):
             trips = trips.filter(order__manager=request.user)
         summary = build_analytics_summary(trips)
         return Response(AnalyticsSummarySerializer(summary).data)
+
+
+class CurrentUserAPIView(APIView):
+    def get(self, request):
+        return Response(CurrentUserSerializer(request.user).data)

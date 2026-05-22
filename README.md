@@ -35,6 +35,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - openpyxl for synchronous `.xlsx` exports
 - django-storages with S3 support for the optional private document archive
 - Django REST Framework for the read-only session-authenticated API
+- SimpleJWT for external Bearer-token API authentication
 - Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
@@ -197,9 +198,19 @@ Phase 19 adds a small JSON API under `/api/v1/` for authenticated integrations:
 - `GET /api/v1/trips/`
 - `GET /api/v1/analytics/summary/`
 
-The API uses Django session authentication, not JWT or token auth. It is read-only: write methods
-return `405`. CORS and Swagger/OpenAPI UI are intentionally not added in this phase. See
-`docs/19_rest_api.md` for the endpoint and data exposure rules.
+The API supports Django session authentication for browser users and JWT Bearer tokens for
+external clients. It is read-only: write methods return `405`. CORS and Swagger/OpenAPI UI are
+intentionally not added. See `docs/19_rest_api.md` and `docs/20_jwt_api_auth.md` for endpoint,
+token and data exposure rules.
+
+Token endpoints:
+
+- `POST /api/v1/auth/token/`
+- `POST /api/v1/auth/token/refresh/`
+- `POST /api/v1/auth/token/verify/`
+- `GET /api/v1/auth/me/`
+
+Use `Authorization: Bearer <access_token>` for API calls. In production, use JWT only over HTTPS.
 
 ## Current Limitations
 
@@ -214,8 +225,8 @@ return `405`. CORS and Swagger/OpenAPI UI are intentionally not added in this ph
 - No real traffic, roadworks, truck restrictions or GPS tracking.
 - Production-style Docker/Nginx deployment preparation is available; full managed hosting,
   TLS automation and scheduled backups are not implemented.
-- The REST API is read-only and session-authenticated; write API, JWT, CORS and Swagger/OpenAPI
-  UI are not implemented.
+- The REST API is read-only and supports sessions plus JWT Bearer tokens; write API, CORS and
+  Swagger/OpenAPI UI are not implemented.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
@@ -240,4 +251,6 @@ phase boundaries.
 ## MVP Boundaries
 
 Do not add FastAPI, React, Celery, Redis, PostGIS, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. MinIO/S3-compatible storage is limited to the approved Phase 17 private document archive. Nginx and Waitress are limited to the approved Phase 18 deployment path. Excel export is limited to the approved synchronous `.xlsx` downloads.
-Django REST Framework is limited to the approved Phase 19 read-only session-authenticated API; JWT, CORS and Swagger/OpenAPI UI remain out of scope.
+Django REST Framework is limited to the approved read-only API. SimpleJWT is limited to the
+approved Phase 20 external API authentication endpoints; CORS, OAuth, Swagger/OpenAPI UI and write
+API remain out of scope.

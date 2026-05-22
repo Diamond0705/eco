@@ -44,12 +44,14 @@ production-grade improvements that should be implemented later as separate phase
 - Phase 19 status: a read-only session-authenticated API is available under `/api/v1/` for
   locations, transports, orders, trips and analytics summary. It does not include write endpoints,
   JWT, CORS or Swagger/OpenAPI UI.
+- Phase 20 status: JWT Bearer authentication is available for external read-only API clients
+  through SimpleJWT token endpoints. The HTML web UI still uses Django sessions.
 - Why not Phase 16: the current product is a Django template monolith and this phase explicitly
   avoids introducing REST API or JWT scope.
 - Risks/complexity: permission design, serializers, pagination, versioning, throttling and
   compatibility with existing role-based workflows.
-- Suggested future phase: Phase 19 for read-only API; later phase for JWT, CORS, versioning,
-  pagination and write endpoints if product scope requires them.
+- Suggested future phase: Phase 19 for read-only API; Phase 20 for JWT auth; later phase for CORS,
+  versioning, pagination, OpenAPI documentation and write endpoints if product scope requires them.
 
 ## Celery And Redis For Background Reports
 

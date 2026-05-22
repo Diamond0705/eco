@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Phase 20 - JWT API Auth
+
+- Added SimpleJWT access, refresh and verify endpoints under `/api/v1/auth/`.
+- Added `/api/v1/auth/me/` with safe current-user fields for API clients.
+- Added Bearer-token authentication while keeping Django session authentication for the HTML web UI.
+- Kept the business API read-only and left CORS, OAuth, Swagger/OpenAPI UI, token blacklist,
+  refresh rotation, write API, migrations, providers and calculation formulas unchanged.
+
 ## Phase 19 - Read-Only REST API
 
 - Added a session-authenticated read-only Django REST Framework API under `/api/v1/`.

@@ -24,6 +24,10 @@ class UserSummarySerializer(serializers.Serializer):
         return user.get_full_name()
 
 
+class CurrentUserSerializer(UserSummarySerializer):
+    role = serializers.CharField()
+
+
 class EcoStandardSummarySerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
