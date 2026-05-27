@@ -40,7 +40,7 @@ class ManagerRegistrationForm(UserCreationForm):
             "phone",
         )
         labels = {
-            "username": "Имя пользователя",
+            "username": "Уникальный никнейм",
             "first_name": "Имя",
             "last_name": "Фамилия",
             "middle_name": "Отчество",
@@ -55,8 +55,22 @@ class ManagerRegistrationForm(UserCreationForm):
             "Минимум 8 символов. Не используйте слишком простой пароль."
         )
         self.fields["password2"].help_text = "Введите тот же пароль еще раз."
+        self.fields["username"].help_text = (
+            "Никнейм используется для входа и должен быть уникальным. "
+            "Имя, фамилия и отчество могут совпадать у разных пользователей."
+        )
+        self.fields["username"].widget.attrs["placeholder"] = "ivan_petrov"
         self.fields["phone"].help_text = PHONE_HELP_TEXT
         self.fields["phone"].widget.attrs["placeholder"] = "+7 (999) 123-45-67"
+
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError(
+                "Пользователь с таким никнеймом уже зарегистрирован. "
+                "Придумайте другой никнейм."
+            )
+        return username
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip()
@@ -76,7 +90,7 @@ class ManagerRegistrationForm(UserCreationForm):
 
 
 class UsernameOrEmailAuthenticationForm(AuthenticationForm):
-    username = forms.CharField(label="Имя пользователя или email")
+    username = forms.CharField(label="Никнейм или email")
 
     error_messages = {
         **AuthenticationForm.error_messages,

@@ -56,6 +56,94 @@ def test_registration_form_rejects_duplicate_email_case_insensitive(client):
 
 
 @pytest.mark.django_db
+def test_registration_form_rejects_duplicate_username(client):
+    User.objects.create_user(
+        username="busy_nickname",
+        email="busy@example.com",
+        password="StrongPass12345",
+    )
+
+    response = client.post(
+        reverse("accounts:register"),
+        {
+            "username": "busy_nickname",
+            "email": "new-busy@example.com",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Пользователь с таким никнеймом уже зарегистрирован" in response.content.decode()
+    assert not User.objects.filter(email="new-busy@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_registration_form_rejects_duplicate_username_case_insensitive(client):
+    User.objects.create_user(
+        username="CaseNickname",
+        email="case@example.com",
+        password="StrongPass12345",
+    )
+
+    response = client.post(
+        reverse("accounts:register"),
+        {
+            "username": "casenickname",
+            "email": "new-case@example.com",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Пользователь с таким никнеймом уже зарегистрирован" in response.content.decode()
+    assert not User.objects.filter(email="new-case@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_registration_allows_same_full_name_with_different_unique_nicknames(client):
+    first_response = client.post(
+        reverse("accounts:register"),
+        {
+            "username": "same_name_one",
+            "email": "same-name-one@example.com",
+            "first_name": "Иван",
+            "last_name": "Петров",
+            "middle_name": "Сергеевич",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        },
+    )
+    second_response = client.post(
+        reverse("accounts:register"),
+        {
+            "username": "same_name_two",
+            "email": "same-name-two@example.com",
+            "first_name": "Иван",
+            "last_name": "Петров",
+            "middle_name": "Сергеевич",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        },
+    )
+
+    assert first_response.status_code == 302
+    assert second_response.status_code == 302
+    assert User.objects.filter(first_name="Иван", last_name="Петров").count() == 2
+
+
+@pytest.mark.django_db
+def test_registration_page_explains_unique_nickname(client):
+    response = client.get(reverse("accounts:register"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Уникальный никнейм" in content
+    assert "Никнейм используется для входа и должен быть уникальным" in content
+
+
+@pytest.mark.django_db
 def test_registration_form_does_not_allow_role_selection(client):
     response = client.post(
         reverse("accounts:register"),

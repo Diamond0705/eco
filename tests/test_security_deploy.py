@@ -113,6 +113,13 @@ def test_deploy_compose_publishes_minio_ports_for_local_verification():
     assert "Published for local Phase 18 verification only." in compose
 
 
+def test_deploy_dockerfile_installs_cyrillic_pdf_font():
+    dockerfile = open("Dockerfile", encoding="utf-8").read()
+
+    assert "apt-get install -y --no-install-recommends fonts-dejavu-core" in dockerfile
+    assert "rm -rf /var/lib/apt/lists/*" in dockerfile
+
+
 def test_debug_false_rejects_unsafe_secret_key():
     env = {
         **os.environ,
