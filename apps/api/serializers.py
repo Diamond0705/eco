@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.fleet.models import Transport
@@ -20,6 +22,7 @@ class UserSummarySerializer(serializers.Serializer):
     username = serializers.CharField()
     full_name = serializers.SerializerMethodField()
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_full_name(self, user):
         return user.get_full_name()
 
@@ -86,11 +89,13 @@ class RouteOptionSummarySerializer(serializers.ModelSerializer):
             "calculation_model_version",
             "co2_kg_per_km",
             "co2_kg_per_ton_km",
-        )
+    )
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_co2_kg_per_km(self, route):
         return display_decimal(co2_kg_per_km(route), "0.001")
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_co2_kg_per_ton_km(self, route):
         return display_decimal(co2_kg_per_ton_km(route), "0.0001")
 
@@ -149,12 +154,15 @@ class TripSerializer(serializers.ModelSerializer):
             "route_option",
         )
 
+    @extend_schema_field(UserSummarySerializer)
     def get_manager(self, trip):
         return UserSummarySerializer(trip.order.manager).data
 
+    @extend_schema_field(TransportSummarySerializer)
     def get_transport(self, trip):
         return TransportSummarySerializer(trip.order.transport).data
 
+    @extend_schema_field(OpenApiTypes.DATETIME)
     def get_planned_finish(self, trip):
         return None
 

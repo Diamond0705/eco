@@ -130,17 +130,8 @@ def _route_option_rows(route_options):
     min_duration = min(route.duration_minutes for route in route_options)
     min_distance = min(route.distance_km for route in route_options)
     max_eco_rating = max(route.eco_rating for route in route_options)
-    best_eco_route = min(
-        route_options,
-        key=lambda route: (
-            -route.eco_rating,
-            route.co2_kg,
-            route.fuel_liters,
-            route.distance_km,
-            route.duration_minutes,
-            route.id,
-        ),
-    )
+    max_eco_routes = [route for route in route_options if route.eco_rating == max_eco_rating]
+    best_eco_route = max_eco_routes[0] if len(max_eco_routes) == 1 else None
 
     rows = []
     for index, route in enumerate(route_options, start=1):

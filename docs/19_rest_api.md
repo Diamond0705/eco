@@ -16,7 +16,7 @@ not replace the Russian server-rendered UI and does not introduce a write API.
 - Anonymous requests are rejected by Django REST Framework permissions.
 - Existing web UI pages continue to use Django sessions.
 - CORS is not configured in this phase.
-- Swagger/OpenAPI UI is not added in this phase.
+- Phase 21 adds OpenAPI schema and Swagger/ReDoc documentation for these existing endpoints.
 
 ## Endpoints
 
@@ -70,6 +70,6 @@ no migration is introduced for this compatibility layer.
 
 - No write API.
 - No CORS policy for browser-based external clients.
-- No OpenAPI/Swagger UI dependency.
 - No pagination, throttling or public integration contract beyond the Phase 19 read-only endpoints.
 - JWT is limited to Phase 20 token endpoints and Bearer access for the same read-only API.
+- OpenAPI/Swagger documentation is available from Phase 21 and does not add write behavior.

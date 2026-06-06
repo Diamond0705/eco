@@ -46,12 +46,15 @@ production-grade improvements that should be implemented later as separate phase
   JWT, CORS or Swagger/OpenAPI UI.
 - Phase 20 status: JWT Bearer authentication is available for external read-only API clients
   through SimpleJWT token endpoints. The HTML web UI still uses Django sessions.
+- Phase 21 status: OpenAPI schema, Swagger UI and ReDoc are available for the existing read-only
+  API. The schema can be imported into Postman and documents JWT Bearer authentication.
 - Why not Phase 16: the current product is a Django template monolith and this phase explicitly
   avoids introducing REST API or JWT scope.
 - Risks/complexity: permission design, serializers, pagination, versioning, throttling and
   compatibility with existing role-based workflows.
-- Suggested future phase: Phase 19 for read-only API; Phase 20 for JWT auth; later phase for CORS,
-  versioning, pagination, OpenAPI documentation and write endpoints if product scope requires them.
+- Suggested future phase: Phase 19 for read-only API; Phase 20 for JWT auth; Phase 21 for OpenAPI
+  documentation; later phases for CORS, versioning, pagination and write endpoints if product
+  scope requires them.
 
 ## Celery And Redis For Background Reports
 

@@ -508,7 +508,7 @@ def test_route_comparison_page_shows_duplicate_toll_warning_once(
 
 
 @pytest.mark.django_db
-def test_route_comparison_page_uses_single_deterministic_best_eco_badge(
+def test_route_comparison_page_marks_equal_best_eco_ratings_without_best_badge(
     client,
     manager,
     transport,
@@ -541,5 +541,27 @@ def test_route_comparison_page_uses_single_deterministic_best_eco_badge(
     content = response.content.decode()
 
     assert response.status_code == 200
+    assert "Лучший по эко-рейтингу" not in content
+    assert content.count("Одинаковый эко-рейтинг") == 2
+
+
+@pytest.mark.django_db
+def test_route_comparison_page_marks_unique_best_eco_route(
+    client,
+    manager,
+    transport,
+    locations,
+):
+    order = create_order(manager, transport, locations)
+    order.status = ShipmentOrder.Status.CALCULATED
+    order.save(update_fields=["status", "updated_at"])
+    create_route_option(order, "Эко-лидер", Decimal("12.00"), 20, Decimal("81.00"))
+    create_route_option(order, "Второй", Decimal("11.00"), 15, Decimal("80.00"))
+    client.force_login(manager)
+
+    response = client.get(reverse("routing:options", kwargs={"pk": order.pk}))
+    content = response.content.decode()
+
+    assert response.status_code == 200
     assert content.count("Лучший по эко-рейтингу") == 1
-    assert "Одинаковый эко-рейтинг" in content
+    assert "Одинаковый эко-рейтинг" not in content

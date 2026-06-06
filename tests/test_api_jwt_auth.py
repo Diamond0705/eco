@@ -12,11 +12,6 @@ from apps.routing.models import RouteOption
 from apps.trips.models import Trip
 
 
-@pytest.fixture(autouse=True)
-def fast_password_hasher(settings):
-    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
-
-
 @pytest.fixture
 def api_users(db):
     user_model = get_user_model()

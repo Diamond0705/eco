@@ -15,3 +15,4 @@ def default_mock_route_provider(settings):
     settings.CALCULATION_MODEL = "v2.1"
     settings.GRAPHHOPPER_API_KEY = ""
     settings.USE_S3_STORAGE = False
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

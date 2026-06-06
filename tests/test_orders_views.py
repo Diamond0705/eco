@@ -1,10 +1,12 @@
 import re
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.fleet.models import EcoStandard, Transport
 from apps.locations.models import Location
@@ -15,6 +17,14 @@ from apps.routing.services.route_calculation_service import RouteCalculationServ
 from apps.trips.services import TripLifecycleService
 
 User = get_user_model()
+
+
+def _future_delivery_date(days=30):
+    return timezone.localdate() + timedelta(days=days)
+
+
+def _future_delivery_date_value(days=30):
+    return _future_delivery_date(days).isoformat()
 
 
 @pytest.fixture
@@ -104,7 +114,7 @@ def _create_order(
         cargo_name=cargo_name,
         cargo_type="Паллеты",
         cargo_weight_kg=Decimal("1000.00"),
-        desired_delivery_date="2026-06-01",
+        desired_delivery_date=_future_delivery_date(),
         status=status,
     )
     OrderPoint.objects.create(
@@ -154,7 +164,7 @@ def test_manager_can_create_order_and_is_redirected_to_detail(
             "cargo_name": "Оборудование",
             "cargo_type": "Паллеты",
             "cargo_weight_kg": "1000.00",
-            "desired_delivery_date": "2026-06-01",
+            "desired_delivery_date": _future_delivery_date_value(),
             "origin_location": origin.pk,
             "destination_location": destination.pk,
             "notes": "Доставить утром",
@@ -377,7 +387,7 @@ def test_manager_can_open_edit_page_for_own_new_order(client, manager, transport
 
     assert response.status_code == 200
     assert "Редактирование заявки" in content
-    assert 'value="2026-06-01"' in content
+    assert f'value="{_future_delivery_date_value()}"' in content
     assert_cargo_entry_polish(content)
 
 
@@ -410,7 +420,7 @@ def test_manager_can_edit_own_new_order_without_duplicate_points(
             "cargo_name": "Новый груз",
             "cargo_type": "Коробки",
             "cargo_weight_kg": "1500.00",
-            "desired_delivery_date": "2026-06-02",
+            "desired_delivery_date": _future_delivery_date_value(days=31),
             "origin_location": origin.pk,
             "destination_location": new_destination.pk,
             "notes": "Обновлено",

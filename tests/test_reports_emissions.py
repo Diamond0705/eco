@@ -336,6 +336,7 @@ def test_no_new_dependencies_added_for_reports():
         "waitress>=3,<4",
         "djangorestframework>=3.15,<4",
         "djangorestframework-simplejwt>=5.3,<6",
+        "drf-spectacular>=0.28,<1",
         "pytest",
         "pytest-django",
         "ruff",
@@ -344,6 +345,6 @@ def test_no_new_dependencies_added_for_reports():
     assert "numpy" not in requirements
     assert "gunicorn" not in requirements
     assert "django-cors-headers" not in requirements
-    assert "drf-spectacular" not in requirements
     assert "drf-yasg" not in requirements
+    assert "drf-spectacular-sidecar" not in requirements
     assert "django-allauth" not in requirements

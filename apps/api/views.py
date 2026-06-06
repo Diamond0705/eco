@@ -1,4 +1,5 @@
 from django.utils.dateparse import parse_date
+from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -90,6 +91,7 @@ class TripListAPIView(ListAPIView):
 
 
 class AnalyticsSummaryAPIView(APIView):
+    @extend_schema(responses=AnalyticsSummarySerializer)
     def get(self, request):
         trips = Trip.objects.filter(status=Trip.Status.DELIVERED).select_related("route_option")
         if not is_admin_user(request.user):
@@ -99,5 +101,6 @@ class AnalyticsSummaryAPIView(APIView):
 
 
 class CurrentUserAPIView(APIView):
+    @extend_schema(responses=CurrentUserSerializer)
     def get(self, request):
         return Response(CurrentUserSerializer(request.user).data)

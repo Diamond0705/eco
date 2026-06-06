@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Phase 21 - API Docs And Swagger
+
+- Added OpenAPI schema generation with drf-spectacular at `/api/schema/`.
+- Added Swagger UI at `/api/docs/` and ReDoc at `/api/redoc/` for inspecting the existing API.
+- Documented JWT Bearer authorization in Swagger and OpenAPI import into Postman.
+- Kept the business API read-only and left CORS, write endpoints, providers, formulas, reports,
+  archives, HTML views and migrations unchanged.
+
 ## Phase 20 - JWT API Auth
 
 - Added SimpleJWT access, refresh and verify endpoints under `/api/v1/auth/`.
