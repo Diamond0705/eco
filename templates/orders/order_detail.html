@@ -1,102 +1,184 @@
 {% extends "base.html" %}
 
 {% block title %}Заявка №{{ order.id }} - EcoLogist{% endblock %}
+{% block body_class %}order-detail-page{% endblock %}
 
 {% block content %}
-<section class="page-panel">
-    <div class="page-heading">
-        <div>
-            <h1>Заявка №{{ order.id }}</h1>
-            <p class="muted">{{ order.get_status_display }}</p>
+<section class="detail-shell order-detail-shell">
+    <div class="detail-panel">
+        <div class="detail-hero">
+            <div class="detail-title-group">
+                <h1>Заявка №{{ order.id }}</h1>
+                <span class="detail-status detail-status-{{ order.status }}">
+                    <span aria-hidden="true"></span>
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+            <div class="detail-actions">
+                {% if order.status == "new" %}
+                    <a class="detail-button detail-button-outline" href="{% url 'orders:edit' order.pk %}">
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                        </svg>
+                        Редактировать
+                    </a>
+                {% endif %}
+                {% if can_cancel_order %}
+                    <form method="post" action="{% url 'orders:cancel' order.pk %}" class="inline-form">
+                        {% csrf_token %}
+                        <button
+                            type="submit"
+                            class="detail-button detail-button-danger"
+                            onclick="return confirm('Отменить заявку?');"
+                        >
+                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                                <path d="M3 6h18"></path>
+                                <path d="M8 6V4h8v2"></path>
+                                <path d="M6 6l1 18h10l1-18"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                            </svg>
+                            Отменить заявку
+                        </button>
+                    </form>
+                {% endif %}
+                <a class="detail-button detail-button-outline" href="{% url 'orders:list' %}">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M8 6h13"></path>
+                        <path d="M8 12h13"></path>
+                        <path d="M8 18h13"></path>
+                        <path d="M3 6h.01"></path>
+                        <path d="M3 12h.01"></path>
+                        <path d="M3 18h.01"></path>
+                    </svg>
+                    К списку
+                </a>
+            </div>
         </div>
-        <div class="form-actions">
-            {% if order.status == "new" %}
-                <a class="button-secondary" href="{% url 'orders:edit' order.pk %}">Редактировать</a>
-            {% endif %}
-            {% if can_cancel_order %}
-                <form method="post" action="{% url 'orders:cancel' order.pk %}" class="inline-form">
-                    {% csrf_token %}
-                    <button
-                        type="submit"
-                        class="button-secondary danger-button"
-                        onclick="return confirm('Отменить заявку?');"
-                    >
-                        Отменить заявку
-                    </button>
-                </form>
-            {% endif %}
-            <a class="button-secondary" href="{% url 'orders:list' %}">К списку</a>
+
+        <div class="detail-facts-card order-facts-card">
+            <dl class="detail-facts-list">
+                <div>
+                    <dt>Груз</dt>
+                    <dd>{{ order.cargo_name }}</dd>
+                </div>
+                <div>
+                    <dt>Тип груза</dt>
+                    <dd>{{ order.cargo_type }}</dd>
+                </div>
+                <div>
+                    <dt>Вес, кг</dt>
+                    <dd>{{ order.cargo_weight_kg }}</dd>
+                </div>
+                <div>
+                    <dt>Дата доставки</dt>
+                    <dd>{{ order.desired_delivery_date|date:"d.m.Y" }}</dd>
+                </div>
+            </dl>
+            <dl class="detail-facts-list">
+                <div>
+                    <dt>Транспорт</dt>
+                    <dd>{{ order.transport }}</dd>
+                </div>
+                <div>
+                    <dt>Создана</dt>
+                    <dd>{{ order.created_at|date:"d.m.Y H:i" }}</dd>
+                </div>
+                <div>
+                    <dt>Обновлена</dt>
+                    <dd>{{ order.updated_at|date:"d.m.Y H:i" }}</dd>
+                </div>
+                {% if order.notes %}
+                    <div>
+                        <dt>Примечания</dt>
+                        <dd>{{ order.notes }}</dd>
+                    </div>
+                {% endif %}
+            </dl>
         </div>
-    </div>
 
-    <dl class="details-list">
-        <dt>Груз</dt>
-        <dd>{{ order.cargo_name }}</dd>
-        <dt>Тип груза</dt>
-        <dd>{{ order.cargo_type }}</dd>
-        <dt>Вес, кг</dt>
-        <dd>{{ order.cargo_weight_kg }}</dd>
-        <dt>Дата доставки</dt>
-        <dd>{{ order.desired_delivery_date|date:"d.m.Y" }}</dd>
-        <dt>Транспорт</dt>
-        <dd>{{ order.transport }}</dd>
-        <dt>Создана</dt>
-        <dd>{{ order.created_at|date:"d.m.Y H:i" }}</dd>
-        <dt>Обновлена</dt>
-        <dd>{{ order.updated_at|date:"d.m.Y H:i" }}</dd>
-        {% if order.notes %}
-            <dt>Примечания</dt>
-            <dd>{{ order.notes }}</dd>
-        {% endif %}
-    </dl>
+        <section class="detail-section">
+            <div class="detail-section-title">
+                <span class="detail-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Z"></path>
+                        <circle cx="12" cy="9" r="2.5"></circle>
+                    </svg>
+                </span>
+                <h2>Точки маршрута</h2>
+            </div>
+            <ol class="route-points-timeline">
+                {% for point in points %}
+                    <li>
+                        <span class="route-point-number">{{ forloop.counter }}</span>
+                        <div>
+                            <strong>{{ point.get_point_type_display }}:</strong>
+                            <span>{{ point.location.name }}</span>
+                            {% if point.location.address %}<span class="muted">— {{ point.location.address }}</span>{% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
 
-    <h2>Точки маршрута</h2>
-    <ol class="point-list">
-        {% for point in points %}
-            <li>
-                <strong>{{ point.get_point_type_display }}:</strong>
-                {{ point.location.name }}
-                {% if point.location.address %}<span class="muted">— {{ point.location.address }}</span>{% endif %}
-            </li>
-        {% endfor %}
-    </ol>
-
-    <div class="message route-actions">
-        {% if order.trip %}
-            <a class="button-primary" href="{% url 'trips:detail' order.trip.pk %}">Открыть рейс</a>
-        {% elif order.status == "new" or order.status == "calculated" %}
-            {% if order.route_options.exists %}
-                <a class="button-primary" href="{% url 'routing:options' order.pk %}">Сравнить маршруты</a>
-                <form method="post" action="{% url 'routing:calculate' order.pk %}" class="inline-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="route_calculation_mode" value="extended">
-                    <button type="submit" class="button-secondary">
-                        Найти дополнительные альтернативы
-                    </button>
-                </form>
+        <section class="detail-action-card">
+            {% if order.trip %}
+                <a class="detail-button detail-button-primary" href="{% url 'trips:detail' order.trip.pk %}">
+                    Открыть рейс
+                </a>
+            {% elif order.status == "new" or order.status == "calculated" %}
+                {% if order.route_options.exists %}
+                    <div class="detail-route-actions">
+                        <a class="detail-button detail-button-primary" href="{% url 'routing:options' order.pk %}">
+                            Сравнить маршруты
+                        </a>
+                        <form method="post" action="{% url 'routing:calculate' order.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="route_calculation_mode" value="extended">
+                            <button type="submit" class="detail-button detail-button-outline">
+                                Найти дополнительные альтернативы
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <form method="post" action="{% url 'routing:calculate' order.pk %}" class="detail-route-calc-form">
+                        {% csrf_token %}
+                        <fieldset>
+                            <legend>Режим расчета маршрутов:</legend>
+                            <label>
+                                <input type="radio" name="route_calculation_mode" value="standard" checked>
+                                <span>Стандартный — до 3 вариантов</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="route_calculation_mode" value="extended">
+                                <span>Расширенный — до 5 вариантов</span>
+                            </label>
+                        </fieldset>
+                        <button type="submit" class="detail-button detail-button-primary detail-button-wide">
+                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                                <path d="M4 17c3-6 7-8 12-6"></path>
+                                <path d="M14 7h5v5"></path>
+                                <path d="M8 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+                                <path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+                            </svg>
+                            Рассчитать маршруты
+                        </button>
+                    </form>
+                {% endif %}
             {% else %}
-                <form method="post" action="{% url 'routing:calculate' order.pk %}" class="route-calc-form">
-                    {% csrf_token %}
-                    <fieldset>
-                        <legend>Режим расчета маршрутов:</legend>
-                        <label>
-                            <input type="radio" name="route_calculation_mode" value="standard" checked>
-                            Стандартный — до 3 вариантов
-                        </label>
-                        <label>
-                            <input type="radio" name="route_calculation_mode" value="extended">
-                            Расширенный — до 5 вариантов
-                        </label>
-                    </fieldset>
-                    <button type="submit" class="button-primary">Рассчитать маршруты</button>
-                </form>
+                <p class="detail-action-note">Маршруты можно рассчитать только для новой или рассчитанной заявки.</p>
             {% endif %}
-        {% else %}
-            <span>Маршруты можно рассчитать только для новой или рассчитанной заявки.</span>
-        {% endif %}
-        {% if not order.trip %}
-            <span>Утверждение маршрута создает рейс</span>
-        {% endif %}
+            {% if not order.trip %}
+                <p class="detail-action-footnote">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M20 4c-9 1-14 6-15 15"></path>
+                        <path d="M20 4c-1 9-6 14-15 15"></path>
+                    </svg>
+                    Утверждение маршрута создает рейс
+                </p>
+            {% endif %}
+        </section>
     </div>
 </section>
 {% endblock %}

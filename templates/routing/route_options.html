@@ -1,54 +1,108 @@
 {% extends "base.html" %}
 
 {% block title %}Сравнение маршрутов - заявка №{{ order.id }} - EcoLogist{% endblock %}
+{% block body_class %}route-options-page{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 {% endblock %}
 
 {% block content %}
-<section class="page-panel-wide">
-    <div class="page-heading">
+<section class="page-panel-wide route-options-panel">
+    <div class="route-options-heading">
+        <a class="route-back-button" href="{% url 'orders:detail' order.pk %}" aria-label="К заявке">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M15 6 9 12l6 6"></path>
+            </svg>
+        </a>
         <div>
             <h1>Сравнение маршрутов</h1>
             <p class="muted">Заявка №{{ order.id }} · {{ order.cargo_name }}</p>
         </div>
-        <div class="form-actions">
-            <a class="button-secondary" href="{% url 'orders:detail' order.pk %}">К заявке</a>
-            <a class="button-secondary" href="{% url 'orders:list' %}">К списку</a>
+        <div class="route-heading-actions">
+            <a class="route-nav-button" href="{% url 'orders:detail' order.pk %}">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M7 3h7l4 4v14H7z"></path>
+                    <path d="M14 3v5h5"></path>
+                    <path d="M10 13h5"></path>
+                    <path d="M10 17h5"></path>
+                </svg>
+                К заявке
+            </a>
+            <a class="route-nav-button" href="{% url 'orders:list' %}">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M8 6h12"></path>
+                    <path d="M8 12h12"></path>
+                    <path d="M8 18h12"></path>
+                    <path d="M4 6h.01"></path>
+                    <path d="M4 12h.01"></path>
+                    <path d="M4 18h.01"></path>
+                </svg>
+                К списку
+            </a>
         </div>
     </div>
 
-    <dl class="details-list">
-        <dt>Груз</dt>
-        <dd>{{ order.cargo_name }}</dd>
-        <dt>Вес, кг</dt>
-        <dd>{{ order.cargo_weight_kg }}</dd>
-        <dt>Транспорт</dt>
-        <dd>{{ order.transport }}</dd>
-        <dt>Дата доставки</dt>
-        <dd>{{ order.desired_delivery_date|date:"d.m.Y" }}</dd>
-        <dt>Точки</dt>
-        <dd>
-            {% for point in points %}
-                {{ point.location.name }}{% if not forloop.last %} → {% endif %}
-            {% endfor %}
-        </dd>
-    </dl>
-
     {% if route_options %}
         {{ map_routes|json_script:"route-options-data" }}
-        <div id="route-map" class="route-map" aria-label="Карта маршрутов"></div>
-        <p class="form-note route-map-note">
-            Количество вариантов зависит от выбранного провайдера маршрутизации и доступных
-            реальных альтернатив.
-        </p>
-        <p class="form-note route-map-note">
-            Запрошено: до {{ route_diagnostics.requested_count }} вариантов.
-            Найдено: {{ route_diagnostics.found_count }}.
-        </p>
+
+        <div class="route-hero">
+            <article class="route-info-card">
+                <div class="route-card-title">
+                    <span class="route-card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"></path>
+                            <path d="m12 12 8-4.5"></path>
+                            <path d="M12 12v9"></path>
+                            <path d="M12 12 4 7.5"></path>
+                        </svg>
+                    </span>
+                    <h2>Информация о грузе</h2>
+                </div>
+
+                <dl class="route-details-list">
+                    <dt>Груз</dt>
+                    <dd>{{ order.cargo_name }}</dd>
+                    <dt>Вес, кг</dt>
+                    <dd>{{ order.cargo_weight_kg }}</dd>
+                    <dt>Транспорт</dt>
+                    <dd>{{ order.transport }}</dd>
+                    <dt>Дата доставки</dt>
+                    <dd>{{ order.desired_delivery_date|date:"d.m.Y" }}</dd>
+                    <dt>Точки</dt>
+                    <dd>
+                        {% for point in points %}
+                            {{ point.location.name }}{% if not forloop.last %} → {% endif %}
+                        {% endfor %}
+                    </dd>
+                </dl>
+            </article>
+
+            <article class="route-map-card">
+                <div id="route-map" class="route-map" aria-label="Карта маршрутов"></div>
+            </article>
+        </div>
+
+        <div class="route-diagnostics-card">
+            <span class="route-diagnostics-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M20 4c-7 0-12 4-12 10 0 4 3 6 6 6 5 0 8-5 8-14V4z"></path>
+                    <path d="M14 14c-3 1-5 3-6 6"></path>
+                </svg>
+            </span>
+            <div>
+                <p>
+                    Количество вариантов зависит от выбранного провайдера маршрутизации и доступных реальных альтернатив.
+                </p>
+                <p>
+                    Запрошено: до {{ route_diagnostics.requested_count }} вариантов.
+                    Найдено: {{ route_diagnostics.found_count }}.
+                </p>
+            </div>
+        </div>
+
         {% if route_diagnostics.show_graphhopper_shortage %}
-            <div class="message">
+            <div class="message route-shortage-message">
                 GraphHopper вернул {{ route_diagnostics.found_count }} вариант(а).
                 Дополнительные реальные альтернативы для этих точек не найдены.
             </div>
@@ -57,7 +111,7 @@
             Нет корректной геометрии для отображения маршрутов на карте.
         </div>
 
-        <div class="table-wrap route-table-wrap">
+        <div class="table-wrap route-table-wrap route-options-card">
             <table class="data-table route-table">
                 <thead>
                     <tr>
@@ -79,16 +133,26 @@
                         {% with option=row.option %}
                         <tr>
                             <td>
-                                {{ row.display_name }}
-                                {% for badge in row.badges %}
-                                    <span class="status-badge">{{ badge }}</span>
-                                {% endfor %}
-                                {% if row.has_unpriced_tolls %}
-                                    <span class="status-badge">Платная дорога</span>
-                                {% endif %}
-                                {% if option.is_selected %}
-                                    <span class="status-badge">Выбран</span>
-                                {% endif %}
+                                <div class="route-option-title">
+                                    <strong>{{ row.display_name }}</strong>
+                                    {% for badge in row.badges %}
+                                        <span class="route-badge route-badge-success">{{ badge }}</span>
+                                    {% endfor %}
+                                    {% if row.has_unpriced_tolls %}
+                                        <span class="route-badge route-badge-warning">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                <path d="M10 20h4"></path>
+                                                <path d="M12 4v16"></path>
+                                                <path d="M7 20 9 4"></path>
+                                                <path d="m15 4 2 16"></path>
+                                            </svg>
+                                            Платная дорога
+                                        </span>
+                                    {% endif %}
+                                    {% if option.is_selected %}
+                                        <span class="route-badge route-badge-success">Выбран</span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td>{{ option.get_provider_display }}</td>
                             <td>{{ option.distance_km }} км</td>
@@ -107,7 +171,7 @@
                                         class="inline-form"
                                     >
                                         {% csrf_token %}
-                                        <button type="submit" class="button-primary">
+                                        <button type="submit" class="button-primary route-approve-button">
                                             Утвердить маршрут
                                         </button>
                                     </form>
@@ -120,7 +184,7 @@
                         </tr>
                         <tr>
                             <td colspan="11">
-                                <details class="form-note">
+                                <details class="form-note route-calculation-details">
                                     <summary>Как рассчитан маршрут</summary>
                                     <div>
                                         множитель расхода: {{ row.calculation_details.final_fuel_multiplier }};
@@ -145,7 +209,7 @@
             </table>
         </div>
     {% else %}
-        <div class="message">Для этой заявки еще нет рассчитанных маршрутов. Вернитесь к заявке и запустите расчет маршрутов.</div>
+        <div class="message route-empty-message">Для этой заявки еще нет рассчитанных маршрутов. Вернитесь к заявке и запустите расчет маршрутов.</div>
     {% endif %}
 
     {% if order.trip %}

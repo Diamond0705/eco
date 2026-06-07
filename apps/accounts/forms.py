@@ -57,7 +57,6 @@ class ManagerRegistrationForm(UserCreationForm):
         self.fields["password2"].help_text = "Введите тот же пароль еще раз."
         self.fields["username"].help_text = (
             "Никнейм используется для входа и должен быть уникальным. "
-            "Имя, фамилия и отчество могут совпадать у разных пользователей."
         )
         self.fields["username"].widget.attrs["placeholder"] = "ivan_petrov"
         self.fields["phone"].help_text = PHONE_HELP_TEXT
@@ -102,6 +101,8 @@ class UsernameOrEmailAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(request, *args, **kwargs)
         self.fields["password"].label = "Пароль"
+        self.fields["username"].widget.attrs["placeholder"] = "Имя пользователя или email"
+        self.fields["password"].widget.attrs["placeholder"] = "Пароль"
 
     def clean(self):
         username_or_email = self.cleaned_data.get("username")

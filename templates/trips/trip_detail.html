@@ -1,134 +1,236 @@
 {% extends "base.html" %}
 
 {% block title %}Рейс №{{ trip.id }} - EcoLogist{% endblock %}
+{% block body_class %}trip-detail-page{% endblock %}
 
 {% block content %}
-<section class="page-panel-wide">
-    <div class="page-heading">
-        <div>
-            <h1>Рейс №{{ trip.id }}</h1>
-            <p class="muted">{{ trip.get_status_display }}</p>
+<section class="detail-shell trip-detail-shell">
+    <div class="detail-panel">
+        <div class="detail-hero">
+            <div class="detail-title-group">
+                <h1>Рейс №{{ trip.id }}</h1>
+                <span class="detail-status detail-status-{{ trip.status }}">
+                    <span aria-hidden="true"></span>
+                    {{ trip.get_status_display }}
+                </span>
+            </div>
+            <div class="detail-actions">
+                <a class="detail-button detail-button-outline" href="{% url 'orders:detail' trip.order.pk %}">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                        <path d="M14 2v6h6"></path>
+                        <path d="M9 15h6"></path>
+                    </svg>
+                    К заявке
+                </a>
+                <a class="detail-button detail-button-outline" href="{% url 'trips:list' %}">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M8 6h13"></path>
+                        <path d="M8 12h13"></path>
+                        <path d="M8 18h13"></path>
+                        <path d="M3 6h.01"></path>
+                        <path d="M3 12h.01"></path>
+                        <path d="M3 18h.01"></path>
+                    </svg>
+                    К рейсам
+                </a>
+                <a class="detail-button detail-button-outline" href="{% url 'trips:waybill' trip.pk %}">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M12 3v12"></path>
+                        <path d="m7 10 5 5 5-5"></path>
+                        <path d="M5 21h14"></path>
+                    </svg>
+                    Скачать путевой лист
+                </a>
+                <form method="post" action="{% url 'trips:waybill_archive' trip.pk %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="detail-button detail-button-outline">
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <path d="M4 7h16"></path>
+                            <path d="M6 7v14h12V7"></path>
+                            <path d="M8 3h8l2 4H6Z"></path>
+                            <path d="M9 12h6"></path>
+                        </svg>
+                        Сохранить в архив
+                    </button>
+                </form>
+            </div>
         </div>
-        <div class="form-actions">
-            <a class="button-secondary" href="{% url 'orders:detail' trip.order.pk %}">К заявке</a>
-            <a class="button-secondary" href="{% url 'trips:list' %}">К рейсам</a>
-            <a class="button-secondary" href="{% url 'trips:waybill' trip.pk %}">Скачать путевой лист</a>
-            <form method="post" action="{% url 'trips:waybill_archive' trip.pk %}" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="button-secondary">Сохранить в архив</button>
-            </form>
+
+        <div class="detail-facts-card trip-facts-card">
+            <dl class="detail-facts-list">
+                <div>
+                    <dt>Заявка</dt>
+                    <dd>№{{ trip.order_id }}</dd>
+                </div>
+                <div>
+                    <dt>Груз</dt>
+                    <dd>{{ trip.order.cargo_name }}</dd>
+                </div>
+                <div>
+                    <dt>Вес, кг</dt>
+                    <dd>{{ trip.order.cargo_weight_kg }}</dd>
+                </div>
+                <div>
+                    <dt>Транспорт</dt>
+                    <dd>{{ trip.order.transport }}</dd>
+                </div>
+                <div>
+                    <dt>Маршрут</dt>
+                    <dd>{{ trip.display_route_name }}</dd>
+                </div>
+                <div>
+                    <dt>Расстояние</dt>
+                    <dd>{{ trip.route_option.distance_km }} км</dd>
+                </div>
+            </dl>
+            <dl class="detail-facts-list">
+                <div>
+                    <dt>Время</dt>
+                    <dd>{{ trip.route_option.duration_minutes }} мин</dd>
+                </div>
+                <div>
+                    <dt>Стоимость</dt>
+                    <dd>{{ trip.route_option.cost_rub }} руб.</dd>
+                </div>
+                <div>
+                    <dt>CO2</dt>
+                    <dd>{{ trip.route_option.co2_kg }} кг</dd>
+                </div>
+                <div>
+                    <dt>NOx</dt>
+                    <dd>{{ trip.route_option.nox_g }} г</dd>
+                </div>
+                <div>
+                    <dt>PM</dt>
+                    <dd>{{ trip.route_option.pm_g }} г</dd>
+                </div>
+                <div>
+                    <dt>Эко-рейтинг</dt>
+                    <dd>{{ trip.route_option.eco_rating }}</dd>
+                </div>
+                {% if trip.actual_start_at %}
+                    <div>
+                        <dt>Начат</dt>
+                        <dd>{{ trip.actual_start_at|date:"d.m.Y H:i" }}</dd>
+                    </div>
+                {% endif %}
+                {% if trip.actual_finish_at %}
+                    <div>
+                        <dt>Завершен</dt>
+                        <dd>{{ trip.actual_finish_at|date:"d.m.Y H:i" }}</dd>
+                    </div>
+                {% endif %}
+            </dl>
         </div>
-    </div>
 
-    <dl class="details-list">
-        <dt>Заявка</dt>
-        <dd>№{{ trip.order_id }}</dd>
-        <dt>Груз</dt>
-        <dd>{{ trip.order.cargo_name }}</dd>
-        <dt>Вес, кг</dt>
-        <dd>{{ trip.order.cargo_weight_kg }}</dd>
-        <dt>Транспорт</dt>
-        <dd>{{ trip.order.transport }}</dd>
-        <dt>Маршрут</dt>
-        <dd>{{ trip.display_route_name }}</dd>
-        <dt>Расстояние</dt>
-        <dd>{{ trip.route_option.distance_km }} км</dd>
-        <dt>Время</dt>
-        <dd>{{ trip.route_option.duration_minutes }} мин</dd>
-        <dt>Стоимость</dt>
-        <dd>{{ trip.route_option.cost_rub }} руб.</dd>
-        <dt>CO2</dt>
-        <dd>{{ trip.route_option.co2_kg }} кг</dd>
-        <dt>NOx</dt>
-        <dd>{{ trip.route_option.nox_g }} г</dd>
-        <dt>PM</dt>
-        <dd>{{ trip.route_option.pm_g }} г</dd>
-        <dt>Эко-рейтинг</dt>
-        <dd>{{ trip.route_option.eco_rating }}</dd>
-        {% if trip.actual_start_at %}
-            <dt>Начат</dt>
-            <dd>{{ trip.actual_start_at|date:"d.m.Y H:i" }}</dd>
-        {% endif %}
-        {% if trip.actual_finish_at %}
-            <dt>Завершен</dt>
-            <dd>{{ trip.actual_finish_at|date:"d.m.Y H:i" }}</dd>
-        {% endif %}
-    </dl>
-
-    <div class="message route-actions">
-        {% if trip.status == "planned" %}
-            <form method="post" action="{% url 'trips:start' trip.pk %}" class="form-card compact-form">
-                {% csrf_token %}
-                <div class="form-row">
-                    {{ start_form.actual_start_at.label_tag }}
-                    {{ start_form.actual_start_at }}
-                    {{ start_form.actual_start_at.errors }}
-                </div>
-                <div class="form-row">
-                    {{ start_form.comment.label_tag }}
-                    {{ start_form.comment }}
-                    {{ start_form.comment.errors }}
-                </div>
-                <button type="submit" class="button-primary">Начать рейс</button>
-            </form>
-        {% elif trip.status == "in_progress" %}
-            <form method="post" action="{% url 'trips:deliver' trip.pk %}" class="form-card compact-form">
-                {% csrf_token %}
-                <div class="form-row">
-                    {{ deliver_form.actual_finish_at.label_tag }}
-                    {{ deliver_form.actual_finish_at }}
-                    {{ deliver_form.actual_finish_at.errors }}
-                </div>
-                <div class="form-row">
-                    {{ deliver_form.comment.label_tag }}
-                    {{ deliver_form.comment }}
-                    {{ deliver_form.comment.errors }}
-                </div>
-                <button type="submit" class="button-primary">Завершить рейс</button>
-            </form>
-        {% elif trip.status == "delivered" %}
-            <span>Рейс доставлен.</span>
-        {% else %}
-            <span>Рейс отменен.</span>
-        {% endif %}
-    </div>
-
-    <h2>История статусов</h2>
-    <div class="table-wrap">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Фактическое время</th>
-                    <th>Время записи</th>
-                    <th>Предыдущий статус</th>
-                    <th>Новый статус</th>
-                    <th>Изменил</th>
-                    <th>Комментарий</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for event in status_events %}
-                    <tr>
-                        <td>
-                            {% if event.event_at %}
-                                {{ event.event_at|date:"d.m.Y H:i" }}
-                            {% else %}
-                                {{ event.changed_at|date:"d.m.Y H:i" }}
-                            {% endif %}
-                        </td>
-                        <td>{{ event.changed_at|date:"d.m.Y H:i" }}</td>
-                        <td>{{ event.get_old_status_display|default:"-" }}</td>
-                        <td>{{ event.get_new_status_display }}</td>
-                        <td>{{ event.changed_by|default:"-" }}</td>
-                        <td>{{ event.comment }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="6">История статусов пока пуста.</td>
-                    </tr>
+        <section class="detail-section">
+            <div class="detail-section-title">
+                <span class="detail-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Z"></path>
+                        <circle cx="12" cy="9" r="2.5"></circle>
+                    </svg>
+                </span>
+                <h2>Точки маршрута</h2>
+            </div>
+            <ol class="route-points-timeline">
+                {% for point in trip.order.points.all %}
+                    <li>
+                        <span class="route-point-number">{{ forloop.counter }}</span>
+                        <div>
+                            <strong>{{ point.get_point_type_display }}:</strong>
+                            <span>{{ point.location.name }}</span>
+                            {% if point.location.address %}<span class="muted">— {{ point.location.address }}</span>{% endif %}
+                        </div>
+                    </li>
                 {% endfor %}
-            </tbody>
-        </table>
+            </ol>
+        </section>
+
+        <section class="detail-action-card trip-lifecycle-card">
+            {% if trip.status == "planned" %}
+                <form method="post" action="{% url 'trips:start' trip.pk %}" class="detail-lifecycle-form">
+                    {% csrf_token %}
+                    <h2>Начало рейса</h2>
+                    <div class="detail-lifecycle-grid">
+                        <div class="form-row">
+                            {{ start_form.actual_start_at.label_tag }}
+                            {{ start_form.actual_start_at }}
+                            {{ start_form.actual_start_at.errors }}
+                        </div>
+                        <div class="form-row">
+                            {{ start_form.comment.label_tag }}
+                            {{ start_form.comment }}
+                            {{ start_form.comment.errors }}
+                        </div>
+                        <button type="submit" class="detail-button detail-button-primary">Начать рейс</button>
+                    </div>
+                </form>
+            {% elif trip.status == "in_progress" %}
+                <form method="post" action="{% url 'trips:deliver' trip.pk %}" class="detail-lifecycle-form">
+                    {% csrf_token %}
+                    <h2>Завершение рейса</h2>
+                    <div class="detail-lifecycle-grid">
+                        <div class="form-row">
+                            {{ deliver_form.actual_finish_at.label_tag }}
+                            {{ deliver_form.actual_finish_at }}
+                            {{ deliver_form.actual_finish_at.errors }}
+                        </div>
+                        <div class="form-row">
+                            {{ deliver_form.comment.label_tag }}
+                            {{ deliver_form.comment }}
+                            {{ deliver_form.comment.errors }}
+                        </div>
+                        <button type="submit" class="detail-button detail-button-primary">Завершить рейс</button>
+                    </div>
+                </form>
+            {% elif trip.status == "delivered" %}
+                <p class="detail-action-note">Рейс доставлен.</p>
+            {% else %}
+                <p class="detail-action-note">Рейс отменен.</p>
+            {% endif %}
+        </section>
+
+        <section class="detail-section">
+            <h2 class="detail-history-heading">История статусов</h2>
+            <div class="detail-history-table-wrap">
+                <table class="detail-history-table">
+                    <thead>
+                        <tr>
+                            <th>Фактическое время</th>
+                            <th>Время записи</th>
+                            <th>Предыдущий статус</th>
+                            <th>Новый статус</th>
+                            <th>Изменил</th>
+                            <th>Комментарий</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in status_events %}
+                            <tr>
+                                <td>
+                                    {% if event.event_at %}
+                                        {{ event.event_at|date:"d.m.Y H:i" }}
+                                    {% else %}
+                                        {{ event.changed_at|date:"d.m.Y H:i" }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ event.changed_at|date:"d.m.Y H:i" }}</td>
+                                <td>{{ event.get_old_status_display|default:"-" }}</td>
+                                <td>{{ event.get_new_status_display }}</td>
+                                <td>{{ event.changed_by|default:"-" }}</td>
+                                <td>{{ event.comment }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">История статусов пока пуста.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </section>
 {% endblock %}

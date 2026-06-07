@@ -1,64 +1,136 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Панель менеджера - EcoLogist{% endblock %}
+{% block body_class %}manager-dashboard-page{% endblock %}
 
 {% block content %}
-<section class="page-panel-wide">
-    <div class="page-heading">
+<section class="page-panel-wide manager-dashboard-panel">
+    <div class="manager-dashboard-heading">
         <div>
             <h1>Панель менеджера</h1>
             <p class="muted">Ключевые показатели по вашим заявкам, рейсам и выбросам</p>
         </div>
     </div>
 
-    <div class="placeholder-grid">
-        <div class="placeholder-card">
+    <div class="manager-metrics-grid">
+        <article class="manager-metric-card">
+            <span class="manager-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3h7l4 4v14H7z"></path>
+                    <path d="M14 3v5h5"></path>
+                    <path d="M10 12h5"></path>
+                    <path d="M10 16h5"></path>
+                </svg>
+            </span>
             <h2>Мои заявки</h2>
             <p class="stat-value">{{ analytics.orders.total }}</p>
-            <p>Новые: {{ analytics.orders.by_status.new }} &nbsp; Рассчитанные: {{ analytics.orders.by_status.calculated }}</p>
-            <div class="card-actions">
-                <a class="button-secondary" href="{% url 'orders:list' %}">Заявки</a>
-                <a class="button-secondary" href="{% url 'orders:create' %}">Создать заявку</a>
+            <p class="metric-note">Новые: {{ analytics.orders.by_status.new }} &nbsp; Рассчитанные: {{ analytics.orders.by_status.calculated }}</p>
+            <div class="manager-card-actions">
+                <a class="manager-action-button" href="{% url 'orders:list' %}">Заявки <span aria-hidden="true">→</span></a>
+                <a class="manager-action-button manager-action-button-wide" href="{% url 'orders:create' %}">Создать заявку <span aria-hidden="true">→</span></a>
             </div>
-        </div>
-        <div class="placeholder-card">
+        </article>
+
+        <article class="manager-metric-card">
+            <span class="manager-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M3 6h11v10H3z"></path>
+                    <path d="M14 10h4l3 3v3h-7z"></path>
+                    <circle cx="7" cy="18" r="2"></circle>
+                    <circle cx="18" cy="18" r="2"></circle>
+                </svg>
+            </span>
             <h2>Активные рейсы</h2>
             <p class="stat-value">{{ analytics.trips.active }}</p>
-            <p>План: {{ analytics.trips.planned }} &nbsp; В пути: {{ analytics.trips.in_progress }}</p>
-            <div class="card-actions">
-                <a class="button-secondary" href="{% url 'trips:list' %}">Рейсы</a>
+            <p class="metric-note">План: {{ analytics.trips.planned }} &nbsp; В пути: {{ analytics.trips.in_progress }}</p>
+            <div class="manager-card-actions">
+                <a class="manager-action-button" href="{% url 'trips:list' %}">Рейсы <span aria-hidden="true">→</span></a>
             </div>
-        </div>
-        <div class="placeholder-card">
+        </article>
+
+        <article class="manager-metric-card">
+            <span class="manager-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <rect x="5" y="4" width="14" height="16" rx="2"></rect>
+                    <path d="m9 12 2 2 4-5"></path>
+                </svg>
+            </span>
             <h2>Доставленные рейсы</h2>
             <p class="stat-value">{{ analytics.trips.delivered }}</p>
-            <p>{{ analytics.delivered.distance_km }} км &nbsp; {{ analytics.delivered.fuel_liters }} л топлива</p>
-            <div class="card-actions">
-                <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчет по выбросам</a>
+            <p class="metric-note">{{ analytics.delivered.distance_km }} км &nbsp; {{ analytics.delivered.fuel_liters }} л топлива</p>
+            <div class="manager-card-actions">
+                <a class="manager-action-button manager-action-button-wide" href="{% url 'reports:emissions' %}">Отчет по выбросам <span aria-hidden="true">→</span></a>
             </div>
-        </div>
-        <div class="placeholder-card">
+        </article>
+
+        <article class="manager-metric-card">
+            <span class="manager-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M20 4c-7 0-12 4-12 10 0 4 3 6 6 6 5 0 8-5 8-14V4z"></path>
+                    <path d="M14 14c-3 1-5 3-6 6"></path>
+                </svg>
+            </span>
             <h2>CO2 доставленных</h2>
             <p class="stat-value">{{ analytics.delivered.co2_kg }} кг</p>
-            <p>Средний эко-рейтинг: {{ analytics.delivered.average_eco_rating }}</p>
-            <div class="card-actions">
-                <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
+            <p class="metric-note">Средний эко-рейтинг:<br>{{ analytics.delivered.average_eco_rating }}</p>
+            <div class="manager-card-actions">
+                <a class="manager-action-button" href="{% url 'dashboard:manager_analytics' %}">Аналитика <span aria-hidden="true">→</span></a>
             </div>
-        </div>
+        </article>
     </div>
 
-    <div class="placeholder-grid">
-        <div class="placeholder-card">
+    <div class="manager-feature-grid">
+        <article class="manager-feature-card manager-feature-card-map">
+            <span class="manager-card-icon manager-feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"></path>
+                    <path d="M9 3v15"></path>
+                    <path d="M15 6v15"></path>
+                </svg>
+            </span>
             <h2>Маршруты</h2>
             <p>Сравнивайте рассчитанные варианты маршрутов по стоимости, выбросам и эко-рейтингу.</p>
-        </div>
-        <div class="placeholder-card">
+            <img class="manager-map-illustration" src="{% static 'img/manager-map-illustration.png' %}" alt="">
+            <div class="manager-card-actions">
+                <a class="manager-action-button manager-action-button-wide" href="{% url 'orders:list' %}">Открыть карту <span aria-hidden="true">→</span></a>
+            </div>
+        </article>
+
+        <article class="manager-feature-card manager-feature-card-report">
+            <span class="manager-card-icon manager-feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5 20V10"></path>
+                    <path d="M12 20V4"></path>
+                    <path d="M19 20v-7"></path>
+                    <path d="M3 20h18"></path>
+                </svg>
+            </span>
             <h2>Отчеты</h2>
             <p>Смотрите суммарные выбросы по доставленным рейсам и скачивайте PDF.</p>
-            <div class="card-actions">
-                <a class="button-secondary" href="{% url 'reports:emissions' %}">Отчеты</a>
+            <div class="manager-report-layout">
+                <div class="manager-card-actions">
+                    <a class="manager-action-button" href="{% url 'reports:emissions' %}">Отчеты <span aria-hidden="true">→</span></a>
+                </div>
+                <img class="manager-report-illustration" src="{% static 'img/manager-report-illustration.png' %}" alt="">
             </div>
-        </div>
+        </article>
     </div>
 </section>
+
+<p class="manager-dashboard-footer">
+    <span class="manager-footer-leaf" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M20 4c-7 0-12 4-12 10 0 4 3 6 6 6 5 0 8-5 8-14V4z"></path>
+            <path d="M14 14c-3 1-5 3-6 6"></path>
+        </svg>
+    </span>
+    EcoLogist — умные логистические решения для зелёного будущего
+    <span class="manager-footer-leaf" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M20 4c-7 0-12 4-12 10 0 4 3 6 6 6 5 0 8-5 8-14V4z"></path>
+            <path d="M14 14c-3 1-5 3-6 6"></path>
+        </svg>
+    </span>
+</p>
 {% endblock %}

@@ -1,32 +1,42 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Регистрация - EcoLogist{% endblock %}
+{% block body_class %}register-page{% endblock %}
 
 {% block content %}
-<section class="page-panel">
-    <h1>Регистрация менеджера</h1>
-    <p class="muted">Новая учетная запись создается с ролью менеджера.</p>
+<section class="register-shell" data-register-background="{% static 'img/login-background.png' %}">
+    <div class="register-card" data-register-card-background="{% static 'img/login-card-background.png' %}">
+        <div class="register-card-header">
+            <h1>Регистрация менеджера</h1>
+            <p class="muted">Новая учетная запись создается с ролью менеджера.</p>
+        </div>
 
-    <form method="post" class="form-card">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="form-errors">{{ form.non_field_errors }}</div>
-        {% endif %}
+        <form method="post" class="form-card">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-        {% for field in form %}
-            <div class="form-row">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <div class="help-text">{{ field.help_text }}</div>
-                {% endif %}
-                {% if field.errors %}
-                    <div class="field-errors">{{ field.errors }}</div>
-                {% endif %}
-            </div>
-        {% endfor %}
+            {% for field in form %}
+                <div class="form-row">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="help-text">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="field-errors">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
 
-        <button type="submit" class="button-primary">Зарегистрироваться</button>
-    </form>
+            <button type="submit" class="button-primary">Зарегистрироваться</button>
+        </form>
+
+        <p class="form-note">
+            Уже есть учетная запись? <a href="{% url 'accounts:login' %}">Войти</a>
+        </p>
+    </div>
 </section>
 {% endblock %}

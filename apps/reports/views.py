@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.core.permissions import is_admin, is_manager, manager_required
@@ -126,8 +128,75 @@ def emissions_report(request):
 @login_required
 @require_GET
 def archive(request):
-    documents = _archive_queryset_for_user(request.user).order_by("-created_at")
-    return render(request, "reports/archive.html", {"documents": documents})
+    documents = _archive_queryset_for_user(request.user)
+    available_document_types = set(documents.values_list("document_type", flat=True).distinct())
+    available_file_formats = set(documents.values_list("file_format", flat=True).distinct())
+    selected_type = request.GET.get("document_type", "")
+    selected_format = request.GET.get("file_format", "")
+    date_from = request.GET.get("date_from", "")
+    date_to = request.GET.get("date_to", "")
+    search_query = request.GET.get("q", "").strip()
+
+    valid_types = {choice.value for choice in ArchivedDocument.DocumentType}
+    valid_formats = {choice.value for choice in ArchivedDocument.FileFormat}
+
+    if selected_type in valid_types:
+        documents = documents.filter(document_type=selected_type)
+    else:
+        selected_type = ""
+
+    if selected_format in valid_formats:
+        documents = documents.filter(file_format=selected_format)
+    else:
+        selected_format = ""
+
+    parsed_date_from = parse_date(date_from)
+    if parsed_date_from:
+        documents = documents.filter(created_at__date__gte=parsed_date_from)
+    else:
+        date_from = ""
+
+    parsed_date_to = parse_date(date_to)
+    if parsed_date_to:
+        documents = documents.filter(created_at__date__lte=parsed_date_to)
+    else:
+        date_to = ""
+
+    if search_query:
+        documents = documents.filter(
+            Q(title__icontains=search_query)
+            | Q(owner__username__icontains=search_query)
+            | Q(owner__first_name__icontains=search_query)
+            | Q(owner__last_name__icontains=search_query)
+            | Q(created_by__username__icontains=search_query)
+            | Q(created_by__first_name__icontains=search_query)
+            | Q(created_by__last_name__icontains=search_query)
+        )
+
+    return render(
+        request,
+        "reports/archive.html",
+        {
+            "documents": documents.order_by("-created_at"),
+            "document_type_choices": [
+                choice
+                for choice in ArchivedDocument.DocumentType.choices
+                if choice[0] in available_document_types
+            ],
+            "file_format_choices": [
+                choice
+                for choice in ArchivedDocument.FileFormat.choices
+                if choice[0] in available_file_formats
+            ],
+            "filters": {
+                "document_type": selected_type,
+                "file_format": selected_format,
+                "date_from": date_from,
+                "date_to": date_to,
+                "q": search_query,
+            },
+        },
+    )
 
 
 @login_required

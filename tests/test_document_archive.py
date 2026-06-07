@@ -221,6 +221,49 @@ def test_archive_page_contains_delete_button(client, manager):
 
 
 @pytest.mark.django_db
+def test_archive_filters_by_format_date_and_search(client, manager):
+    pdf_document = save_test_document(manager, title="Майский путевой лист")
+    xlsx_document = DocumentArchiveService().save_document(
+        content_bytes=b"PK-xlsx-filter",
+        document_type=ArchivedDocument.DocumentType.EMISSIONS_XLSX,
+        file_format=ArchivedDocument.FileFormat.XLSX,
+        title="Июньский отчет Excel",
+        owner=manager,
+        created_by=manager,
+        metadata={"source": "test"},
+    )
+    ArchivedDocument.objects.filter(pk=pdf_document.pk).update(
+        created_at=timezone.make_aware(datetime(2026, 5, 22, 7, 35))
+    )
+    ArchivedDocument.objects.filter(pk=xlsx_document.pk).update(
+        created_at=timezone.make_aware(datetime(2026, 6, 22, 14, 32))
+    )
+    client.force_login(manager)
+
+    response = client.get(
+        reverse("reports:archive"),
+        {
+            "file_format": ArchivedDocument.FileFormat.XLSX,
+            "date_from": "2026-06-01",
+            "date_to": "2026-06-30",
+            "q": "Excel",
+        },
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert xlsx_document.title in content
+    assert pdf_document.title not in content
+    assert 'name="file_format"' in content
+    assert 'name="date_from"' in content
+    assert 'name="date_to"' in content
+    assert 'name="q"' in content
+    assert "archive-file-icon-xlsx" in content
+    assert "archive-download-button" in content
+    assert "archive-delete-button" in content
+
+
+@pytest.mark.django_db
 def test_manager_deletes_own_archive_document_and_file(client, manager, settings):
     document = save_test_document(manager, content=b"%PDF-delete-me")
     file_path = settings.MEDIA_ROOT / document.file.name
