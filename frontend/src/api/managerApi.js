@@ -42,6 +42,35 @@ export const managerApi = baseApi.injectEndpoints({
         "Dashboard"
       ]
     }),
+    calculateRoutes: builder.mutation({
+      query: ({ orderId, mode = "standard" }) => ({
+        url: `orders/${orderId}/calculate-routes/`,
+        method: "POST",
+        body: { route_calculation_mode: mode }
+      }),
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: "Order", id: orderId },
+        { type: "RouteOptions", id: orderId },
+        { type: "Orders", id: "LIST" },
+        "Dashboard"
+      ]
+    }),
+    routeOptions: builder.query({
+      query: (orderId) => `orders/${orderId}/route-options/`,
+      providesTags: (_result, _error, orderId) => [{ type: "RouteOptions", id: orderId }]
+    }),
+    approveRoute: builder.mutation({
+      query: ({ orderId, routeOptionId }) => ({
+        url: `orders/${orderId}/routes/${routeOptionId}/approve/`,
+        method: "POST"
+      }),
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: "Order", id: orderId },
+        { type: "RouteOptions", id: orderId },
+        { type: "Orders", id: "LIST" },
+        "Dashboard"
+      ]
+    }),
     transports: builder.query({
       query: () => "transports/",
       providesTags: ["References"]
@@ -54,11 +83,14 @@ export const managerApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useApproveRouteMutation,
   useCancelOrderMutation,
+  useCalculateRoutesMutation,
   useCreateOrderMutation,
   useLocationsQuery,
   useManagerDashboardQuery,
   useOrderQuery,
   useOrdersQuery,
+  useRouteOptionsQuery,
   useTransportsQuery
 } = managerApi;

@@ -57,7 +57,7 @@ No MUI, Ant Design, Tailwind, Bootstrap, FontAwesome or other heavy UI dependenc
 - Create form uses API transports and locations.
 - Transport helper shows capacity and whether the selected transport fits the entered cargo weight.
 - Detail page shows cargo, transport, delivery date, notes, route points and available actions.
-- Route calculation UI and Leaflet route comparison are deferred to the next phase.
+- Route calculation UI and Leaflet route comparison are implemented later in Phase 27.
 - Admin SPA remains deferred.
 
 ## Checks

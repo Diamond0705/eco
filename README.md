@@ -257,6 +257,8 @@ collection authorization to Bearer Token.
 - Phase 25 adds a separate Vite React scaffold in `/frontend`; full manager pages remain future
   work.
 - Phase 26 adds the first manager SPA pages for dashboard and order create/list/detail/cancel.
+- Phase 27 adds React route calculation, Leaflet route comparison and route approval for manager
+  orders.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
@@ -264,8 +266,9 @@ collection authorization to Bearer Token.
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
 records the approved React SPA migration plan, `docs/24_manager_api_expansion.md` documents the
 manager API contract, `docs/25_react_spa_scaffold.md` documents the Vite React scaffold, and
-`docs/26_manager_spa_core.md` documents the first manager React workflow. Earlier docs in
-`docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
+`docs/26_manager_spa_core.md` documents the first manager React workflow.
+`docs/27_react_route_comparison.md` documents React route comparison and approval. Earlier docs
+in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
 earlier phase boundaries.
 
 ## Before Public Deployment

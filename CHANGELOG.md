@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Phase 27 - React Route Comparison And Approval
+
+- Added React route calculation and comparison page at `/orders/:id/routes`.
+- Added React Leaflet map rendering from saved `geometry_json` route snapshots.
+- Added route option cards with provider, badges, warnings, metrics and calculation details.
+- Added route approval through the existing Django API while keeping trip creation on the backend.
+- Kept Django templates, backend views, models, migrations, formulas, providers, reports, archive,
+  admin SPA, trips/reports React pages, CORS, WebSocket, Celery and Redis unchanged.
+
 ## Phase 26 - Manager SPA Core
 
 - Added React manager dashboard, orders list, order create and order detail pages.

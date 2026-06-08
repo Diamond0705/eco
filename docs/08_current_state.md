@@ -138,6 +138,17 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Existing Django templates, backend views, models, migrations, business logic, route providers,
   formulas, PDF/XLSX/archive behavior, CORS, WebSocket, Celery and Redis remain unchanged.
 
+## Phase 27
+
+- Added React route calculation and comparison at `/orders/:id/routes`.
+- Added React Leaflet and Leaflet frontend dependencies for route maps.
+- The route comparison page renders saved `geometry_json`, route metrics, backend badges,
+  warnings and calculation details.
+- Managers can approve a route through the existing backend API; trip creation remains in Django.
+- Existing Django templates, backend views, models, migrations, calculation formulas, routing
+  providers, PDF/XLSX/archive behavior, admin React pages, trips/reports React pages, CORS,
+  WebSocket, Celery and Redis remain unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -158,6 +169,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Manager workflow API for the future React SPA.
 - Vite React SPA scaffold with JWT auth shell.
 - Manager React dashboard and order workflow.
+- React route calculation, Leaflet comparison map and route approval.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -217,8 +229,9 @@ planning notes for earlier phases, so they may describe target behavior or old p
   TLS certificate automation and scheduled backups are not implemented.
 - The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
   and now has manager workflow write/action endpoints. CORS is not implemented.
-- React SPA exists in `/frontend` with manager dashboard and order workflow. Route comparison,
-  reports, trips and admin React pages remain future work; Django templates remain available.
+- React SPA exists in `/frontend` with manager dashboard, order workflow, route calculation,
+  Leaflet route comparison and route approval. Reports, trips and admin React pages remain future
+  work; Django templates remain available.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

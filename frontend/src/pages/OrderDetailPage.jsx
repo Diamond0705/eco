@@ -106,6 +106,11 @@ export default function OrderDetailPage() {
       <Card className="actions-card">
         <h2>Действия</h2>
         <div className="form-actions">
+          {["new", "calculated"].includes(order.status) ? (
+            <Button to={`/orders/${order.id}/routes`}>
+              {order.route_options?.length ? "Сравнить маршруты" : "Рассчитать маршруты"}
+            </Button>
+          ) : null}
           {canCancelOrder(order) ? (
             <Button variant="danger" disabled={isCancelling} onClick={handleCancel}>
               {isCancelling ? "Отменяем..." : "Отменить заявку"}
@@ -114,9 +119,11 @@ export default function OrderDetailPage() {
           <Button variant="secondary" onClick={() => navigate("/orders")}>
             Назад к списку
           </Button>
-          <Link className="button button-muted" to={`/orders/${order.id}`}>
-            Расчет маршрута будет добавлен позже
-          </Link>
+          {order.route_options?.length ? (
+            <Link className="button button-secondary" to={`/orders/${order.id}/routes`}>
+              Открыть варианты маршрута
+            </Link>
+          ) : null}
         </div>
       </Card>
     </PageShell>

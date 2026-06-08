@@ -590,6 +590,152 @@ p {
   gap: 12px;
 }
 
+.route-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.75fr) minmax(360px, 1.35fr);
+  gap: 18px;
+}
+
+.route-summary-card {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.map-card {
+  min-height: 470px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.route-map,
+.leaflet-map {
+  min-height: 470px;
+  width: 100%;
+}
+
+.route-marker {
+  background: transparent;
+  border: 0;
+}
+
+.route-marker span {
+  align-items: center;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(26, 58, 39, 0.24);
+  color: #fff;
+  display: inline-flex;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.route-marker-start span {
+  background: #1f7a4d;
+}
+
+.route-marker-end span {
+  background: #b94735;
+}
+
+.route-options-list {
+  display: grid;
+  gap: 16px;
+}
+
+.route-option-card {
+  display: grid;
+  gap: 16px;
+}
+
+.selected-route {
+  border-color: #87c79e;
+  box-shadow: 0 16px 38px rgba(31, 122, 77, 0.16);
+}
+
+.route-option-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.route-option-heading h3 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.route-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.route-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.route-metric-grid div {
+  border: 1px solid #dce8e0;
+  border-radius: 8px;
+  background: #f8fbf9;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.route-metric-grid span {
+  color: #6b8174;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.route-metric-grid strong {
+  font-size: 1.05rem;
+}
+
+.warning-line {
+  display: block;
+}
+
+.calculation-details {
+  border: 1px solid #dce8e0;
+  border-radius: 8px;
+  background: #fbfdfb;
+  padding: 12px;
+}
+
+.calculation-details summary {
+  color: #24563d;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.calculation-details dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.calculation-details div {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.6fr) 1fr;
+  gap: 12px;
+}
+
+.calculation-details dt {
+  color: #6b8174;
+  font-weight: 800;
+}
+
+.calculation-details dd {
+  margin: 0;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -607,8 +753,13 @@ p {
   .dashboard-grid,
   .feature-grid,
   .detail-grid,
+  .route-layout,
   .order-form {
     grid-template-columns: 1fr;
+  }
+
+  .route-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .topbar {
@@ -619,5 +770,12 @@ p {
   .page-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .route-metric-grid,
+  .calculation-details div {
+    grid-template-columns: 1fr;
   }
 }

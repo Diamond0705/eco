@@ -7,6 +7,7 @@ import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrderCreatePage from "./pages/OrderCreatePage.jsx";
 import OrderDetailPage from "./pages/OrderDetailPage.jsx";
 import OrdersListPage from "./pages/OrdersListPage.jsx";
+import RouteComparisonPage from "./pages/RouteComparisonPage.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import RoleRoute from "./routes/RoleRoute.jsx";
 
@@ -46,6 +47,14 @@ export default function App() {
             element={
               <RoleRoute allowedRoles={["manager"]}>
                 <OrderDetailPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/orders/:id/routes"
+            element={
+              <RoleRoute allowedRoles={["manager"]}>
+                <RouteComparisonPage />
               </RoleRoute>
             }
           />
