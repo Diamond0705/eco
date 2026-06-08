@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Phase 25 - React SPA Scaffold
+
+- Added a Vite React SPA scaffold under `/frontend` using JavaScript, React Router, Redux Toolkit,
+  RTK Query and React Redux.
+- Added JWT login flow, current-user loading, in-memory access token state, `sessionStorage`
+  refresh token storage, refresh-on-401 retry and logout clearing.
+- Added protected and role-based routes plus a Russian EcoLogist shell with login, dashboard
+  placeholder and not-found pages.
+- Kept Django templates, backend views, models, migrations, business logic, CORS, WebSocket,
+  Celery, Redis and full manager/admin SPA pages unchanged.
+
 ## Phase 24 - Manager API Expansion
 
 - Added manager-facing DRF write/action endpoints for orders, route calculation, route options,

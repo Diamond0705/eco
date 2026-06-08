@@ -55,6 +55,17 @@ python manage.py seed_demo
 python manage.py runserver
 ```
 
+Optional React SPA development from Phase 25:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Keep Django running on `http://127.0.0.1:8000`; Vite proxies `/api` and `/static` to Django, so
+CORS is not required for local React development.
+
 Optional local MinIO for the private document archive:
 
 ```powershell
@@ -243,14 +254,17 @@ collection authorization to Bearer Token.
   TLS automation and scheduled backups are not implemented.
 - The REST API supports sessions plus JWT Bearer tokens. Phase 24 adds manager workflow
   write/action endpoints for the future React SPA, while CORS is not implemented.
+- Phase 25 adds a separate Vite React scaffold in `/frontend`; full manager pages remain future
+  work.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
-records the approved React SPA migration plan for later phases. Earlier docs in `docs/00_*`
-through `docs/07_*` are useful historical and planning notes and may still describe earlier phase
-boundaries.
+records the approved React SPA migration plan, `docs/24_manager_api_expansion.md` documents the
+manager API contract, and `docs/25_react_spa_scaffold.md` documents the Vite React scaffold.
+Earlier docs in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may
+still describe earlier phase boundaries.
 
 ## Before Public Deployment
 

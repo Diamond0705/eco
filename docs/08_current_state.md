@@ -115,6 +115,17 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - No React files, frontend dependencies, migrations, CORS, WebSocket, Celery, Redis, provider
   changes or calculation formula changes are added in this phase.
 
+## Phase 25
+
+- Added `/frontend` as a Vite React JavaScript SPA scaffold.
+- Added React Router, Redux Toolkit, RTK Query and React Redux frontend structure.
+- Added login, current-user loading, protected routes, role routes, logout, Russian layout shell,
+  placeholder dashboard and not-found page.
+- Vite proxies `/api` and `/static` to Django on `http://127.0.0.1:8000`, so CORS remains
+  unconfigured.
+- Existing Django templates, backend views, models, migrations, business logic, route providers,
+  calculation formulas, PDF/XLSX/archive behavior, WebSocket, Celery and Redis remain unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -133,6 +144,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - OpenAPI schema, Swagger UI and ReDoc for API inspection and Postman import.
 - React SPA migration plan for later phases.
 - Manager workflow API for the future React SPA.
+- Vite React SPA scaffold with JWT auth shell.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -192,7 +204,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
   TLS certificate automation and scheduled backups are not implemented.
 - The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
   and now has manager workflow write/action endpoints. CORS is not implemented.
-- React SPA is planned but not scaffolded yet; Django templates remain the active user interface.
+- React SPA scaffold exists in `/frontend`, but full manager pages are not implemented yet; Django
+  templates remain available.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment
