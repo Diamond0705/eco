@@ -247,11 +247,18 @@
             attribution: "&copy; OpenStreetMap"
         }).addTo(map);
 
-        function isValidCoordinate(coordinate) {
-            return Array.isArray(coordinate)
-                && coordinate.length === 2
-                && typeof coordinate[0] === "number"
-                && typeof coordinate[1] === "number";
+        function normalizeCoordinate(coordinate) {
+            if (!Array.isArray(coordinate) || coordinate.length !== 2) {
+                return null;
+            }
+
+            var latitude = Number(coordinate[0]);
+            var longitude = Number(coordinate[1]);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return null;
+            }
+
+            return [latitude, longitude];
         }
 
         var bounds = [];
@@ -262,7 +269,9 @@
             if (!Array.isArray(coordinates)) {
                 return;
             }
-            coordinates = coordinates.filter(isValidCoordinate);
+            coordinates = coordinates.map(normalizeCoordinate).filter(function (coordinate) {
+                return coordinate !== null;
+            });
             if (coordinates.length < 2) {
                 return;
             }
@@ -274,7 +283,7 @@
             }).addTo(map).bindPopup(
                 route.name + "<br>Источник: " + route.provider_display + "<br>Эко-рейтинг: " + route.eco_rating
             );
-            if (index === 0) {
+            if (!firstPoint) {
                 firstPoint = coordinates[0];
                 lastPoint = coordinates[coordinates.length - 1];
             }
@@ -282,6 +291,9 @@
         });
 
         if (bounds.length > 0) {
+            if (warningElement) {
+                warningElement.hidden = true;
+            }
             if (firstPoint) {
                 L.marker(firstPoint).addTo(map).bindPopup("Начало маршрута");
             }

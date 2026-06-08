@@ -1,31 +1,110 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Редактирование профиля - EcoLogist{% endblock %}
+{% block body_class %}profile-page profile-edit-page{% endblock %}
 
 {% block content %}
-<section class="page-panel">
-    <h1>Редактирование профиля</h1>
+<section class="profile-panel">
+    <div class="profile-heading">
+        <div>
+            <h1>Профиль</h1>
+            <p class="muted">Управляйте своими персональными данными и настройками аккаунта.</p>
+        </div>
+        <a class="profile-button profile-button-outline" href="{% url 'accounts:profile' %}">
+            К профилю
+        </a>
+    </div>
 
-    <form method="post" class="form-card">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="form-errors">{{ form.non_field_errors }}</div>
-        {% endif %}
-
-        {% for field in form %}
-            <div class="form-row">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="field-errors">{{ field.errors }}</div>
+    <div class="profile-layout">
+        <aside class="profile-avatar-card">
+            <div class="profile-avatar-frame">
+                {% if user.avatar %}
+                    <img src="{% url 'accounts:profile_avatar' %}" alt="Фото профиля" class="profile-avatar-image">
+                {% else %}
+                    <div class="profile-avatar-placeholder" aria-hidden="true">
+                        <span>
+                            {% if user.last_name or user.first_name %}
+                                {% if user.last_name %}{{ user.last_name|first|upper }}{% endif %}{% if user.first_name %}{{ user.first_name|first|upper }}{% endif %}
+                            {% else %}
+                                {{ user.username|first|upper }}
+                            {% endif %}
+                        </span>
+                    </div>
                 {% endif %}
             </div>
-        {% endfor %}
+            <h2>
+                {% if user.last_name or user.first_name %}
+                    {{ user.last_name }}{% if user.first_name %} {{ user.first_name }}{% endif %}
+                {% else %}
+                    {{ user.username }}
+                {% endif %}
+            </h2>
+            <span class="profile-role-badge">{{ user.get_role_display }}</span>
+            <div class="profile-avatar-note">
+                <img src="{% static 'img/eco-leaf-icon.png' %}" alt="" aria-hidden="true">
+                <p>Вы можете добавить фотографию профиля, чтобы персонализировать свой аккаунт.</p>
+            </div>
 
-        <div class="form-actions">
-            <button type="submit" class="button-primary">Сохранить</button>
-            <a class="button-secondary" href="{% url 'accounts:profile' %}">Отмена</a>
-        </div>
-    </form>
+            <form method="post" action="{% url 'accounts:profile_avatar_upload' %}" enctype="multipart/form-data" class="profile-avatar-form">
+                {% csrf_token %}
+                <input id="id_avatar" type="file" name="avatar" accept="image/png,image/jpeg" class="profile-file-input" onchange="this.form.submit()">
+                <label class="profile-button profile-button-primary" for="id_avatar">
+                    Загрузить фото
+                </label>
+                <button type="submit" class="profile-button profile-button-outline profile-avatar-submit">
+                    {% if user.avatar %}Изменить фото{% else %}Сохранить фото{% endif %}
+                </button>
+            </form>
+
+            {% if user.avatar %}
+                <form method="post" action="{% url 'accounts:profile_avatar_delete' %}" class="profile-avatar-delete-form">
+                    {% csrf_token %}
+                    <button type="submit" class="profile-button profile-button-danger">
+                        Удалить фото
+                    </button>
+                </form>
+            {% endif %}
+
+            <p class="profile-upload-hint">Рекомендуемый формат: JPG, PNG. Максимальный размер файла: 5 МБ.</p>
+        </aside>
+
+        <section class="profile-data-card">
+            <h2>Личные данные</h2>
+            <form method="post" class="profile-data-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="form-errors">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="profile-form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="profile-privacy-note">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+                        <path d="m9 12 2 2 4-5"></path>
+                    </svg>
+                    Ваши данные используются для работы в системе и не передаются третьим лицам.
+                </div>
+
+                <div class="profile-save-actions">
+                    <button type="submit" class="profile-button profile-button-primary">
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <path d="m5 12 5 5L20 7"></path>
+                        </svg>
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
 </section>
 {% endblock %}

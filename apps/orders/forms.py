@@ -88,9 +88,17 @@ class ShipmentOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.points_instance = kwargs.pop("points_instance", None)
         super().__init__(*args, **kwargs)
-        self.fields["transport"].queryset = Transport.objects.filter(is_active=True).select_related(
+        transports = Transport.objects.filter(is_active=True).select_related(
             "eco_standard"
         )
+        self.fields["transport"].queryset = transports
+        self.transport_capacity_data = {
+            str(transport.pk): {
+                "capacity_kg": transport.capacity_kg,
+                "label": str(transport),
+            }
+            for transport in transports
+        }
         active_locations = Location.objects.filter(is_active=True)
         self.fields["origin_location"].queryset = active_locations
         self.fields["destination_location"].queryset = active_locations

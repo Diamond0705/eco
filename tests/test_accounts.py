@@ -1,10 +1,23 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 
-from apps.accounts.forms import ManagerRegistrationForm, ProfileUpdateForm
+from apps.accounts.forms import (
+    ManagerRegistrationForm,
+    ProfileAvatarUploadForm,
+    ProfileUpdateForm,
+)
 
 User = get_user_model()
+
+PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+JPG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF"
+
+
+def avatar_file(name="avatar.png", content=PNG_BYTES, content_type="image/png"):
+    return SimpleUploadedFile(name, content, content_type=content_type)
 
 
 @pytest.mark.django_db
@@ -317,6 +330,152 @@ def test_profile_edit_allows_own_email(client):
 
     user.refresh_from_db()
     assert user.email == "own@example.com"
+
+
+@pytest.mark.django_db
+def test_profile_edit_contains_avatar_forms(client):
+    user = User.objects.create_user(username="profile_avatar_html", password="StrongPass12345")
+    client.force_login(user)
+
+    response = client.get(reverse("accounts:profile_edit"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'enctype="multipart/form-data"' in content
+    assert reverse("accounts:profile_avatar_upload") in content
+    assert "csrfmiddlewaretoken" in content
+    assert 'onchange="this.form.submit()"' in content
+    assert "Загрузить фото" in content
+
+
+@pytest.mark.django_db
+@override_settings(USE_S3_STORAGE=False)
+def test_profile_avatar_upload_view_saves_valid_png(client, tmp_path, settings):
+    settings.PROTECTED_MEDIA_ROOT = tmp_path / "protected"
+    user = User.objects.create_user(username="profile_avatar_upload", password="StrongPass12345")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("accounts:profile_avatar_upload"),
+        {"avatar": avatar_file()},
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse("accounts:profile_edit")
+
+    user.refresh_from_db()
+    assert user.avatar.name.startswith(f"user_{user.pk}/")
+    assert user.avatar.storage.exists(user.avatar.name)
+
+
+@pytest.mark.django_db
+@override_settings(USE_S3_STORAGE=False)
+def test_profile_avatar_upload_replaces_old_file(client, tmp_path, settings):
+    settings.PROTECTED_MEDIA_ROOT = tmp_path / "protected"
+    user = User.objects.create_user(username="profile_avatar_replace", password="StrongPass12345")
+    client.force_login(user)
+
+    client.post(reverse("accounts:profile_avatar_upload"), {"avatar": avatar_file()})
+    user.refresh_from_db()
+    old_name = user.avatar.name
+    assert user.avatar.storage.exists(old_name)
+
+    response = client.post(
+        reverse("accounts:profile_avatar_upload"),
+        {"avatar": avatar_file("avatar.jpg", JPG_BYTES, "image/jpeg")},
+    )
+
+    assert response.status_code == 302
+    user.refresh_from_db()
+    assert user.avatar.name != old_name
+    assert user.avatar.name.endswith(".jpg")
+    assert not user.avatar.storage.exists(old_name)
+    assert user.avatar.storage.exists(user.avatar.name)
+
+
+@pytest.mark.django_db
+@override_settings(USE_S3_STORAGE=False)
+def test_profile_avatar_delete_view_clears_field_and_file(client, tmp_path, settings):
+    settings.PROTECTED_MEDIA_ROOT = tmp_path / "protected"
+    user = User.objects.create_user(username="profile_avatar_delete", password="StrongPass12345")
+    client.force_login(user)
+    client.post(reverse("accounts:profile_avatar_upload"), {"avatar": avatar_file()})
+    user.refresh_from_db()
+    old_name = user.avatar.name
+    assert user.avatar.storage.exists(old_name)
+
+    response = client.post(reverse("accounts:profile_avatar_delete"))
+
+    assert response.status_code == 302
+    user.refresh_from_db()
+    assert user.avatar.name == ""
+    assert not user.avatar.storage.exists(old_name)
+
+
+@pytest.mark.django_db
+@override_settings(USE_S3_STORAGE=False)
+def test_profile_avatar_view_is_private_and_streams_current_user_avatar(client, tmp_path, settings):
+    settings.PROTECTED_MEDIA_ROOT = tmp_path / "protected"
+    owner = User.objects.create_user(username="profile_avatar_owner", password="StrongPass12345")
+    other = User.objects.create_user(username="profile_avatar_other", password="StrongPass12345")
+    client.force_login(owner)
+    client.post(reverse("accounts:profile_avatar_upload"), {"avatar": avatar_file()})
+
+    response = client.get(reverse("accounts:profile_avatar"))
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "image/png"
+    assert b"".join(response.streaming_content).startswith(b"\x89PNG")
+
+    client.logout()
+    anonymous_response = client.get(reverse("accounts:profile_avatar"))
+    assert anonymous_response.status_code == 302
+    assert anonymous_response["Location"].startswith(reverse("accounts:login"))
+
+    client.force_login(other)
+    assert client.get(reverse("accounts:profile_avatar")).status_code == 404
+
+
+@pytest.mark.django_db
+def test_profile_card_uses_surname_first_initials_and_role_only(client):
+    user = User.objects.create_user(
+        username="profile_name_order",
+        first_name="Виктория",
+        last_name="Удалова",
+        role=User.Role.MANAGER,
+        password="StrongPass12345",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("accounts:profile"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    compact_html = "".join(content.split())
+    assert "УдаловаВиктория" in compact_html
+    assert "УВ" in compact_html
+    assert "Менеджер" in content
+    assert "Аккаунт активен" not in content
+
+
+def test_profile_avatar_upload_form_rejects_invalid_files():
+    text_form = ProfileAvatarUploadForm(
+        files={"avatar": avatar_file("avatar.txt", b"plain text", "text/plain")}
+    )
+    assert not text_form.is_valid()
+    assert "Загрузите фото в формате JPG или PNG." in text_form.errors["avatar"]
+
+    fake_png_form = ProfileAvatarUploadForm(
+        files={"avatar": avatar_file("avatar.png", b"not a png", "image/png")}
+    )
+    assert not fake_png_form.is_valid()
+    assert "Файл не похож на изображение JPG или PNG." in fake_png_form.errors["avatar"]
+
+    large_form = ProfileAvatarUploadForm(
+        files={"avatar": avatar_file("avatar.png", PNG_BYTES + (b"0" * (5 * 1024 * 1024)))}
+    )
+    assert not large_form.is_valid()
+    assert "Максимальный размер файла: 5 МБ." in large_form.errors["avatar"]
 
 
 @pytest.mark.django_db

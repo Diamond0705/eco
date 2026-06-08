@@ -120,6 +120,13 @@ def test_deploy_dockerfile_installs_cyrillic_pdf_font():
     assert "rm -rf /var/lib/apt/lists/*" in dockerfile
 
 
+def test_deploy_entrypoint_applies_migrations_and_refreshes_staticfiles():
+    entrypoint = open("docker/entrypoint.sh", encoding="utf-8").read()
+
+    assert "python manage.py migrate --noinput" in entrypoint
+    assert "python manage.py collectstatic --noinput --clear" in entrypoint
+
+
 def test_debug_false_rejects_unsafe_secret_key():
     env = {
         **os.environ,

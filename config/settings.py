@@ -166,6 +166,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+PROTECTED_MEDIA_ROOT = BASE_DIR / "protected_media"
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=False)
@@ -182,6 +183,7 @@ if env.bool("USE_X_FORWARDED_PROTO", default=False):
 USE_S3_STORAGE = env.bool("USE_S3_STORAGE", default=False)
 DOCUMENT_ARCHIVE_ENABLED = env.bool("DOCUMENT_ARCHIVE_ENABLED", default=True)
 DOCUMENT_ARCHIVE_LOCATION = env("DOCUMENT_ARCHIVE_LOCATION", default="document_archive")
+PROFILE_AVATAR_LOCATION = env("PROFILE_AVATAR_LOCATION", default="profile_avatars")
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="ecologist")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="ecologist-password")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="ecologist-documents")

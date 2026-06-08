@@ -2,29 +2,156 @@
 
 {% block title %}Создание заявки - EcoLogist{% endblock %}
 
-{% block content %}
-<section class="page-panel">
-    <h1>Создание заявки</h1>
-    <p class="muted">Выберите транспорт, груз и две точки маршрута.</p>
+{% block body_class %}order-create-page{% endblock %}
 
-    <form method="post" class="form-card">
+{% block content %}
+<section class="order-create-panel">
+    <div class="order-create-heading">
+        <h1>Создание заявки</h1>
+        <p class="muted">Укажите характеристики груза, затем подберите подходящий транспорт и маршрут.</p>
+    </div>
+
+    <form method="post" class="order-create-form">
         {% csrf_token %}
+        {{ form.transport_capacity_data|json_script:"transport-capacity-data" }}
+
         {% if form.non_field_errors %}
-            <div class="form-errors">{{ form.non_field_errors }}</div>
+            <div class="form-errors order-create-errors">{{ form.non_field_errors }}</div>
         {% endif %}
 
-        {% for field in form %}
-            <div class="form-row">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <div class="help-text">{{ field.help_text }}</div>
-                {% endif %}
-                {% if field.errors %}
-                    <div class="field-errors">{{ field.errors }}</div>
-                {% endif %}
+        <section class="order-form-section">
+            <h2 class="order-form-section-title">
+                <span class="order-form-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3 4.5 7.2v8.6L12 20l7.5-4.2V7.2L12 3Z"></path>
+                        <path d="m4.8 7.4 7.2 4 7.2-4"></path>
+                        <path d="M12 11.4V20"></path>
+                    </svg>
+                </span>
+                Данные о грузе
+            </h2>
+
+            <div class="order-form-grid order-form-grid-three">
+                <div class="order-form-field">
+                    <label for="{{ form.cargo_name.id_for_label }}">{{ form.cargo_name.label }}</label>
+                    {{ form.cargo_name }}
+                    {% if form.cargo_name.help_text %}
+                        <div class="help-text">{{ form.cargo_name.help_text }}</div>
+                    {% endif %}
+                    {% if form.cargo_name.errors %}
+                        <div class="field-errors">{{ form.cargo_name.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="order-form-field">
+                    <label for="{{ form.cargo_type.id_for_label }}">{{ form.cargo_type.label }}</label>
+                    {{ form.cargo_type }}
+                    {% if form.cargo_type.help_text %}
+                        <div class="help-text">{{ form.cargo_type.help_text }}</div>
+                    {% endif %}
+                    {% if form.cargo_type.errors %}
+                        <div class="field-errors">{{ form.cargo_type.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="order-form-field">
+                    <label for="{{ form.cargo_weight_kg.id_for_label }}">{{ form.cargo_weight_kg.label }}</label>
+                    {{ form.cargo_weight_kg }}
+                    {% if form.cargo_weight_kg.help_text %}
+                        <div class="help-text">{{ form.cargo_weight_kg.help_text }}</div>
+                    {% endif %}
+                    {% if form.cargo_weight_kg.errors %}
+                        <div class="field-errors">{{ form.cargo_weight_kg.errors }}</div>
+                    {% endif %}
+                </div>
             </div>
-        {% endfor %}
+        </section>
+
+        <section class="order-form-section">
+            <h2 class="order-form-section-title">
+                <span class="order-form-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 7h11v10H3z"></path>
+                        <path d="M14 10h3.5l2.5 3v4h-6z"></path>
+                        <path d="M6.5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                        <path d="M17.5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                    </svg>
+                </span>
+                Выбор транспорта
+            </h2>
+
+            <div class="order-form-grid order-form-grid-two">
+                <div class="order-form-field">
+                    <label for="{{ form.transport.id_for_label }}">{{ form.transport.label }}</label>
+                    {{ form.transport }}
+                    <div class="order-capacity-hint" data-order-capacity-hint aria-live="polite"></div>
+                    {% if form.transport.help_text %}
+                        <div class="help-text">{{ form.transport.help_text }}</div>
+                    {% endif %}
+                    {% if form.transport.errors %}
+                        <div class="field-errors">{{ form.transport.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="order-form-field">
+                    <label for="{{ form.desired_delivery_date.id_for_label }}">{{ form.desired_delivery_date.label }}</label>
+                    {{ form.desired_delivery_date }}
+                    {% if form.desired_delivery_date.help_text %}
+                        <div class="help-text">{{ form.desired_delivery_date.help_text }}</div>
+                    {% endif %}
+                    {% if form.desired_delivery_date.errors %}
+                        <div class="field-errors">{{ form.desired_delivery_date.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="order-form-field order-form-field-full">
+                    <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {% if form.notes.help_text %}
+                        <div class="help-text">{{ form.notes.help_text }}</div>
+                    {% endif %}
+                    {% if form.notes.errors %}
+                        <div class="field-errors">{{ form.notes.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="order-form-section order-form-section-last">
+            <h2 class="order-form-section-title">
+                <span class="order-form-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21s6-5.4 6-11a6 6 0 0 0-12 0c0 5.6 6 11 6 11Z"></path>
+                        <path d="M12 12.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z"></path>
+                    </svg>
+                </span>
+                Маршрут
+            </h2>
+
+            <div class="order-form-grid order-form-grid-two">
+                <div class="order-form-field">
+                    <label for="{{ form.origin_location.id_for_label }}">{{ form.origin_location.label }}</label>
+                    {{ form.origin_location }}
+                    {% if form.origin_location.help_text %}
+                        <div class="help-text">{{ form.origin_location.help_text }}</div>
+                    {% endif %}
+                    {% if form.origin_location.errors %}
+                        <div class="field-errors">{{ form.origin_location.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="order-form-field">
+                    <label for="{{ form.destination_location.id_for_label }}">{{ form.destination_location.label }}</label>
+                    {{ form.destination_location }}
+                    {% if form.destination_location.help_text %}
+                        <div class="help-text">{{ form.destination_location.help_text }}</div>
+                    {% endif %}
+                    {% if form.destination_location.errors %}
+                        <div class="field-errors">{{ form.destination_location.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
 
         <datalist id="cargo-type-suggestions">
             {% for suggestion in cargo_type_suggestions %}
@@ -37,9 +164,17 @@
             {% endfor %}
         </datalist>
 
-        <div class="form-actions">
-            <button type="submit" class="button-primary">Создать заявку</button>
-            <a class="button-secondary" href="{% url 'orders:list' %}">Отмена</a>
+        <div class="order-create-actions">
+            <button type="submit" class="order-create-button order-create-button-primary">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path>
+                    <path d="M14 3v6h6"></path>
+                    <path d="M12 11v6"></path>
+                    <path d="M9 14h6"></path>
+                </svg>
+                Создать заявку
+            </button>
+            <a class="order-create-button order-create-button-secondary" href="{% url 'orders:list' %}">Отмена</a>
         </div>
     </form>
 </section>

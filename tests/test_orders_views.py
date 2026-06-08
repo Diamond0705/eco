@@ -193,6 +193,23 @@ def test_order_create_form_renders_cargo_suggestions_and_disables_autocomplete(
 
     assert response.status_code == 200
     assert_cargo_entry_polish(content)
+    assert "order-create-page" in content
+    assert "Данные о грузе" in content
+    assert "Выбор транспорта" in content
+    assert "Маршрут" in content
+    assert '<script id="transport-capacity-data" type="application/json">' in content
+    assert str(transport.capacity_kg) in content
+    for field_name in (
+        "transport",
+        "cargo_name",
+        "cargo_type",
+        "cargo_weight_kg",
+        "desired_delivery_date",
+        "origin_location",
+        "destination_location",
+        "notes",
+    ):
+        assert f'name="{field_name}"' in content
 
 
 @pytest.mark.django_db

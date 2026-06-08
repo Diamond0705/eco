@@ -1,48 +1,88 @@
 {% extends "base.html" %}
 
 {% block title %}Отчет по выбросам - EcoLogist{% endblock %}
+{% block body_class %}emissions-report-page{% endblock %}
 
 {% block content %}
-<section class="page-panel-wide">
-    <div class="page-heading">
+<section class="emissions-report-panel">
+    <div class="emissions-report-hero">
         <div>
             <h1>Отчет по выбросам</h1>
             <p class="muted">Доставленные рейсы текущего менеджера.</p>
         </div>
-        <div class="form-actions">
-            <a class="button-secondary" href="{% url 'dashboard:manager_analytics' %}">Аналитика</a>
-            <a class="button-secondary" href="{% url 'reports:emissions_pdf' %}?date_from={{ date_from }}&date_to={{ date_to }}">
+        <div class="emissions-report-actions">
+            <a class="emissions-button emissions-button-outline" href="{% url 'dashboard:manager_analytics' %}">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M4 19V5"></path>
+                    <path d="M4 19h17"></path>
+                    <path d="M8 16v-5"></path>
+                    <path d="M13 16V8"></path>
+                    <path d="M18 16v-9"></path>
+                </svg>
+                Аналитика
+            </a>
+            <a class="emissions-button emissions-button-outline" href="{% url 'reports:emissions_pdf' %}?date_from={{ date_from }}&date_to={{ date_to }}">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="M12 11v7"></path>
+                    <path d="m9 15 3 3 3-3"></path>
+                </svg>
                 Скачать PDF
             </a>
-            <a class="button-secondary" href="{% url 'reports:emissions_xlsx' %}?date_from={{ date_from }}&date_to={{ date_to }}">
+            <a class="emissions-button emissions-button-outline" href="{% url 'reports:emissions_xlsx' %}?date_from={{ date_from }}&date_to={{ date_to }}">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="m9 13 6 6"></path>
+                    <path d="m15 13-6 6"></path>
+                </svg>
                 Скачать Excel
             </a>
             <form method="post" action="{% url 'reports:emissions_pdf_archive' %}" class="inline-form">
                 {% csrf_token %}
                 <input type="hidden" name="date_from" value="{{ date_from }}">
                 <input type="hidden" name="date_to" value="{{ date_to }}">
-                <button type="submit" class="button-secondary">Сохранить PDF в архив</button>
+                <button type="submit" class="emissions-button emissions-button-outline">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M4 7h16"></path>
+                        <path d="M6 7v14h12V7"></path>
+                        <path d="M8 3h8l2 4H6Z"></path>
+                        <path d="M9 12h6"></path>
+                    </svg>
+                    Сохранить PDF в архив
+                </button>
             </form>
             <form method="post" action="{% url 'reports:emissions_xlsx_archive' %}" class="inline-form">
                 {% csrf_token %}
                 <input type="hidden" name="date_from" value="{{ date_from }}">
                 <input type="hidden" name="date_to" value="{{ date_to }}">
-                <button type="submit" class="button-secondary">Сохранить Excel в архив</button>
+                <button type="submit" class="emissions-button emissions-button-outline">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M4 7h16"></path>
+                        <path d="M6 7v14h12V7"></path>
+                        <path d="M8 3h8l2 4H6Z"></path>
+                        <path d="M9 12h6"></path>
+                    </svg>
+                    Сохранить Excel в архив
+                </button>
             </form>
         </div>
     </div>
 
-    <form method="get" class="filter-form">
-        <label>
-            Дата с
-            <input type="date" name="date_from" value="{{ date_from }}">
-        </label>
-        <label>
-            Дата по
-            <input type="date" name="date_to" value="{{ date_to }}">
-        </label>
-        <button type="submit" class="button-primary">Показать</button>
-        <a class="button-secondary" href="{% url 'reports:emissions' %}">Сбросить</a>
+    <form method="get" class="emissions-filter-card">
+        <div class="emissions-filter-field">
+            <label for="emissions-date-from">Дата с</label>
+            <input id="emissions-date-from" type="date" name="date_from" value="{{ date_from }}">
+        </div>
+        <div class="emissions-filter-field">
+            <label for="emissions-date-to">Дата по</label>
+            <input id="emissions-date-to" type="date" name="date_to" value="{{ date_to }}">
+        </div>
+        <div class="emissions-filter-actions">
+            <button type="submit" class="emissions-button emissions-button-primary">Показать</button>
+            <a class="emissions-button emissions-button-outline" href="{% url 'reports:emissions' %}">Сбросить</a>
+        </div>
     </form>
 
     {% if filters.error_message %}
@@ -53,51 +93,51 @@
         <div class="message">Доставленных рейсов за выбранный период нет.</div>
     {% endif %}
 
-    <div class="placeholder-grid">
-        <div class="placeholder-card">
+    <div class="emissions-metrics-grid">
+        <div class="emissions-metric-card">
             <h2>Рейсы</h2>
             <p>{{ report.summary.trips_count }}</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>Расстояние</h2>
             <p>{{ report.summary.distance_km }} км</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>Топливо</h2>
             <p>{{ report.summary.fuel_liters }} л</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>Стоимость</h2>
             <p>{{ report.summary.cost_rub }} руб.</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>CO2</h2>
             <p>{{ report.summary.co2_kg }} кг</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>NOx / PM</h2>
             <p>{{ report.summary.nox_g }} г / {{ report.summary.pm_g }} г</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>CO2 на км</h2>
             <p>{{ report.summary.average_co2_kg_per_km }} кг/км</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>CO2 на тонно-км</h2>
             <p>{{ report.summary.average_co2_kg_per_ton_km }} кг/тонно-км</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>Эко-рейтинг</h2>
             <p>{{ report.summary.average_eco_rating }}</p>
         </div>
-        <div class="placeholder-card">
+        <div class="emissions-metric-card">
             <h2>Платные участки</h2>
             <p>{{ report.summary.toll_routes_count }}</p>
         </div>
     </div>
 
-    <div class="table-wrap">
-        <table class="data-table route-table">
+    <div class="emissions-table-wrap">
+        <table class="data-table emissions-table">
             <thead>
                 <tr>
                     <th>Рейс</th>

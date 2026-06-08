@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
@@ -7,6 +8,9 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 User = get_user_model()
 
 PHONE_HELP_TEXT = "Предпочтительный формат: +7 (999) 123-45-67"
+MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024
+ALLOWED_AVATAR_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+ALLOWED_AVATAR_CONTENT_TYPES = {"image/jpeg", "image/png"}
 
 
 def validate_russian_phone(phone):
@@ -164,3 +168,30 @@ class ProfileUpdateForm(forms.ModelForm):
         if users.exists():
             raise forms.ValidationError("Пользователь с таким email уже зарегистрирован.")
         return email
+
+
+class ProfileAvatarUploadForm(forms.Form):
+    avatar = forms.FileField(label="Фото профиля")
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data["avatar"]
+        extension = Path(avatar.name).suffix.lower()
+        content_type = getattr(avatar, "content_type", "")
+
+        if avatar.size > MAX_AVATAR_SIZE_BYTES:
+            raise forms.ValidationError("Максимальный размер файла: 5 МБ.")
+
+        if extension not in ALLOWED_AVATAR_EXTENSIONS:
+            raise forms.ValidationError("Загрузите фото в формате JPG или PNG.")
+
+        if content_type and content_type not in ALLOWED_AVATAR_CONTENT_TYPES:
+            raise forms.ValidationError("Загрузите фото в формате JPG или PNG.")
+
+        header = avatar.read(12)
+        avatar.seek(0)
+        is_png = header.startswith(b"\x89PNG\r\n\x1a\n")
+        is_jpeg = header.startswith(b"\xff\xd8\xff")
+        if not (is_png or is_jpeg):
+            raise forms.ValidationError("Файл не похож на изображение JPG или PNG.")
+
+        return avatar

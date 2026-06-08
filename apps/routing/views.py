@@ -44,7 +44,7 @@ def calculate_routes(request, pk):
     _store_route_diagnostics(request, order, service)
     if service.last_warning:
         messages.warning(request, service.last_warning)
-    messages.success(request, "Маршруты рассчитаны.")
+    messages.success(request, "Маршруты рассчитаны")
     return redirect("routing:options", pk=order.pk)
 
 

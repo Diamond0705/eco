@@ -1,7 +1,14 @@
+{% load static %}
+
 {% if messages %}
     <div class="messages" aria-live="polite">
         {% for message in messages %}
-            <div class="message message-{{ message.tags }}">{{ message }}</div>
+            <div class="message message-{{ message.tags }}">
+                {% if "success" in message.tags %}
+                    <img src="{% static 'img/eco-leaf-icon.png' %}" alt="" class="message-leaf-icon" aria-hidden="true">
+                {% endif %}
+                <span>{{ message }}</span>
+            </div>
         {% endfor %}
     </div>
 {% endif %}
