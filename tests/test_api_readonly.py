@@ -8,6 +8,8 @@ from django.utils import timezone
 from apps.fleet.models import EcoCalculationSettings, EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.reports.models import ArchivedDocument
+from apps.reports.services.document_archive import DocumentArchiveService
 from apps.routing.models import RouteOption
 from apps.trips.models import Trip
 
@@ -532,3 +534,108 @@ def test_manager_dashboard_and_emissions_report_api_reuse_saved_snapshots(
     assert report_payload["summary"]["trips_count"] == 1
     assert report_payload["summary"]["average_co2_kg_per_km"] == "0.800"
     assert report_payload["rows"][0]["trip_id"] == trip.pk
+
+
+@pytest.mark.django_db
+def test_archive_api_respects_scope_download_and_delete(
+    client,
+    users,
+    reference_data,
+    settings,
+    tmp_path,
+):
+    settings.MEDIA_ROOT = tmp_path / "media"
+    manager, other_manager, admin = users
+    download_document = DocumentArchiveService().save_document(
+        content_bytes=b"%PDF-own-api",
+        document_type=ArchivedDocument.DocumentType.WAYBILL_PDF,
+        file_format=ArchivedDocument.FileFormat.PDF,
+        title="API own document",
+        owner=manager,
+        created_by=manager,
+    )
+    delete_document = DocumentArchiveService().save_document(
+        content_bytes=b"%PDF-delete-api",
+        document_type=ArchivedDocument.DocumentType.WAYBILL_PDF,
+        file_format=ArchivedDocument.FileFormat.PDF,
+        title="API delete document",
+        owner=manager,
+        created_by=manager,
+    )
+    other_document = DocumentArchiveService().save_document(
+        content_bytes=b"%PDF-other-api",
+        document_type=ArchivedDocument.DocumentType.WAYBILL_PDF,
+        file_format=ArchivedDocument.FileFormat.PDF,
+        title="API other document",
+        owner=other_manager,
+        created_by=other_manager,
+    )
+    client.force_login(manager)
+
+    list_response = client.get(reverse("api:archive"))
+    other_download_response = client.get(reverse("api:archive_download", args=[other_document.pk]))
+    own_download_response = client.get(reverse("api:archive_download", args=[download_document.pk]))
+
+    assert list_response.status_code == 200
+    assert {item["id"] for item in list_response.json()} == {
+        download_document.pk,
+        delete_document.pk,
+    }
+    assert other_download_response.status_code == 404
+    assert own_download_response.status_code == 200
+    assert own_download_response["Content-Type"] == "application/pdf"
+    assert b"".join(own_download_response.streaming_content) == b"%PDF-own-api"
+    delete_response = client.delete(reverse("api:archive_delete", args=[delete_document.pk]))
+    assert delete_response.status_code == 204
+    assert not ArchivedDocument.objects.filter(pk=delete_document.pk).exists()
+
+    client.force_login(admin)
+    admin_response = client.get(reverse("api:archive"))
+    assert admin_response.status_code == 200
+    assert {item["id"] for item in admin_response.json()} == {
+        download_document.pk,
+        other_document.pk,
+    }
+
+
+@pytest.mark.django_db
+def test_report_and_trip_export_api_create_archive_documents(
+    client,
+    users,
+    reference_data,
+    settings,
+    tmp_path,
+):
+    settings.MEDIA_ROOT = tmp_path / "media"
+    manager, _other_manager, _admin = users
+    order = create_order(manager, **reference_data)
+    route = create_route(order)
+    trip = create_trip(order, route)
+    client.force_login(manager)
+
+    pdf_response = client.get(reverse("api:emissions_report_pdf"))
+    xlsx_response = client.get(reverse("api:emissions_report_xlsx"))
+    archive_pdf_response = client.post(reverse("api:emissions_report_pdf_archive"))
+    archive_xlsx_response = client.post(reverse("api:emissions_report_xlsx_archive"))
+    trips_archive_response = client.post(
+        reverse("api:trips_export_xlsx_archive"),
+        {"status": Trip.Status.DELIVERED},
+    )
+    waybill_archive_response = client.post(reverse("api:trip_waybill_archive", args=[trip.pk]))
+
+    assert pdf_response.status_code == 200
+    assert pdf_response["Content-Type"] == "application/pdf"
+    assert xlsx_response.status_code == 200
+    assert xlsx_response["Content-Type"] == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert archive_pdf_response.status_code == 201
+    assert archive_xlsx_response.status_code == 201
+    assert trips_archive_response.status_code == 201
+    assert waybill_archive_response.status_code == 201
+    assert {document.document_type for document in ArchivedDocument.objects.all()} == {
+        ArchivedDocument.DocumentType.EMISSIONS_PDF,
+        ArchivedDocument.DocumentType.EMISSIONS_XLSX,
+        ArchivedDocument.DocumentType.TRIPS_XLSX,
+        ArchivedDocument.DocumentType.WAYBILL_PDF,
+    }

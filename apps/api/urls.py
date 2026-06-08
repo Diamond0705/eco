@@ -8,8 +8,15 @@ from rest_framework_simplejwt.views import (
 from .views import (
     AnalyticsSummaryAPIView,
     ApproveRouteAPIView,
+    ArchiveDeleteAPIView,
+    ArchiveDownloadAPIView,
+    ArchiveListAPIView,
     CurrentUserAPIView,
     EmissionsReportAPIView,
+    EmissionsReportPdfAPIView,
+    EmissionsReportPdfArchiveAPIView,
+    EmissionsReportXlsxAPIView,
+    EmissionsReportXlsxArchiveAPIView,
     LocationListAPIView,
     ManagerDashboardAPIView,
     OrderCalculateRoutesAPIView,
@@ -21,8 +28,12 @@ from .views import (
     TransportListAPIView,
     TripDeliverAPIView,
     TripDetailAPIView,
+    TripExportXlsxAPIView,
+    TripExportXlsxArchiveAPIView,
     TripListAPIView,
     TripStartAPIView,
+    TripWaybillAPIView,
+    TripWaybillArchiveAPIView,
 )
 
 app_name = "api"
@@ -59,9 +70,48 @@ urlpatterns = [
         name="approve_route",
     ),
     path("trips/", TripListAPIView.as_view(), name="trips"),
+    path("trips/export-xlsx/", TripExportXlsxAPIView.as_view(), name="trips_export_xlsx"),
+    path(
+        "trips/export-xlsx/archive/",
+        TripExportXlsxArchiveAPIView.as_view(),
+        name="trips_export_xlsx_archive",
+    ),
     path("trips/<int:pk>/", TripDetailAPIView.as_view(), name="trip_detail"),
     path("trips/<int:pk>/start/", TripStartAPIView.as_view(), name="trip_start"),
     path("trips/<int:pk>/deliver/", TripDeliverAPIView.as_view(), name="trip_deliver"),
+    path("trips/<int:pk>/waybill/", TripWaybillAPIView.as_view(), name="trip_waybill"),
+    path(
+        "trips/<int:pk>/waybill/archive/",
+        TripWaybillArchiveAPIView.as_view(),
+        name="trip_waybill_archive",
+    ),
     path("reports/emissions/", EmissionsReportAPIView.as_view(), name="emissions_report"),
+    path(
+        "reports/emissions/pdf/",
+        EmissionsReportPdfAPIView.as_view(),
+        name="emissions_report_pdf",
+    ),
+    path(
+        "reports/emissions/pdf/archive/",
+        EmissionsReportPdfArchiveAPIView.as_view(),
+        name="emissions_report_pdf_archive",
+    ),
+    path(
+        "reports/emissions/xlsx/",
+        EmissionsReportXlsxAPIView.as_view(),
+        name="emissions_report_xlsx",
+    ),
+    path(
+        "reports/emissions/xlsx/archive/",
+        EmissionsReportXlsxArchiveAPIView.as_view(),
+        name="emissions_report_xlsx_archive",
+    ),
+    path("reports/archive/", ArchiveListAPIView.as_view(), name="archive"),
+    path(
+        "reports/archive/<int:pk>/download/",
+        ArchiveDownloadAPIView.as_view(),
+        name="archive_download",
+    ),
+    path("reports/archive/<int:pk>/", ArchiveDeleteAPIView.as_view(), name="archive_delete"),
     path("analytics/summary/", AnalyticsSummaryAPIView.as_view(), name="analytics_summary"),
 ]

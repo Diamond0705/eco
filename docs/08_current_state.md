@@ -149,6 +149,17 @@ planning notes for earlier phases, so they may describe target behavior or old p
   providers, PDF/XLSX/archive behavior, admin React pages, trips/reports React pages, CORS,
   WebSocket, Celery and Redis remain unchanged.
 
+## Phase 28
+
+- Added React manager pages for trips, trip detail/status actions, emissions reports and document
+  archive.
+- Added JWT-protected API endpoints for report PDF/XLSX downloads, report archive saves, trip
+  Excel export, waybill PDF actions and archive list/download/delete.
+- React file downloads use the REST API with Bearer auth, so they do not require Django session
+  cookies.
+- Existing Django templates, backend models, migrations, route providers, calculation formulas,
+  report/archive services, CORS, WebSocket, Celery and Redis remain unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -170,6 +181,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Vite React SPA scaffold with JWT auth shell.
 - Manager React dashboard and order workflow.
 - React route calculation, Leaflet comparison map and route approval.
+- React manager trips, emissions reports and document archive.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -230,8 +242,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
   and now has manager workflow write/action endpoints. CORS is not implemented.
 - React SPA exists in `/frontend` with manager dashboard, order workflow, route calculation,
-  Leaflet route comparison and route approval. Reports, trips and admin React pages remain future
-  work; Django templates remain available.
+  Leaflet route comparison, route approval, trips, emissions reports and document archive. Admin
+  React pages remain future work; Django templates remain available.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

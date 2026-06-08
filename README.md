@@ -34,9 +34,11 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - ReportLab
 - openpyxl for synchronous `.xlsx` exports
 - django-storages with S3 support for the optional private document archive
-- Django REST Framework for the read-only session-authenticated API
+- Django REST Framework for the session/JWT-authenticated API
 - SimpleJWT for external Bearer-token API authentication
 - drf-spectacular for OpenAPI schema and Swagger/ReDoc documentation
+- React + Vite SPA under `/frontend`
+- Redux Toolkit, RTK Query, React Router and React Leaflet
 - Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
@@ -55,7 +57,7 @@ python manage.py seed_demo
 python manage.py runserver
 ```
 
-Optional React SPA development from Phase 25:
+Optional React SPA development:
 
 ```powershell
 cd frontend
@@ -65,6 +67,10 @@ npm run dev
 
 Keep Django running on `http://127.0.0.1:8000`; Vite proxies `/api` and `/static` to Django, so
 CORS is not required for local React development.
+
+The manager React SPA currently covers dashboard, orders, route calculation/comparison, route
+approval, trips, emissions reports and document archive. Django templates remain available during
+the migration.
 
 Optional local MinIO for the private document archive:
 

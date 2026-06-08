@@ -335,6 +335,28 @@ p {
   text-decoration: none;
 }
 
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table-button {
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.table-button-danger {
+  background: #fff0ed;
+  color: #9a321f;
+}
+
+.table-button-danger:hover {
+  background: #f8d7cf;
+}
+
 .feature-grid,
 .detail-grid {
   display: grid;
@@ -411,6 +433,20 @@ p {
   margin-bottom: 16px;
 }
 
+.toolbar-wrap,
+.archive-toolbar {
+  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .compact-field,
 .form-field {
   display: grid;
@@ -419,6 +455,7 @@ p {
   font-weight: 800;
 }
 
+.compact-field input,
 .compact-field select,
 .form-field input,
 .form-field select,
@@ -438,6 +475,7 @@ p {
   resize: vertical;
 }
 
+.compact-field input:focus,
 .compact-field select:focus,
 .form-field input:focus,
 .form-field select:focus,
@@ -698,6 +736,54 @@ p {
   font-size: 1.05rem;
 }
 
+.report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.lifecycle-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(260px, 1.3fr);
+  gap: 16px;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-list li {
+  border: 1px solid #dce8e0;
+  border-radius: 8px;
+  background: #f8fbf9;
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+}
+
+.timeline-list span,
+.document-title-cell span {
+  color: #6b8174;
+  font-weight: 800;
+}
+
+.timeline-list p {
+  margin: 0;
+}
+
+.document-title-cell {
+  display: grid;
+  gap: 5px;
+}
+
+.archive-search-field {
+  min-width: min(100%, 260px);
+}
+
 .warning-line {
   display: block;
 }
@@ -754,6 +840,8 @@ p {
   .feature-grid,
   .detail-grid,
   .route-layout,
+  .report-summary-grid,
+  .lifecycle-form,
   .order-form {
     grid-template-columns: 1fr;
   }
@@ -775,6 +863,7 @@ p {
 
 @media (max-width: 560px) {
   .route-metric-grid,
+  .toolbar-actions,
   .calculation-details div {
     grid-template-columns: 1fr;
   }

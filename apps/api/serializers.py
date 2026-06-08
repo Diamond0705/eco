@@ -9,6 +9,7 @@ from rest_framework import serializers
 from apps.fleet.models import Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
+from apps.reports.models import ArchivedDocument
 from apps.routing.models import RouteOption
 from apps.routing.services.route_snapshot_metrics import (
     average_decimal,
@@ -401,6 +402,48 @@ class EmissionsReportSerializer(serializers.Serializer):
     filters = serializers.DictField()
     summary = serializers.DictField()
     rows = EmissionsReportRowSerializer(many=True)
+
+
+class ArchivedDocumentSerializer(serializers.ModelSerializer):
+    owner = UserSummarySerializer(read_only=True)
+    created_by = UserSummarySerializer(read_only=True)
+    document_type_display = serializers.CharField(
+        source="get_document_type_display",
+        read_only=True,
+    )
+    file_format_display = serializers.CharField(source="get_file_format_display", read_only=True)
+    related_order_id = serializers.IntegerField(read_only=True)
+    related_trip_id = serializers.IntegerField(read_only=True)
+    download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ArchivedDocument
+        fields = (
+            "id",
+            "owner",
+            "created_by",
+            "document_type",
+            "document_type_display",
+            "file_format",
+            "file_format_display",
+            "title",
+            "related_order_id",
+            "related_trip_id",
+            "date_from",
+            "date_to",
+            "file_size_bytes",
+            "metadata_json",
+            "created_at",
+            "download_url",
+        )
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_download_url(self, document):
+        return f"/api/v1/reports/archive/{document.pk}/download/"
+
+
+class ArchiveDocumentResponseSerializer(serializers.Serializer):
+    document = ArchivedDocumentSerializer()
 
 
 class AnalyticsSummarySerializer(serializers.Serializer):

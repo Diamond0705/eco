@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { useLogoutMutation } from "../api/authApi.js";
@@ -24,9 +24,10 @@ export default function AppLayout() {
         <nav className="main-nav" aria-label="Основная навигация">
           <NavLink to="/dashboard">Панель</NavLink>
           <NavLink to="/orders">Заявки</NavLink>
-          <span className="nav-placeholder">Маршруты</span>
-          <span className="nav-placeholder">Рейсы</span>
-          <span className="nav-placeholder">Отчеты</span>
+          <NavLink to="/orders/create">Создать заявку</NavLink>
+          <NavLink to="/trips">Рейсы</NavLink>
+          <NavLink to="/reports/emissions">Отчеты</NavLink>
+          <NavLink to="/archive">Архив</NavLink>
         </nav>
       </aside>
 
@@ -38,7 +39,9 @@ export default function AppLayout() {
           </div>
           <div className="user-menu">
             <span>{user?.full_name || user?.username}</span>
-            <span className="role-pill">{user?.role === "admin" ? "Администратор" : "Менеджер"}</span>
+            <span className="role-pill">
+              {user?.role === "admin" ? "Администратор" : "Менеджер"}
+            </span>
             <button type="button" onClick={handleLogout}>
               Выйти
             </button>

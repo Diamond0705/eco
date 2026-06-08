@@ -1,7 +1,11 @@
+from django.db.models import Q
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +14,14 @@ from apps.dashboard.services import ManagerAnalyticsService
 from apps.fleet.models import Transport
 from apps.locations.models import Location
 from apps.orders.models import ShipmentOrder
-from apps.reports.services.emissions_report import EmissionsReportService
+from apps.reports.models import ArchivedDocument
+from apps.reports.services.document_archive import (
+    DocumentArchiveDisabledError,
+    DocumentArchiveService,
+)
+from apps.reports.services.emissions_report import EmissionsReportPdfService, EmissionsReportService
+from apps.reports.services.excel_export import TripExcelExportService, build_xlsx_response
+from apps.reports.services.waybill_pdf import WaybillPdfService
 from apps.routing.models import RouteOption
 from apps.routing.services.provider_factory import EXTENDED_MODE, STANDARD_MODE
 from apps.routing.services.route_calculation_service import RouteCalculationService
@@ -19,6 +30,8 @@ from apps.trips.services import TripLifecycleService
 
 from .serializers import (
     AnalyticsSummarySerializer,
+    ArchivedDocumentSerializer,
+    ArchiveDocumentResponseSerializer,
     CurrentUserSerializer,
     EmissionsReportSerializer,
     LocationSerializer,
@@ -67,6 +80,20 @@ def manager_trip_queryset(user):
     )
 
 
+def archive_queryset_for_user(user):
+    queryset = ArchivedDocument.objects.select_related(
+        "owner",
+        "created_by",
+        "related_order",
+        "related_trip",
+    ).order_by("-created_at")
+    if is_admin_user(user):
+        return queryset
+    if is_manager_user(user):
+        return queryset.filter(owner=user)
+    raise PermissionDenied("Архив документов доступен менеджерам и администраторам.")
+
+
 def can_cancel_order(order):
     return (
         order.status in {ShipmentOrder.Status.NEW, ShipmentOrder.Status.CALCULATED}
@@ -81,6 +108,38 @@ def manager_only(request):
             status=status.HTTP_403_FORBIDDEN,
         )
     return None
+
+
+def _emissions_report_for_request(request):
+    service = EmissionsReportService()
+    source = request.query_params if request.method == "GET" else request.data
+    filters = service.parse_filters(source)
+    report = service.build(request.user, filters)
+    return filters, report
+
+
+def _emissions_report_payload(filters, report):
+    return {
+        "filters": {
+            "date_from": filters.date_from.isoformat() if filters.date_from else None,
+            "date_to": filters.date_to.isoformat() if filters.date_to else None,
+            "error_message": filters.error_message,
+        },
+        "summary": report["summary"],
+        "rows": report["rows"],
+    }
+
+
+def _trips_for_export(request):
+    source = request.query_params if request.method == "GET" else request.data
+    queryset = manager_trip_queryset(request.user)
+    selected_status = source.get("status", "")
+    valid_statuses = {choice.value for choice in Trip.Status}
+    if selected_status in valid_statuses:
+        queryset = queryset.filter(status=selected_status)
+    else:
+        selected_status = ""
+    return selected_status, list(queryset.order_by("-created_at"))
 
 
 class LocationListAPIView(ListAPIView):
@@ -395,17 +454,262 @@ class EmissionsReportAPIView(APIView):
         forbidden_response = manager_only(request)
         if forbidden_response:
             return forbidden_response
-        service = EmissionsReportService()
-        filters = service.parse_filters(request.query_params)
-        report = service.build(request.user, filters)
-        payload = {
-            "filters": {
-                "date_from": filters.date_from.isoformat() if filters.date_from else None,
-                "date_to": filters.date_to.isoformat() if filters.date_to else None,
-                "error_message": filters.error_message,
-            },
-            "summary": report["summary"],
-            "rows": report["rows"],
-        }
+        filters, report = _emissions_report_for_request(request)
+        payload = _emissions_report_payload(filters, report)
         serializer = EmissionsReportSerializer(payload, context={"request": request})
         return Response(serializer.data)
+
+
+class EmissionsReportPdfAPIView(APIView):
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    def get(self, request):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        _filters, report = _emissions_report_for_request(request)
+        pdf_bytes = EmissionsReportPdfService().build(request.user, report)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="emissions_report.pdf"'
+        return response
+
+
+class EmissionsReportXlsxAPIView(APIView):
+    @extend_schema(
+        responses={
+            (200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"): (
+                OpenApiTypes.BINARY
+            )
+        }
+    )
+    def get(self, request):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        _filters, report = _emissions_report_for_request(request)
+        xlsx_bytes = TripExcelExportService().build_emissions_report(request.user, report)
+        return build_xlsx_response(xlsx_bytes, "emissions_report.xlsx")
+
+
+class EmissionsReportPdfArchiveAPIView(APIView):
+    @extend_schema(responses={201: ArchiveDocumentResponseSerializer})
+    def post(self, request):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        filters, report = _emissions_report_for_request(request)
+        pdf_bytes = EmissionsReportPdfService().build(request.user, report)
+        try:
+            document = DocumentArchiveService().save_document(
+                content_bytes=pdf_bytes,
+                document_type=ArchivedDocument.DocumentType.EMISSIONS_PDF,
+                file_format=ArchivedDocument.FileFormat.PDF,
+                title="Отчет по выбросам PDF",
+                owner=request.user,
+                created_by=request.user,
+                date_from=filters.date_from,
+                date_to=filters.date_to,
+                metadata={
+                    "source": "emissions_report_api",
+                    "trips_count": report["summary"]["trips_count"],
+                },
+            )
+        except DocumentArchiveDisabledError:
+            return Response(
+                {"detail": "Архив документов временно отключен."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        serializer = ArchivedDocumentSerializer(document, context={"request": request})
+        return Response({"document": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class EmissionsReportXlsxArchiveAPIView(APIView):
+    @extend_schema(responses={201: ArchiveDocumentResponseSerializer})
+    def post(self, request):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        filters, report = _emissions_report_for_request(request)
+        xlsx_bytes = TripExcelExportService().build_emissions_report(request.user, report)
+        try:
+            document = DocumentArchiveService().save_document(
+                content_bytes=xlsx_bytes,
+                document_type=ArchivedDocument.DocumentType.EMISSIONS_XLSX,
+                file_format=ArchivedDocument.FileFormat.XLSX,
+                title="Отчет по выбросам Excel",
+                owner=request.user,
+                created_by=request.user,
+                date_from=filters.date_from,
+                date_to=filters.date_to,
+                metadata={
+                    "source": "emissions_report_api",
+                    "trips_count": report["summary"]["trips_count"],
+                },
+            )
+        except DocumentArchiveDisabledError:
+            return Response(
+                {"detail": "Архив документов временно отключен."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        serializer = ArchivedDocumentSerializer(document, context={"request": request})
+        return Response({"document": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class TripExportXlsxAPIView(APIView):
+    @extend_schema(
+        responses={
+            (200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"): (
+                OpenApiTypes.BINARY
+            )
+        }
+    )
+    def get(self, request):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        _selected_status, trips = _trips_for_export(request)
+        xlsx_bytes = TripExcelExportService().build_trips_export(trips)
+        return build_xlsx_response(xlsx_bytes, "trips_export.xlsx")
+
+
+class TripExportXlsxArchiveAPIView(APIView):
+    @extend_schema(responses={201: ArchiveDocumentResponseSerializer})
+    def post(self, request):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        selected_status, trips = _trips_for_export(request)
+        xlsx_bytes = TripExcelExportService().build_trips_export(trips)
+        try:
+            document = DocumentArchiveService().save_document(
+                content_bytes=xlsx_bytes,
+                document_type=ArchivedDocument.DocumentType.TRIPS_XLSX,
+                file_format=ArchivedDocument.FileFormat.XLSX,
+                title="Экспорт рейсов Excel",
+                owner=request.user,
+                created_by=request.user,
+                metadata={
+                    "source": "trips_export_api",
+                    "status": selected_status,
+                    "trips_count": len(trips),
+                },
+            )
+        except DocumentArchiveDisabledError:
+            return Response(
+                {"detail": "Архив документов временно отключен."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        serializer = ArchivedDocumentSerializer(document, context={"request": request})
+        return Response({"document": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class TripWaybillAPIView(APIView):
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    def get(self, request, pk):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        trip = get_object_or_404(manager_trip_queryset(request.user), pk=pk)
+        pdf_bytes = WaybillPdfService().build(trip)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="waybill_trip_{trip.pk}.pdf"'
+        return response
+
+
+class TripWaybillArchiveAPIView(APIView):
+    @extend_schema(responses={201: ArchiveDocumentResponseSerializer})
+    def post(self, request, pk):
+        forbidden_response = manager_only(request)
+        if forbidden_response:
+            return forbidden_response
+        trip = get_object_or_404(manager_trip_queryset(request.user), pk=pk)
+        pdf_bytes = WaybillPdfService().build(trip)
+        try:
+            document = DocumentArchiveService().save_document(
+                content_bytes=pdf_bytes,
+                document_type=ArchivedDocument.DocumentType.WAYBILL_PDF,
+                file_format=ArchivedDocument.FileFormat.PDF,
+                title=f"Путевой лист рейса №{trip.pk}",
+                owner=request.user,
+                created_by=request.user,
+                related_order=trip.order,
+                related_trip=trip,
+                metadata={
+                    "trip_id": trip.pk,
+                    "order_id": trip.order_id,
+                    "source": "waybill_api",
+                },
+            )
+        except DocumentArchiveDisabledError:
+            return Response(
+                {"detail": "Архив документов временно отключен."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        serializer = ArchivedDocumentSerializer(document, context={"request": request})
+        return Response({"document": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class ArchiveListAPIView(APIView):
+    @extend_schema(responses=ArchivedDocumentSerializer(many=True))
+    def get(self, request):
+        documents = archive_queryset_for_user(request.user)
+        valid_types = {choice.value for choice in ArchivedDocument.DocumentType}
+        valid_formats = {choice.value for choice in ArchivedDocument.FileFormat}
+
+        selected_type = request.query_params.get("document_type", "")
+        if selected_type in valid_types:
+            documents = documents.filter(document_type=selected_type)
+
+        selected_format = request.query_params.get("file_format", "")
+        if selected_format in valid_formats:
+            documents = documents.filter(file_format=selected_format)
+
+        date_from = parse_date(request.query_params.get("date_from", "").strip())
+        if date_from:
+            documents = documents.filter(created_at__date__gte=date_from)
+
+        date_to = parse_date(request.query_params.get("date_to", "").strip())
+        if date_to:
+            documents = documents.filter(created_at__date__lte=date_to)
+
+        search_query = request.query_params.get("q", "").strip()
+        if search_query:
+            documents = documents.filter(
+                Q(title__icontains=search_query)
+                | Q(owner__username__icontains=search_query)
+                | Q(owner__first_name__icontains=search_query)
+                | Q(owner__last_name__icontains=search_query)
+                | Q(created_by__username__icontains=search_query)
+                | Q(created_by__first_name__icontains=search_query)
+                | Q(created_by__last_name__icontains=search_query)
+            )
+
+        serializer = ArchivedDocumentSerializer(
+            documents,
+            many=True,
+            context={"request": request},
+        )
+        return Response(serializer.data)
+
+
+class ArchiveDownloadAPIView(APIView):
+    @extend_schema(responses={(200, "application/octet-stream"): OpenApiTypes.BINARY})
+    def get(self, request, pk):
+        document = get_object_or_404(archive_queryset_for_user(request.user), pk=pk)
+        service = DocumentArchiveService()
+        response = FileResponse(
+            document.file.open("rb"),
+            as_attachment=True,
+            filename=service.download_filename(document),
+            content_type=service.content_type_for(document),
+        )
+        response["Content-Length"] = str(document.file_size_bytes)
+        return response
+
+
+class ArchiveDeleteAPIView(APIView):
+    @extend_schema(responses={204: None})
+    def delete(self, request, pk):
+        document = get_object_or_404(archive_queryset_for_user(request.user), pk=pk)
+        document.file.delete(save=False)
+        document.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

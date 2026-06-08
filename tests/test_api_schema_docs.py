@@ -14,8 +14,19 @@ BUSINESS_PATHS = [
     "/api/v1/trips/{id}/",
     "/api/v1/trips/{id}/start/",
     "/api/v1/trips/{id}/deliver/",
+    "/api/v1/trips/{id}/waybill/",
+    "/api/v1/trips/{id}/waybill/archive/",
+    "/api/v1/trips/export-xlsx/",
+    "/api/v1/trips/export-xlsx/archive/",
     "/api/v1/manager/dashboard/",
     "/api/v1/reports/emissions/",
+    "/api/v1/reports/emissions/pdf/",
+    "/api/v1/reports/emissions/pdf/archive/",
+    "/api/v1/reports/emissions/xlsx/",
+    "/api/v1/reports/emissions/xlsx/archive/",
+    "/api/v1/reports/archive/",
+    "/api/v1/reports/archive/{id}/",
+    "/api/v1/reports/archive/{id}/download/",
     "/api/v1/analytics/summary/",
 ]
 
@@ -28,6 +39,10 @@ READ_ONLY_PATHS = [
     "/api/v1/trips/{id}/",
     "/api/v1/manager/dashboard/",
     "/api/v1/reports/emissions/",
+    "/api/v1/reports/emissions/pdf/",
+    "/api/v1/reports/emissions/xlsx/",
+    "/api/v1/reports/archive/",
+    "/api/v1/reports/archive/{id}/download/",
     "/api/v1/analytics/summary/",
 ]
 
@@ -94,6 +109,11 @@ def test_openapi_schema_documents_phase_24_write_actions(client):
     }
     assert set(schema["paths"]["/api/v1/trips/{id}/start/"]) == {"post"}
     assert set(schema["paths"]["/api/v1/trips/{id}/deliver/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/trips/{id}/waybill/archive/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/trips/export-xlsx/archive/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/reports/emissions/pdf/archive/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/reports/emissions/xlsx/archive/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/reports/archive/{id}/"]) == {"delete"}
 
 
 def test_openapi_schema_uses_bearer_auth_for_api_paths(client):

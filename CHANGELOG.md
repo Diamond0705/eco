@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Phase 28 - React Trips, Reports And Archive
+
+- Added React manager pages for trips list/detail, trip start/deliver actions, emissions reports
+  and private document archive.
+- Added JWT-protected API endpoints for emissions PDF/XLSX downloads, report archive saves, trip
+  Excel export, waybill PDF download/archive and archive list/download/delete.
+- Kept all report, waybill, Excel and archive generation on existing Django services.
+- Kept Django templates, backend models, migrations, route providers, calculation formulas, admin
+  SPA, CORS, WebSocket, Celery and Redis unchanged.
+
 ## Phase 27 - React Route Comparison And Approval
 
 - Added React route calculation and comparison page at `/orders/:id/routes`.
