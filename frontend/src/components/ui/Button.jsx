@@ -6,20 +6,21 @@ export default function Button({
   variant = "primary",
   type = "button",
   disabled = false,
-  onClick
+  onClick,
+  className = ""
 }) {
-  const className = `button button-${variant}`;
+  const classes = `button button-${variant} ${className}`.trim();
 
   if (to) {
     return (
-      <Link className={className} to={to}>
+      <Link className={classes} to={to}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button className={className} type={type} disabled={disabled} onClick={onClick}>
+    <button className={classes} type={type} disabled={disabled} onClick={onClick}>
       {children}
     </button>
   );

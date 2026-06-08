@@ -19,6 +19,14 @@ export const authApi = baseApi.injectEndpoints({
       query: () => "auth/me/",
       providesTags: ["Auth"]
     }),
+    registerManager: builder.mutation({
+      query: (payload) => ({
+        url: "auth/register/",
+        method: "POST",
+        body: payload,
+        timeout: 15000
+      })
+    }),
     refreshAccess: builder.mutation({
       query: (refreshToken) => ({
         url: "auth/token/refresh/",
@@ -50,5 +58,6 @@ export const {
   useCurrentUserQuery,
   useLoginMutation,
   useLogoutMutation,
+  useRegisterManagerMutation,
   useRefreshAccessMutation
 } = authApi;

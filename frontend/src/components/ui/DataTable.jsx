@@ -1,10 +1,10 @@
-export default function DataTable({ columns, rows, emptyText = "Нет данных." }) {
+export default function DataTable({ columns, rows, emptyText = "Нет данных.", className = "" }) {
   if (!rows.length) {
     return <p className="empty-state">{emptyText}</p>;
   }
 
   return (
-    <div className="table-wrap">
+    <div className={`table-wrap ${className}`.trim()}>
       <table className="data-table">
         <thead>
           <tr>

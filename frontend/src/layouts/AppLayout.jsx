@@ -4,6 +4,17 @@ import { useSelector } from "react-redux";
 import { useLogoutMutation } from "../api/authApi.js";
 import { selectCurrentUser } from "../features/auth/authSlice.js";
 
+const managerLinks = [
+  { to: "/dashboard", label: "Панель" },
+  { to: "/orders", label: "Заявки" },
+  { to: "/orders/create", label: "Создать заявку" },
+  { to: "/trips", label: "Рейсы" },
+  { to: "/analytics", label: "Аналитика" },
+  { to: "/reports/emissions", label: "Отчеты" },
+  { to: "/archive", label: "Архив" },
+  { to: "/profile", label: "Профиль" }
+];
+
 export default function AppLayout() {
   const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
@@ -15,41 +26,30 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <NavLink to="/dashboard" className="brand" aria-label="EcoLogist">
+    <div className="manager-spa-shell">
+      <header className="manager-topbar">
+        <NavLink to="/dashboard" className="manager-brand" aria-label="EcoLogist">
           <img src="/static/img/ecologist-truck-mark.png" alt="" />
-          <span>EcoLogist</span>
+          <span>
+            <strong>EcoLogist</strong>
+            <small>Система планирования грузоперевозок</small>
+          </span>
         </NavLink>
-        <nav className="main-nav" aria-label="Основная навигация">
-          <NavLink to="/dashboard">Панель</NavLink>
-          <NavLink to="/orders">Заявки</NavLink>
-          <NavLink to="/orders/create">Создать заявку</NavLink>
-          <NavLink to="/trips">Рейсы</NavLink>
-          <NavLink to="/reports/emissions">Отчеты</NavLink>
-          <NavLink to="/archive">Архив</NavLink>
-          <NavLink to="/profile">Профиль</NavLink>
-        </nav>
-      </aside>
-
-      <div className="workspace">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Одностраничное приложение</p>
-            <h1>Рабочее место EcoLogist</h1>
-          </div>
-          <div className="user-menu">
-            <NavLink className="profile-link" to="/profile">
-              {user?.full_name || user?.username}
+        <nav
+          className="manager-nav"
+          aria-label={`Основная навигация менеджера ${user?.username || ""}`}
+        >
+          {managerLinks.map((link) => (
+            <NavLink key={link.to} to={link.to}>
+              {link.label}
             </NavLink>
-            <span className="role-pill">
-              {user?.role === "admin" ? "Администратор" : "Менеджер"}
-            </span>
-            <button type="button" onClick={handleLogout}>
-              Выйти
-            </button>
-          </div>
-        </header>
+          ))}
+          <button type="button" className="manager-nav-button" onClick={handleLogout}>
+            Выйти
+          </button>
+        </nav>
+      </header>
+      <div className="workspace manager-workspace">
         <Outlet />
       </div>
     </div>

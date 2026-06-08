@@ -1,6 +1,6 @@
 # Current Project State
 
-EcoLogist is complete through Phase 34 for final demonstration readiness.
+EcoLogist is complete through Phase 37 for final demonstration readiness.
 
 The current architecture is React SPA + Django REST API:
 
@@ -9,6 +9,9 @@ The current architecture is React SPA + Django REST API:
 - Django Admin remains available at `/admin/`.
 - Django REST Framework exposes JSON API under `/api/v1/`.
 - SimpleJWT Bearer tokens are used for React/API authentication.
+- React exposes template-matched login and manager registration screens.
+- Public API manager registration is available at `/api/v1/auth/register/`.
+- React registration shows field-level validation errors and times out stalled requests.
 - Django sessions remain for Django Admin and legacy/template views.
 - Nginx serves the React build and proxies backend routes to Django/Waitress.
 - PostgreSQL stores application data.
@@ -247,6 +250,38 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - No business logic, models, migrations, calculations, routing providers, React behavior, deploy
   logic, Celery, Redis, WebSockets or PostGIS are changed.
 
+## Phase 35
+
+- Reworked the manager React SPA visual layer to follow the existing Django-template design.
+- Manager React now uses a white top navigation, EcoLogist logo, dashboard background, broad
+  translucent panels, green cards, sectioned forms, archive file icons and template-like tables.
+- Added `/analytics` as a lightweight manager React page using existing dashboard API data.
+- Admin-specific React pages are not redesigned in this phase.
+- Backend APIs, models, migrations, calculations, routing providers, Django templates, Django Admin,
+  dependencies and deploy logic remain unchanged.
+
+## Phase 36
+
+- React `/login` and `/register` now match the Django auth template visual language: white
+  header, EcoLogist logo, leaf background, card background, green buttons and Russian-only text.
+- Added `POST /api/v1/auth/register/` for public manager account creation using the existing
+  `ManagerRegistrationForm` validation and role assignment.
+- Successful React registration redirects to `/login` with a completion message instead of
+  auto-login, matching the Django template flow.
+- Models, migrations, JWT token obtain/refresh behavior, Django templates and Django Admin remain
+  unchanged.
+
+## Phase 37
+
+- React manager registration now shows duplicate username/email warnings under the matching fields
+  instead of leaving the form in a loading state.
+- Registration API validation errors are normalized as arrays of Russian strings for predictable
+  React rendering.
+- The React registration request has a timeout and shows a general message for server/network
+  failures.
+- Models, migrations, registration rules, JWT login/refresh behavior and Django templates remain
+  unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -276,6 +311,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Playwright smoke coverage for core React manager/admin routes.
 - GitHub Actions CI for backend, frontend and deploy compose validation.
 - Final demo readiness documentation and runbook.
+- Manager React UI parity with the Django-template visual language.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 

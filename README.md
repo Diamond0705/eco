@@ -7,7 +7,7 @@ The MVP UI is Russian-only. The demo domain is Russia-oriented: RUB currency, di
 
 ## Current Status
 
-EcoLogist is complete through Phase 34 for final demonstration. The main user-facing interface is
+EcoLogist is complete through Phase 37 for final demonstration. The main user-facing interface is
 the React SPA in `/frontend`. The Django backend remains the source of truth for authentication,
 permissions, business services, route calculations, reports, archive access and database writes.
 Django templates remain in the project as legacy/fallback/internal views, and Django Admin remains
@@ -54,6 +54,7 @@ Frontend:
 - React Router
 - Redux Toolkit and RTK Query
 - React Leaflet, Leaflet and OpenStreetMap tiles
+- Template-matched login and manager registration screens backed by JWT/API authentication
 - HTML/CSS
 
 Infrastructure and quality:
@@ -342,14 +343,17 @@ collection authorization to Bearer Token.
 - Phase 32 adds Playwright E2E smoke tests for core manager/admin React navigation.
 - Phase 33 adds GitHub Actions CI for backend, frontend and deploy compose validation.
 - Phase 34 aligns final demo documentation and runbooks.
+- Phase 35 aligns the manager React UI with the Django-template visual language.
+- Phase 36 aligns React auth screens with Django templates and adds manager registration.
+- Phase 37 fixes React registration validation feedback and stalled request handling.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
-records the approved React SPA migration plan, and docs `24` through `34` document the manager API,
+records the approved React SPA migration plan, and docs `24` through `37` document the manager API,
 React scaffold, manager/admin SPA pages, deployment path, Playwright smoke tests, CI pipeline and
-final demo readiness. Earlier docs
+final demo readiness plus manager UI/auth parity. Earlier docs
 in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
 earlier phase boundaries.
 

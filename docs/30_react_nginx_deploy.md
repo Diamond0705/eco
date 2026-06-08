@@ -27,6 +27,7 @@ Nginx serves:
 
 - `/`
 - `/login`
+- `/register`
 - `/dashboard`
 - `/orders`
 - `/orders/create`
@@ -34,6 +35,7 @@ Nginx serves:
 - `/orders/:id/routes`
 - `/trips`
 - `/trips/:id`
+- `/analytics`
 - `/reports/emissions`
 - `/archive`
 - `/profile`
@@ -90,6 +92,7 @@ Useful checks:
 ```powershell
 Invoke-WebRequest -UseBasicParsing http://localhost/
 Invoke-WebRequest -UseBasicParsing http://localhost/login
+Invoke-WebRequest -UseBasicParsing http://localhost/register
 Invoke-WebRequest -UseBasicParsing http://localhost/orders
 Invoke-WebRequest -UseBasicParsing http://localhost/admin/dashboard
 Invoke-WebRequest -UseBasicParsing http://localhost/api/v1/auth/me/
@@ -99,7 +102,7 @@ Invoke-WebRequest -UseBasicParsing http://localhost/admin/
 
 Expected:
 
-- `/`, `/login`, `/orders` and `/admin/dashboard` return the React SPA.
+- `/`, `/login`, `/register`, `/orders` and `/admin/dashboard` return the React SPA.
 - `/api/v1/auth/me/` reaches Django and returns `401` when anonymous.
 - `/healthz/` returns `ok`.
 - `/admin/` reaches Django Admin.

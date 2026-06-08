@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useCurrentUserQuery, useLoginMutation } from "../api/authApi.js";
 import {
   selectIsAuthenticated,
   setCurrentUser
 } from "../features/auth/authSlice.js";
+import AuthLayout from "../layouts/AuthLayout.jsx";
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -20,6 +21,7 @@ export default function LoginPage() {
     skip: !isAuthenticated
   });
   const from = location.state?.from?.pathname;
+  const successMessage = location.state?.message;
 
   useEffect(() => {
     if (user) {
@@ -39,11 +41,11 @@ export default function LoginPage() {
 
   if (isAuthenticated && isUserLoading) {
     return (
-      <main className="login-page">
-        <section className="login-card">
+      <AuthLayout pageClassName="login-page">
+        <section className="login-card auth-status-card">
           <p>Загружаем профиль...</p>
         </section>
-      </main>
+      </AuthLayout>
     );
   }
 
@@ -52,30 +54,39 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
+    <AuthLayout pageClassName="login-page">
       <section className="login-card">
         <div className="login-brand">
-          <img src="/static/img/ecologist-truck-mark.png" alt="" />
-          <div>
-            <p className="eyebrow">EcoLogist SPA</p>
-            <h1>Вход в систему</h1>
-          </div>
+          <img
+            className="login-brand-mark"
+            src="/static/img/ecologist-truck-mark.png"
+            alt=""
+          />
+          <span className="login-brand-name">EcoLogist</span>
+          <span className="login-brand-subtitle">Система планирования грузоперевозок</span>
         </div>
 
+        <h1>Вход</h1>
+        <p className="muted">Введите никнейм или email и пароль</p>
+
+        {successMessage ? <p className="form-success">{successMessage}</p> : null}
+
         <form className="login-form" onSubmit={handleSubmit}>
-          <label>
-            Логин
+          <label className="form-row">
+            <span>Никнейм или email</span>
             <input
               autoComplete="username"
+              placeholder="Имя пользователя или email"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               required
             />
           </label>
-          <label>
-            Пароль
+          <label className="form-row">
+            <span>Пароль</span>
             <input
               autoComplete="current-password"
+              placeholder="Пароль"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -87,7 +98,11 @@ export default function LoginPage() {
             {isLoading ? "Входим..." : "Войти"}
           </button>
         </form>
+
+        <p className="form-note">
+          Нет учетной записи? <Link to="/register">Зарегистрироваться</Link>
+        </p>
       </section>
-    </main>
+    </AuthLayout>
   );
 }

@@ -60,6 +60,45 @@ async function expectSpaPageLoaded(page, path, options = {}) {
   await expect(page.locator(".alert-danger")).toHaveCount(0);
 }
 
+async function expectNoMojibake(page) {
+  const text = await page.locator("body").innerText();
+  expect(text).not.toContain("Рџ");
+  expect(text).not.toContain("Р”");
+  expect(text).not.toContain("С‚");
+}
+
+test.describe("React auth smoke", () => {
+  test.beforeAll(async ({ request }) => {
+    await assertBackendReady(request);
+  });
+
+  test("login and registration screens match Russian auth flow", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Вход" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Войти" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Регистрация" })).toBeVisible();
+    await expect(page.getByPlaceholder("Имя пользователя или email")).toBeVisible();
+    await expectNoMojibake(page);
+
+    await page.getByRole("link", { name: "Зарегистрироваться" }).click();
+    await expect(page).toHaveURL(/\/register$/);
+    await expect(page.getByRole("heading", { name: "Регистрация менеджера" })).toBeVisible();
+    await expect(page.getByLabel("Уникальный никнейм")).toBeVisible();
+    await expect(page.getByPlaceholder("+7 (999) 123-45-67")).toBeVisible();
+    await expectNoMojibake(page);
+
+    await page.getByLabel("Уникальный никнейм").fill(managerCredentials.username);
+    await page.getByLabel("Email").fill("manager@example.com");
+    await page.locator('input[name="password1"]').fill("Manager12345!");
+    await page.locator('input[name="password2"]').fill("Manager12345!");
+    await page.getByRole("button", { name: "Зарегистрироваться" }).click();
+    await expect(page.getByRole("button", { name: "Зарегистрироваться" })).toBeEnabled();
+    await expect(page.getByText("Пользователь с таким никнеймом уже зарегистрирован")).toBeVisible();
+    await expect(page.getByText("Пользователь с таким email уже зарегистрирован")).toBeVisible();
+    await expectNoMojibake(page);
+  });
+});
+
 test.describe("React manager smoke", () => {
   test.beforeAll(async ({ request }) => {
     await assertBackendReady(request);
@@ -78,6 +117,7 @@ test.describe("React manager smoke", () => {
       "/dashboard",
       "/orders/create",
       "/trips",
+      "/analytics",
       "/reports/emissions",
       "/archive",
       "/profile"

@@ -7,10 +7,11 @@ export default function FormField({
   error,
   required = false,
   children,
+  className = "",
   ...props
 }) {
   return (
-    <label className="form-field">
+    <label className={`form-field ${className}`.trim()}>
       <span>{label}</span>
       {children || (
         <input

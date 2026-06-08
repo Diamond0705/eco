@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -46,6 +47,7 @@ from .serializers import (
     EmissionsReportSerializer,
     LocationSerializer,
     ManagerDashboardSerializer,
+    ManagerRegistrationSerializer,
     OrderDetailSerializer,
     OrderListSerializer,
     ProfileSerializer,
@@ -475,6 +477,20 @@ class CurrentUserAPIView(APIView):
     @extend_schema(responses=CurrentUserSerializer)
     def get(self, request):
         return Response(CurrentUserSerializer(request.user).data)
+
+
+class ManagerRegistrationAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        request=ManagerRegistrationSerializer,
+        responses={201: CurrentUserSerializer},
+    )
+    def post(self, request):
+        serializer = ManagerRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(CurrentUserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class AdminDashboardAPIView(APIView):

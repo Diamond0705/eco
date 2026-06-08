@@ -7,7 +7,11 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.accounts.forms import validate_profile_avatar_file, validate_russian_phone
+from apps.accounts.forms import (
+    ManagerRegistrationForm,
+    validate_profile_avatar_file,
+    validate_russian_phone,
+)
 from apps.accounts.models import User
 from apps.fleet.models import EcoCalculationSettings, EcoStandard, Transport
 from apps.locations.models import Location
@@ -46,6 +50,36 @@ class CurrentUserSerializer(UserSummarySerializer):
     @extend_schema_field(OpenApiTypes.BOOL)
     def get_is_admin(self, user):
         return user.is_superuser or user.role == User.Role.ADMIN
+
+
+class ManagerRegistrationSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    middle_name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    password1 = serializers.CharField(write_only=True, trim_whitespace=False)
+    password2 = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def _error_messages(self, errors):
+        return {
+            field: [str(error) for error in field_errors]
+            for field, field_errors in errors.items()
+        }
+
+    def validate(self, attrs):
+        form = ManagerRegistrationForm(data=attrs)
+        if not form.is_valid():
+            raise serializers.ValidationError(self._error_messages(form.errors))
+        self._form = form
+        return attrs
+
+    def create(self, validated_data):
+        form = getattr(self, "_form", ManagerRegistrationForm(data=validated_data))
+        if not form.is_valid():
+            raise serializers.ValidationError(self._error_messages(form.errors))
+        return form.save()
 
 
 class ProfileSerializer(serializers.ModelSerializer):

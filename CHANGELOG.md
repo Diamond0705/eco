@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## Phase 37 - React Registration Error Handling Fix
+
+- Stabilized manager registration API validation errors so field errors are returned as arrays of
+  Russian strings for React.
+- Improved React registration error rendering for duplicate username/email, invalid fields,
+  network failures and request timeout.
+- Added a registration request timeout to prevent an endless `Регистрируем...` state.
+- Extended Playwright auth smoke coverage for the duplicate manager registration scenario.
+- Kept models, migrations, registration rules, JWT login/refresh behavior and Django templates
+  unchanged.
+
+## Phase 36 - React Auth Template Parity And Registration
+
+- Reworked unauthenticated React auth screens to match the Django login/register templates:
+  white header, EcoLogist logo, template font stack, leaf background and soft white cards.
+- Added public manager registration API at `/api/v1/auth/register/` using the existing
+  `ManagerRegistrationForm` validation and manager role assignment.
+- Added React `/register` flow with Russian labels, field-level API errors and post-success
+  redirect back to `/login`.
+- Extended React smoke tests and backend API tests for auth screen rendering and manager
+  registration behavior.
+- Kept database models, migrations, business logic, JWT login/refresh flow, Django templates and
+  Django Admin unchanged.
+
+## Phase 35 - React Manager UI Template Parity
+
+- Reworked the manager React layout to match the Django template header: white top navigation,
+  EcoLogist logo, green links and dashboard background.
+- Updated manager dashboard, order creation and archive pages toward Django-template visual parity
+  with metric cards, sectioned forms, archive filters, file icons and table actions.
+- Added a lightweight React manager analytics route for the restored `Аналитика` navigation item
+  using existing dashboard API data.
+- Refined shared React UI components and CSS so manager orders, trips, reports, archive and profile
+  pages share the same panel/card/form/table visual language.
+- Kept backend APIs, models, migrations, calculations, route providers, Django templates, Django
+  Admin, admin-specific React pages and dependencies unchanged.
+
 ## Phase 34 - Final Demo Readiness And Documentation Alignment
 
 - Aligned README and current-state documentation with the final React SPA + Django REST API

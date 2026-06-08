@@ -13,11 +13,13 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import EmissionsReportPage from "./pages/EmissionsReportPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import ManagerAnalyticsPage from "./pages/ManagerAnalyticsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrderCreatePage from "./pages/OrderCreatePage.jsx";
 import OrderDetailPage from "./pages/OrderDetailPage.jsx";
 import OrdersListPage from "./pages/OrdersListPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import RegisterPage from "./pages/RegisterPage.jsx";
 import RouteComparisonPage from "./pages/RouteComparisonPage.jsx";
 import TripDetailPage from "./pages/TripDetailPage.jsx";
 import TripsListPage from "./pages/TripsListPage.jsx";
@@ -34,6 +36,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<HomeRedirect />} />
@@ -90,6 +93,14 @@ export default function App() {
             element={
               <RoleRoute allowedRoles={["manager"]}>
                 <TripDetailPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <RoleRoute allowedRoles={["manager"]}>
+                <ManagerAnalyticsPage />
               </RoleRoute>
             }
           />

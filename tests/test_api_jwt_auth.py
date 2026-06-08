@@ -249,6 +249,93 @@ def test_anonymous_business_api_access_is_rejected(client):
 
 
 @pytest.mark.django_db
+def test_anonymous_can_register_manager_via_api(client):
+    response = client.post(
+        reverse("api:auth_register"),
+        {
+            "username": "react_manager",
+            "email": "react-manager@example.test",
+            "first_name": "React",
+            "last_name": "Manager",
+            "middle_name": "Spa",
+            "phone": "+7 (999) 123-45-67",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    user = get_user_model().objects.get(username="react_manager")
+    assert user.role == "manager"
+    assert user.email == "react-manager@example.test"
+    assert user.phone == "+7 (999) 123-45-67"
+    assert payload == {
+        "id": user.pk,
+        "username": "react_manager",
+        "full_name": "React Manager",
+        "role": "manager",
+        "is_admin": False,
+    }
+    assert "password" not in response.content.decode()
+    assert "access" not in payload
+    assert "refresh" not in payload
+
+
+@pytest.mark.django_db
+def test_register_api_rejects_duplicate_username_and_email(client):
+    user_model = get_user_model()
+    user_model.objects.create_user(
+        username="duplicate_manager",
+        email="duplicate@example.test",
+        password="StrongPass12345",
+        role="manager",
+    )
+
+    response = client.post(
+        reverse("api:auth_register"),
+        {
+            "username": "DUPLICATE_MANAGER",
+            "email": "duplicate@example.test",
+            "password1": "StrongPass12345",
+            "password2": "StrongPass12345",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert payload["username"] == [
+        "Пользователь с таким никнеймом уже зарегистрирован. Придумайте другой никнейм."
+    ]
+    assert payload["email"] == ["Пользователь с таким email уже зарегистрирован."]
+    assert user_model.objects.filter(username__iexact="duplicate_manager").count() == 1
+
+
+@pytest.mark.django_db
+def test_register_api_rejects_invalid_phone_and_password(client):
+    response = client.post(
+        reverse("api:auth_register"),
+        {
+            "username": "invalid_manager",
+            "email": "invalid-manager@example.test",
+            "phone": "+7 (495) 123-45-67",
+            "password1": "123",
+            "password2": "123",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert payload["phone"] == ["Введите телефон в формате +7 (999) 123-45-67."]
+    assert isinstance(payload["password2"], list)
+    assert payload["password2"]
+    assert not get_user_model().objects.filter(username="invalid_manager").exists()
+
+
+@pytest.mark.django_db
 def test_reference_api_write_methods_still_return_405(client, api_users, api_reference):
     manager, _other_manager = api_users
     transport, pickup, delivery = api_reference
