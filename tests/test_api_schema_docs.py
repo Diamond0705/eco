@@ -5,7 +5,29 @@ BUSINESS_PATHS = [
     "/api/v1/transports/",
     "/api/v1/orders/",
     "/api/v1/orders/{id}/",
+    "/api/v1/orders/{id}/cancel/",
+    "/api/v1/orders/{id}/calculate-routes/",
+    "/api/v1/orders/{id}/route-calculation-status/",
+    "/api/v1/orders/{id}/route-options/",
+    "/api/v1/orders/{order_pk}/routes/{route_option_pk}/approve/",
     "/api/v1/trips/",
+    "/api/v1/trips/{id}/",
+    "/api/v1/trips/{id}/start/",
+    "/api/v1/trips/{id}/deliver/",
+    "/api/v1/manager/dashboard/",
+    "/api/v1/reports/emissions/",
+    "/api/v1/analytics/summary/",
+]
+
+READ_ONLY_PATHS = [
+    "/api/v1/locations/",
+    "/api/v1/transports/",
+    "/api/v1/orders/{id}/route-calculation-status/",
+    "/api/v1/orders/{id}/route-options/",
+    "/api/v1/trips/",
+    "/api/v1/trips/{id}/",
+    "/api/v1/manager/dashboard/",
+    "/api/v1/reports/emissions/",
     "/api/v1/analytics/summary/",
 ]
 
@@ -20,7 +42,6 @@ FORBIDDEN_SCHEMA_FIELDS = [
     "password_hash",
     "calculation_details_json",
     "route_facts_json",
-    "geometry_json",
     "AWS_SECRET_ACCESS_KEY",
     "GRAPHHOPPER_API_KEY",
 ]
@@ -54,11 +75,25 @@ def test_openapi_schema_contains_existing_api_paths(client):
         assert path in schema["paths"]
 
 
-def test_openapi_schema_documents_business_api_as_read_only(client):
+def test_openapi_schema_documents_reference_and_report_api_as_read_only(client):
     schema = openapi_schema(client)
 
-    for path in BUSINESS_PATHS:
+    for path in READ_ONLY_PATHS:
         assert set(schema["paths"][path]) == {"get"}
+
+
+def test_openapi_schema_documents_phase_24_write_actions(client):
+    schema = openapi_schema(client)
+
+    assert set(schema["paths"]["/api/v1/orders/"]) == {"get", "post"}
+    assert set(schema["paths"]["/api/v1/orders/{id}/"]) == {"get", "patch"}
+    assert set(schema["paths"]["/api/v1/orders/{id}/cancel/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/orders/{id}/calculate-routes/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/orders/{order_pk}/routes/{route_option_pk}/approve/"]) == {
+        "post"
+    }
+    assert set(schema["paths"]["/api/v1/trips/{id}/start/"]) == {"post"}
+    assert set(schema["paths"]["/api/v1/trips/{id}/deliver/"]) == {"post"}
 
 
 def test_openapi_schema_uses_bearer_auth_for_api_paths(client):

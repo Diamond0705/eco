@@ -3,6 +3,10 @@
 Phase 19 adds a small read-only integration API on top of the existing Django monolith. It does
 not replace the Russian server-rendered UI and does not introduce a write API.
 
+Phase 24 later expands the manager workflow API with write/action endpoints for the React SPA.
+This document remains the Phase 19 read-only baseline; see `docs/24_manager_api_expansion.md` for
+the current expanded manager API contract.
+
 ## Purpose
 
 - Provide stable machine-readable data for internal integrations and future clients.
@@ -68,7 +72,7 @@ no migration is introduced for this compatibility layer.
 
 ## Limitations
 
-- No write API.
+- Phase 19 itself had no write API; Phase 24 adds manager workflow write/action endpoints.
 - No CORS policy for browser-based external clients.
 - No pagination, throttling or public integration contract beyond the Phase 19 read-only endpoints.
 - JWT is limited to Phase 20 token endpoints and Bearer access for the same read-only API.

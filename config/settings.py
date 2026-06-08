@@ -218,7 +218,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "EcoLogist API",
-    "DESCRIPTION": "Read-only integration API for EcoLogist",
+    "DESCRIPTION": "EcoLogist API for integrations and the manager React SPA",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_SETTINGS": {

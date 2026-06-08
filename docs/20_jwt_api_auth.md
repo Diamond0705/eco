@@ -3,10 +3,14 @@
 Phase 20 adds JWT authentication for external REST API clients. It does not replace Django
 sessions used by the Russian HTML web interface.
 
+Phase 24 later expands manager workflow write/action endpoints. JWT Bearer authentication applies
+to those endpoints as well; this document remains the Phase 20 token-auth baseline.
+
 ## Scope
 
 - Web UI login, logout, registration and profile pages keep using Django sessions.
-- API business endpoints remain read-only.
+- Phase 20 business endpoints remain read-only; Phase 24 later adds manager workflow write/action
+  endpoints.
 - JWT is available only for authenticated API access with `Authorization: Bearer <access_token>`.
 - CORS, OAuth, token blacklist, refresh rotation and token logout are not implemented in this
   phase. Phase 21 adds Swagger/OpenAPI documentation for the existing JWT-protected API.
@@ -86,12 +90,11 @@ GET /api/v1/orders/
 Authorization: Bearer <access_token>
 ```
 
-Manager and admin access rules are the same as with session-authenticated API calls:
+Manager and admin read access rules are the same as with session-authenticated API calls:
 
 - managers see only their own orders, trips and analytics;
 - admins and superusers see company-level data;
-- business endpoints do not accept writes and return `405` for `POST`, `PUT`, `PATCH` and
-  `DELETE`.
+- Phase 24 manager write/action endpoints are available to manager users only.
 
 ## Swagger Authorization
 

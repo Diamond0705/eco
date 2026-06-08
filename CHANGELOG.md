@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## Phase 24 - Manager API Expansion
+
+- Added manager-facing DRF write/action endpoints for orders, route calculation, route options,
+  route approval, trip detail/start/deliver, dashboard and emissions report JSON.
+- Exposed authorized route `geometry_json` for the future React Leaflet map while keeping raw
+  provider data and full calculation internals hidden.
+- Kept Django templates, sessions, business services, models, route providers, formulas, reports,
+  archive behavior, migrations, CORS, WebSocket, Celery, Redis and frontend files unchanged.
+- Updated API, JWT and OpenAPI tests for the expanded manager API contract.
+
+## Phase 23 - React SPA Foundation Plan
+
+- Added `docs/23_react_spa_foundation.md` with the approved React SPA migration architecture.
+- Recorded React, Vite, React Router, Redux Toolkit, RTK Query and React Leaflet as planned
+  frontend technologies for later phases.
+- Documented API gaps, JWT handling, polling-first status updates, migration phases and test
+  strategy.
+- Kept code, dependencies, migrations, templates, existing API behavior, providers, formulas,
+  reports and deployment files unchanged.
+
 ## Phase 21 - API Docs And Swagger
 
 - Added OpenAPI schema generation with drf-spectacular at `/api/schema/`.

@@ -4,6 +4,9 @@ Phase 21 adds OpenAPI documentation for the existing read-only EcoLogist REST AP
 write endpoints and does not change authentication, routing providers, calculation formulas,
 reports, archives or HTML views.
 
+Phase 24 later adds manager workflow write/action endpoints and includes them in the OpenAPI
+schema. This document remains the Phase 21 Swagger/OpenAPI baseline.
+
 ## URLs
 
 - `GET /api/schema/` - OpenAPI schema.
@@ -30,8 +33,8 @@ JWT endpoints are documented under `/api/v1/auth/`.
 5. Enter `Bearer <access_token>`.
 6. Run the documented `GET` endpoints.
 
-Business `POST`, `PUT`, `PATCH` and `DELETE` endpoints are not implemented and return
-`405 Method Not Allowed`.
+Phase 24 manager workflow `POST` and `PATCH` endpoints are documented in the schema. Reference
+endpoints such as locations, transports and analytics summary remain read-only.
 
 ## Postman Import
 
@@ -49,5 +52,5 @@ The schema documents safe serializer fields only. API responses must not expose 
 secrets, API keys, MinIO/S3 internal paths, raw GraphHopper responses, route geometry,
 `route_facts_json` or full `calculation_details_json`.
 
-OpenAPI documentation is for inspection and integration testing only. CORS, OAuth, write API,
-pagination, throttling and public versioning policy remain future scope decisions.
+OpenAPI documentation is for inspection and integration testing only. CORS, OAuth, pagination,
+throttling and public versioning policy remain future scope decisions.

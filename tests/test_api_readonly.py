@@ -244,7 +244,11 @@ def test_admin_lists_all_orders(client, users, reference_data):
 
 
 @pytest.mark.django_db
-def test_order_detail_contains_safe_route_snapshot_summary(client, users, reference_data):
+def test_order_detail_contains_safe_route_snapshot_summary_and_geometry(
+    client,
+    users,
+    reference_data,
+):
     manager, _other_manager, _admin = users
     order = create_order(manager, **reference_data)
     create_route(order)
@@ -259,10 +263,10 @@ def test_order_detail_contains_safe_route_snapshot_summary(client, users, refere
     assert route["distance_km"] == "100.00"
     assert route["co2_kg_per_km"] == "0.800"
     assert route["co2_kg_per_ton_km"] == "0.1600"
+    assert route["provider"] == RouteOption.Provider.GRAPHHOPPER
+    assert route["geometry_json"] == [[55.7558, 37.6173], [56.344, 37.52]]
     assert "calculation_details_json" not in route
     assert "route_facts_json" not in route
-    assert "geometry_json" not in route
-    assert "provider" not in route
 
 
 @pytest.mark.django_db
@@ -327,7 +331,7 @@ def test_analytics_summary_uses_saved_route_snapshots(client, users, reference_d
 
 
 @pytest.mark.django_db
-def test_api_write_methods_return_405(client, users, reference_data):
+def test_reference_and_summary_api_write_methods_return_405(client, users, reference_data):
     manager, _other_manager, _admin = users
     order = create_order(manager, **reference_data)
     route = create_route(order)
@@ -336,8 +340,6 @@ def test_api_write_methods_return_405(client, users, reference_data):
     urls = [
         reverse("api:locations"),
         reverse("api:transports"),
-        reverse("api:orders"),
-        reverse("api:order_detail", args=[order.pk]),
         reverse("api:trips"),
         reverse("api:analytics_summary"),
     ]
@@ -347,3 +349,186 @@ def test_api_write_methods_return_405(client, users, reference_data):
         assert client.put(url, {}, content_type="application/json").status_code == 405
         assert client.patch(url, {}, content_type="application/json").status_code == 405
         assert client.delete(url).status_code == 405
+
+
+@pytest.mark.django_db
+def test_manager_can_create_patch_and_cancel_order_through_api(client, users, reference_data):
+    manager, _other_manager, _admin = users
+    client.force_login(manager)
+    payload = {
+        "transport": reference_data["transport"].pk,
+        "cargo_name": "API cargo",
+        "cargo_type": "Metal",
+        "cargo_weight_kg": "5000.00",
+        "delivery_date": timezone.localdate().isoformat(),
+        "origin_location": reference_data["pickup"].pk,
+        "destination_location": reference_data["delivery"].pk,
+        "notes": "Created through API",
+    }
+
+    create_response = client.post(
+        reverse("api:orders"),
+        payload,
+        content_type="application/json",
+    )
+    order = ShipmentOrder.objects.get(cargo_name="API cargo")
+    patch_response = client.patch(
+        reverse("api:order_detail", args=[order.pk]),
+        {"notes": "Updated through API"},
+        content_type="application/json",
+    )
+    cancel_response = client.post(reverse("api:order_cancel", args=[order.pk]))
+    order.refresh_from_db()
+
+    assert create_response.status_code == 201
+    assert create_response.json()["manager"]["username"] == "manager_api"
+    assert order.manager == manager
+    assert list(order.points.order_by("sequence").values_list("location_id", flat=True)) == [
+        reference_data["pickup"].pk,
+        reference_data["delivery"].pk,
+    ]
+    assert patch_response.status_code == 200
+    assert patch_response.json()["notes"] == "Updated through API"
+    assert cancel_response.status_code == 200
+    assert order.status == ShipmentOrder.Status.CANCELLED
+
+
+@pytest.mark.django_db
+def test_manager_order_api_validates_capacity_dates_and_locations(client, users, reference_data):
+    manager, _other_manager, _admin = users
+    client.force_login(manager)
+    payload = {
+        "transport": reference_data["transport"].pk,
+        "cargo_name": "Invalid API cargo",
+        "cargo_type": "Metal",
+        "cargo_weight_kg": "13000.00",
+        "delivery_date": timezone.localdate().isoformat(),
+        "origin_location": reference_data["pickup"].pk,
+        "destination_location": reference_data["pickup"].pk,
+    }
+
+    response = client.post(reverse("api:orders"), payload, content_type="application/json")
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert "cargo_weight_kg" in payload
+    assert "destination_location" in payload
+
+
+@pytest.mark.django_db
+def test_manager_can_calculate_routes_and_read_route_options_with_geometry(
+    client,
+    users,
+    reference_data,
+):
+    manager, _other_manager, _admin = users
+    order = create_order(manager, **reference_data, status=ShipmentOrder.Status.NEW)
+    client.force_login(manager)
+
+    calculate_response = client.post(reverse("api:order_calculate_routes", args=[order.pk]))
+    status_response = client.get(reverse("api:order_route_calculation_status", args=[order.pk]))
+    options_response = client.get(reverse("api:order_route_options", args=[order.pk]))
+    order.refresh_from_db()
+
+    assert calculate_response.status_code == 200
+    assert calculate_response.json()["route_options_count"] == 3
+    assert calculate_response.json()["diagnostics"]["provider"] == RouteOption.Provider.MOCK
+    assert order.status == ShipmentOrder.Status.CALCULATED
+    assert status_response.status_code == 200
+    assert status_response.json()["status"] == "completed"
+    assert status_response.json()["route_options_count"] == 3
+    assert options_response.status_code == 200
+    route = options_response.json()[0]
+    assert route["geometry_json"]
+    assert isinstance(route["geometry_json"][0], list)
+    assert "calculation_details_json" not in route
+    assert "route_facts_json" not in route
+
+
+@pytest.mark.django_db
+def test_manager_cannot_run_order_actions_for_another_manager(client, users, reference_data):
+    manager, other_manager, _admin = users
+    other_order = create_order(other_manager, **reference_data, status=ShipmentOrder.Status.NEW)
+    client.force_login(manager)
+
+    patch_response = client.patch(
+        reverse("api:order_detail", args=[other_order.pk]),
+        {"notes": "nope"},
+        content_type="application/json",
+    )
+    cancel_response = client.post(reverse("api:order_cancel", args=[other_order.pk]))
+    calculate_response = client.post(reverse("api:order_calculate_routes", args=[other_order.pk]))
+
+    assert patch_response.status_code == 404
+    assert cancel_response.status_code == 404
+    assert calculate_response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_manager_can_approve_start_and_deliver_trip_through_api(
+    client,
+    users,
+    reference_data,
+):
+    manager, _other_manager, _admin = users
+    order = create_order(manager, **reference_data, status=ShipmentOrder.Status.CALCULATED)
+    route = create_route(order, selected=False)
+    client.force_login(manager)
+    start_at = timezone.now() - timezone.timedelta(hours=2)
+    finish_at = timezone.now()
+
+    approve_response = client.post(reverse("api:approve_route", args=[order.pk, route.pk]))
+    trip = Trip.objects.get(order=order)
+    start_response = client.post(
+        reverse("api:trip_start", args=[trip.pk]),
+        {"actual_start": start_at.isoformat(), "comment": "API start"},
+        content_type="application/json",
+    )
+    deliver_response = client.post(
+        reverse("api:trip_deliver", args=[trip.pk]),
+        {"actual_finish": finish_at.isoformat(), "comment": "API deliver"},
+        content_type="application/json",
+    )
+    detail_response = client.get(reverse("api:trip_detail", args=[trip.pk]))
+    trip.refresh_from_db()
+    order.refresh_from_db()
+
+    assert approve_response.status_code == 201
+    assert approve_response.json()["status"] == Trip.Status.PLANNED
+    assert start_response.status_code == 200
+    assert start_response.json()["status"] == Trip.Status.IN_PROGRESS
+    assert deliver_response.status_code == 200
+    assert deliver_response.json()["status"] == Trip.Status.DELIVERED
+    assert detail_response.status_code == 200
+    assert len(detail_response.json()["status_events"]) == 3
+    assert trip.status == Trip.Status.DELIVERED
+    assert order.status == ShipmentOrder.Status.COMPLETED
+
+
+@pytest.mark.django_db
+def test_manager_dashboard_and_emissions_report_api_reuse_saved_snapshots(
+    client,
+    users,
+    reference_data,
+):
+    manager, _other_manager, _admin = users
+    order = create_order(manager, **reference_data)
+    route = create_route(
+        order,
+        details={"co2_kg_per_km": "0.800", "co2_kg_per_ton_km": "0.1600"},
+    )
+    trip = create_trip(order, route)
+    client.force_login(manager)
+
+    dashboard_response = client.get(reverse("api:manager_dashboard"))
+    report_response = client.get(reverse("api:emissions_report"))
+
+    assert dashboard_response.status_code == 200
+    assert dashboard_response.json()["orders"]["total"] == 1
+    assert dashboard_response.json()["trips"]["delivered"] == 1
+    assert dashboard_response.json()["recent_delivered_trips"][0]["id"] == trip.pk
+    assert report_response.status_code == 200
+    report_payload = report_response.json()
+    assert report_payload["summary"]["trips_count"] == 1
+    assert report_payload["summary"]["average_co2_kg_per_km"] == "0.800"
+    assert report_payload["rows"][0]["trip_id"] == trip.pk

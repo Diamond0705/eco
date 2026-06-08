@@ -249,7 +249,7 @@ def test_anonymous_business_api_access_is_rejected(client):
 
 
 @pytest.mark.django_db
-def test_business_api_write_methods_still_return_405(client, api_users, api_reference):
+def test_reference_api_write_methods_still_return_405(client, api_users, api_reference):
     manager, _other_manager = api_users
     transport, pickup, delivery = api_reference
     order = create_order(manager, transport, pickup, delivery)
@@ -258,8 +258,6 @@ def test_business_api_write_methods_still_return_405(client, api_users, api_refe
     urls = [
         reverse("api:locations"),
         reverse("api:transports"),
-        reverse("api:orders"),
-        reverse("api:order_detail", args=[order.pk]),
         reverse("api:trips"),
         reverse("api:analytics_summary"),
     ]
@@ -280,6 +278,33 @@ def test_business_api_write_methods_still_return_405(client, api_users, api_refe
             == 405
         )
         assert client.delete(url, **auth_header(access)).status_code == 405
+
+
+@pytest.mark.django_db
+def test_jwt_manager_can_create_order(client, api_users, api_reference):
+    manager, _other_manager = api_users
+    transport, pickup, delivery = api_reference
+    access = obtain_access_token(client, manager)
+
+    response = client.post(
+        reverse("api:orders"),
+        {
+            "transport": transport.pk,
+            "cargo_name": "JWT created cargo",
+            "cargo_type": "Metal",
+            "cargo_weight_kg": "1000.00",
+            "delivery_date": timezone.localdate().isoformat(),
+            "origin_location": pickup.pk,
+            "destination_location": delivery.pk,
+        },
+        content_type="application/json",
+        **auth_header(access),
+    )
+    order = ShipmentOrder.objects.get(cargo_name="JWT created cargo")
+
+    assert response.status_code == 201
+    assert response.json()["manager"]["username"] == "jwt_manager"
+    assert order.manager == manager
 
 
 @pytest.mark.django_db
@@ -317,7 +342,7 @@ def test_jwt_order_detail_does_not_expose_raw_or_secret_data(client, api_users, 
     route = response.json()["route_options"][0]
     assert "calculation_details_json" not in route
     assert "route_facts_json" not in route
-    assert "geometry_json" not in route
+    assert route["geometry_json"] == [[55.7558, 37.6173], [56.344, 37.52]]
     assert "secret_detail" not in content
     assert "raw" not in content
     assert "password" not in content

@@ -93,6 +93,28 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Business API endpoints remain read-only; CORS, write API, migrations, provider changes,
   formula changes, PDF/XLSX/archive changes and HTML view changes remain out of this phase.
 
+## Phase 23
+
+- Added `docs/23_react_spa_foundation.md` as the React SPA migration foundation plan.
+- React, Vite, React Router, Redux Toolkit, RTK Query and React Leaflet are approved for later
+  phases as an explicit project scope change.
+- The target architecture keeps Django, DRF, PostgreSQL, existing services, routing providers,
+  calculations, reports and saved snapshots as the backend source of truth.
+- Phase 23 itself adds no frontend files, dependencies, migrations, write API endpoints, CORS,
+  WebSocket, Celery or Redis.
+
+## Phase 24
+
+- Added manager-facing DRF endpoints for order create/edit/cancel, route calculation, route
+  calculation status, route options, route approval, trip detail/start/deliver, manager dashboard
+  and emissions report JSON.
+- Route option API exposes authorized `geometry_json` for the future React Leaflet map while
+  continuing to hide raw provider payloads, `route_facts_json` and full
+  `calculation_details_json`.
+- Existing Django templates and session-based web UI remain available.
+- No React files, frontend dependencies, migrations, CORS, WebSocket, Celery, Redis, provider
+  changes or calculation formula changes are added in this phase.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -109,6 +131,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Read-only session-authenticated API for integrations.
 - JWT Bearer authentication for external read-only API clients.
 - OpenAPI schema, Swagger UI and ReDoc for API inspection and Postman import.
+- React SPA migration plan for later phases.
+- Manager workflow API for the future React SPA.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -166,8 +190,9 @@ planning notes for earlier phases, so they may describe target behavior or old p
   saved manually to the private document archive, while background exports remain out of scope.
 - Production-style deployment preparation is available, but full managed VPS/cloud operations,
   TLS certificate automation and scheduled backups are not implemented.
-- The REST API is read-only, supports session and JWT authentication, and includes OpenAPI/Swagger
-  documentation. CORS and write endpoints are not implemented.
+- The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
+  and now has manager workflow write/action endpoints. CORS is not implemented.
+- React SPA is planned but not scaffolded yet; Django templates remain the active user interface.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

@@ -188,9 +188,10 @@ The `seed_demo` command creates:
 8. Open emissions reports and analytics.
 9. Download Excel exports for emissions, analytics or trip lists.
 
-## Read-Only API
+## REST API
 
-Phase 19 adds a small JSON API under `/api/v1/` for authenticated integrations:
+Phase 19 added a small JSON API under `/api/v1/` for authenticated integrations, Phase 20 added
+JWT Bearer authentication, and Phase 24 expands the manager workflow API for the future React SPA.
 
 - `GET /api/v1/locations/`
 - `GET /api/v1/transports/`
@@ -198,11 +199,14 @@ Phase 19 adds a small JSON API under `/api/v1/` for authenticated integrations:
 - `GET /api/v1/orders/<id>/`
 - `GET /api/v1/trips/`
 - `GET /api/v1/analytics/summary/`
+- `GET /api/v1/manager/dashboard/`
+- `GET /api/v1/reports/emissions/`
 
-The API supports Django session authentication for browser users and JWT Bearer tokens for
-external clients. It is read-only: write methods return `405`. CORS and write API endpoints are
-intentionally not added. See `docs/19_rest_api.md`, `docs/20_jwt_api_auth.md` and
-`docs/21_api_docs_swagger.md` for endpoint, token, Swagger and data exposure rules.
+Manager write/action endpoints now support order create/edit/cancel, route calculation, route
+options with authorized `geometry_json`, route approval, trip detail/start/deliver and a
+polling-compatible route calculation status response. CORS is still intentionally not configured.
+See `docs/19_rest_api.md`, `docs/20_jwt_api_auth.md`, `docs/21_api_docs_swagger.md` and
+`docs/24_manager_api_expansion.md` for endpoint, token, Swagger and data exposure rules.
 
 Token endpoints:
 
@@ -237,15 +241,16 @@ collection authorization to Bearer Token.
 - No real traffic, roadworks, truck restrictions or GPS tracking.
 - Production-style Docker/Nginx deployment preparation is available; full managed hosting,
   TLS automation and scheduled backups are not implemented.
-- The REST API is read-only and supports sessions plus JWT Bearer tokens; OpenAPI/Swagger
-  documentation is available, while write API and CORS are not implemented.
+- The REST API supports sessions plus JWT Bearer tokens. Phase 24 adds manager workflow
+  write/action endpoints for the future React SPA, while CORS is not implemented.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
-`docs/08_current_state.md` is the current implementation snapshot. Earlier docs in `docs/00_*`
-through `docs/07_*` are useful historical and planning notes and may still describe earlier
-phase boundaries.
+`docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
+records the approved React SPA migration plan for later phases. Earlier docs in `docs/00_*`
+through `docs/07_*` are useful historical and planning notes and may still describe earlier phase
+boundaries.
 
 ## Before Public Deployment
 
