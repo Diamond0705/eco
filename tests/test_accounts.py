@@ -463,19 +463,19 @@ def test_profile_avatar_upload_form_rejects_invalid_files():
         files={"avatar": avatar_file("avatar.txt", b"plain text", "text/plain")}
     )
     assert not text_form.is_valid()
-    assert "Загрузите фото в формате JPG или PNG." in text_form.errors["avatar"]
+    assert "Недопустимый формат файла. Загрузите JPG, PNG или WEBP." in text_form.errors["avatar"]
 
     fake_png_form = ProfileAvatarUploadForm(
         files={"avatar": avatar_file("avatar.png", b"not a png", "image/png")}
     )
     assert not fake_png_form.is_valid()
-    assert "Файл не похож на изображение JPG или PNG." in fake_png_form.errors["avatar"]
+    assert "Файл не похож на изображение JPG, PNG или WEBP." in fake_png_form.errors["avatar"]
 
     large_form = ProfileAvatarUploadForm(
         files={"avatar": avatar_file("avatar.png", PNG_BYTES + (b"0" * (5 * 1024 * 1024)))}
     )
     assert not large_form.is_valid()
-    assert "Максимальный размер файла: 5 МБ." in large_form.errors["avatar"]
+    assert "Файл слишком большой. Максимальный размер: 5 МБ." in large_form.errors["avatar"]
 
 
 @pytest.mark.django_db

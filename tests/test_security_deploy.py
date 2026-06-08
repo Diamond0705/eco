@@ -104,13 +104,26 @@ def test_blank_allowed_hosts_and_csrf_trusted_origins_are_safe():
     assert "[]" in result.stdout
 
 
-def test_deploy_compose_publishes_minio_ports_for_local_verification():
+def test_deploy_compose_keeps_minio_internal_by_default():
     compose = open("docker-compose.deploy.yml", encoding="utf-8").read()
 
     assert 'AWS_S3_ENDPOINT_URL: http://minio:9000' in compose
-    assert '      - "9000:9000"' in compose
-    assert '      - "9001:9001"' in compose
-    assert "Published for local Phase 18 verification only." in compose
+    assert '      - "9000:9000"' not in compose
+    assert '      - "9001:9001"' not in compose
+
+
+def test_nginx_builds_react_spa_and_proxies_backend_routes():
+    nginx_dockerfile = open("docker/nginx/Dockerfile", encoding="utf-8").read()
+    nginx_conf = open("docker/nginx/default.conf", encoding="utf-8").read()
+
+    assert "FROM node:22-alpine AS react_builder" in nginx_dockerfile
+    assert "RUN npm ci" in nginx_dockerfile
+    assert "RUN npm run build" in nginx_dockerfile
+    assert "COPY --from=react_builder /frontend/dist /usr/share/nginx/html" in nginx_dockerfile
+    assert "location /api/" in nginx_conf
+    assert "location /admin/" in nginx_conf
+    assert "location /healthz/" in nginx_conf
+    assert "try_files $uri $uri/ /index.html;" in nginx_conf
 
 
 def test_deploy_dockerfile_installs_cyrillic_pdf_font():

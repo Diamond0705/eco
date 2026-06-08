@@ -28,6 +28,7 @@ export default function AppLayout() {
           <NavLink to="/trips">Рейсы</NavLink>
           <NavLink to="/reports/emissions">Отчеты</NavLink>
           <NavLink to="/archive">Архив</NavLink>
+          <NavLink to="/profile">Профиль</NavLink>
         </nav>
       </aside>
 
@@ -38,7 +39,9 @@ export default function AppLayout() {
             <h1>Рабочее место EcoLogist</h1>
           </div>
           <div className="user-menu">
-            <span>{user?.full_name || user?.username}</span>
+            <NavLink className="profile-link" to="/profile">
+              {user?.full_name || user?.username}
+            </NavLink>
             <span className="role-pill">
               {user?.role === "admin" ? "Администратор" : "Менеджер"}
             </span>

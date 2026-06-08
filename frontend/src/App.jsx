@@ -9,6 +9,7 @@ import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrderCreatePage from "./pages/OrderCreatePage.jsx";
 import OrderDetailPage from "./pages/OrderDetailPage.jsx";
 import OrdersListPage from "./pages/OrdersListPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 import RouteComparisonPage from "./pages/RouteComparisonPage.jsx";
 import TripDetailPage from "./pages/TripDetailPage.jsx";
 import TripsListPage from "./pages/TripsListPage.jsx";
@@ -94,6 +95,7 @@ export default function App() {
               </RoleRoute>
             }
           />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

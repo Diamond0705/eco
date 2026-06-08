@@ -22,7 +22,7 @@ temporary file storage so tests do not require real MinIO/S3 even if a developer
 
 The deployment stack is:
 
-- Nginx reverse proxy;
+- Nginx serving the React SPA and proxying backend routes;
 - Django served by Waitress;
 - PostgreSQL 16;
 - MinIO/S3-compatible private document archive.
@@ -80,9 +80,11 @@ The deploy entrypoint runs:
 python manage.py collectstatic --noinput
 ```
 
-Nginx serves `/static/` from the collected static volume and proxies dynamic requests to Django.
-Nginx does not serve private archived PDF/XLSX files. Archived documents continue to download only
-through authorized Django views.
+Nginx serves the built React SPA at `/` and uses SPA fallback for React client routes. It proxies
+`/api/`, `/admin/`, `/healthz/` and selected protected legacy download/action paths to Django.
+Nginx serves `/static/` from the collected static volume. Nginx does not serve private archived
+PDF/XLSX files or profile avatars directly; protected files continue to download only through
+authorized Django/API views.
 
 ## Deploy Commands
 
@@ -92,16 +94,11 @@ Build and start the deployment stack:
 docker compose -f docker-compose.deploy.yml up -d --build
 ```
 
-The deploy compose publishes MinIO ports for local Phase 18 verification:
-
-```powershell
-docker compose -f docker-compose.deploy.yml up -d --build
-```
-
-Then open `http://localhost:9001`, create the private `ecologist-documents` bucket, and only then
-set `USE_S3_STORAGE=True` for manual archive storage checks. For real production, close MinIO
-ports or move them to a private local override; archived documents must still download through
-authorized Django views, not public MinIO URLs.
+The deploy compose keeps MinIO internal by default. For local MinIO console debugging, create a
+local compose override that publishes `9000` and `9001`, then open `http://localhost:9001` and
+create the private `ecologist-documents` bucket. Do not expose MinIO ports in production; archived
+documents and profile avatars must still download through authorized Django/API views, not public
+MinIO URLs.
 
 Run migrations explicitly:
 

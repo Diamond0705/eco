@@ -160,6 +160,29 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Existing Django templates, backend models, migrations, route providers, calculation formulas,
   report/archive services, CORS, WebSocket, Celery and Redis remain unchanged.
 
+## Phase 29
+
+- Added React `/profile` page for current-user profile viewing/editing and avatar management.
+- Added current-user profile API endpoints under `/api/v1/profile/`.
+- Avatar upload/download/delete is protected by API authentication and does not expose raw storage
+  paths or public MinIO/S3 URLs.
+- Avatar validation allows JPG, PNG and WEBP up to 5 MB with extension, content-type and file
+  header checks.
+- Existing Django profile pages, login/logout flow, calculations, route providers, reports,
+  archive behavior, admin React pages and deployment files remain unchanged.
+
+## Phase 30
+
+- Updated production-like Docker/Nginx deployment so Nginx builds and serves the React SPA.
+- React client routes now use Nginx SPA fallback in deploy mode.
+- `/api/`, `/admin/`, `/healthz/` and selected protected legacy download/action paths still proxy
+  to Django/Waitress.
+- Django collected static files continue to be served from the `static_data` volume.
+- MinIO remains internal by default in deploy compose; public debug ports should be added only via
+  local override.
+- Waitress remains the WSGI server. Gunicorn, Celery, Redis, WebSockets, admin React SPA,
+  migrations and business logic changes remain out of scope.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -182,6 +205,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Manager React dashboard and order workflow.
 - React route calculation, Leaflet comparison map and route approval.
 - React manager trips, emissions reports and document archive.
+- React current-user profile with protected avatar upload/delete.
+- Production-like Nginx deploy path serving the React SPA and proxying Django API/Admin.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -242,8 +267,9 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
   and now has manager workflow write/action endpoints. CORS is not implemented.
 - React SPA exists in `/frontend` with manager dashboard, order workflow, route calculation,
-  Leaflet route comparison, route approval, trips, emissions reports and document archive. Admin
-  React pages remain future work; Django templates remain available.
+  Leaflet route comparison, route approval, trips, emissions reports, document archive and profile
+  avatar management. Production-like Nginx can serve the built SPA while proxying Django API/Admin.
+  Admin React pages remain future work; Django templates remain available.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

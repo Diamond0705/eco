@@ -69,8 +69,8 @@ Keep Django running on `http://127.0.0.1:8000`; Vite proxies `/api` and `/static
 CORS is not required for local React development.
 
 The manager React SPA currently covers dashboard, orders, route calculation/comparison, route
-approval, trips, emissions reports and document archive. Django templates remain available during
-the migration.
+approval, trips, emissions reports, document archive and user profile with protected avatar upload.
+Django templates remain available during the migration.
 
 Optional local MinIO for the private document archive:
 
@@ -131,12 +131,16 @@ docker compose -f docker-compose.deploy.yml up -d --build
 docker compose -f docker-compose.deploy.yml exec web python manage.py migrate
 ```
 
-The deploy stack uses Nginx + Waitress + Django + PostgreSQL + MinIO. Gunicorn is intentionally
-not used. The web container runs:
+The deploy stack uses Nginx + React static build + Waitress + Django + PostgreSQL + MinIO.
+Gunicorn is intentionally not used. The web container runs:
 
 ```powershell
 waitress-serve --listen=0.0.0.0:8000 config.wsgi:application
 ```
+
+In the production-like compose path, Nginx serves the built React SPA at `/`, proxies `/api/`,
+`/admin/` and `/healthz/` to Django/Waitress, and serves collected Django static files from the
+`static_data` volume. React is built inside the Nginx image; `frontend/dist` is not committed.
 
 Set production security variables in `.env` before `DEBUG=False`:
 

@@ -7,6 +7,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -32,12 +33,14 @@ from .serializers import (
     AnalyticsSummarySerializer,
     ArchivedDocumentSerializer,
     ArchiveDocumentResponseSerializer,
+    AvatarUploadSerializer,
     CurrentUserSerializer,
     EmissionsReportSerializer,
     LocationSerializer,
     ManagerDashboardSerializer,
     OrderDetailSerializer,
     OrderListSerializer,
+    ProfileSerializer,
     RouteOptionDetailSerializer,
     ShipmentOrderWriteSerializer,
     TransportSummarySerializer,
@@ -108,6 +111,15 @@ def manager_only(request):
             status=status.HTTP_403_FORBIDDEN,
         )
     return None
+
+
+def _avatar_content_type(name):
+    name = name.lower()
+    if name.endswith(".png"):
+        return "image/png"
+    if name.endswith(".webp"):
+        return "image/webp"
+    return "image/jpeg"
 
 
 def _emissions_report_for_request(request):
@@ -435,6 +447,68 @@ class CurrentUserAPIView(APIView):
     @extend_schema(responses=CurrentUserSerializer)
     def get(self, request):
         return Response(CurrentUserSerializer(request.user).data)
+
+
+class ProfileAPIView(APIView):
+    @extend_schema(responses=ProfileSerializer)
+    def get(self, request):
+        return Response(ProfileSerializer(request.user).data)
+
+    @extend_schema(request=ProfileSerializer, responses=ProfileSerializer)
+    def patch(self, request):
+        serializer = ProfileSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(ProfileSerializer(request.user).data)
+
+
+class ProfileAvatarAPIView(APIView):
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(responses={(200, "image/*"): OpenApiTypes.BINARY})
+    def get(self, request):
+        if not request.user.avatar:
+            return Response(
+                {"detail": "Фото профиля не загружено."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            avatar_file = request.user.avatar.open("rb")
+        except OSError:
+            return Response(
+                {"detail": "Фото профиля не найдено."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return FileResponse(
+            avatar_file,
+            content_type=_avatar_content_type(request.user.avatar.name),
+        )
+
+    @extend_schema(request=AvatarUploadSerializer, responses=ProfileSerializer)
+    def post(self, request):
+        serializer = AvatarUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        old_avatar_name = user.avatar.name
+        user.avatar = serializer.validated_data["avatar"]
+        user.save(update_fields=["avatar"])
+
+        if old_avatar_name and old_avatar_name != user.avatar.name:
+            user.avatar.storage.delete(old_avatar_name)
+
+        return Response(ProfileSerializer(user).data)
+
+    @extend_schema(responses={204: None})
+    def delete(self, request):
+        user = request.user
+        if user.avatar:
+            user.avatar.delete(save=False)
+            user.avatar = ""
+            user.save(update_fields=["avatar"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ManagerDashboardAPIView(APIView):

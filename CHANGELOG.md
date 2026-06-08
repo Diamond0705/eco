@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## Phase 30 - React Nginx Production Deploy
+
+- Added a dedicated Nginx Docker build that builds the React SPA with Node and serves the compiled
+  assets from Nginx.
+- Updated production-like Nginx routing so `/` and React client routes use SPA fallback while
+  `/api/`, `/admin/`, `/healthz/` and protected backend download/action paths proxy to Django.
+- Kept Django/Waitress as the backend application server and kept Django static files served from
+  the existing `static_data` volume.
+- Kept MinIO internal by default in deploy compose; public MinIO debug ports should be added only
+  through a local override.
+- Kept business logic, models, migrations, calculations, providers, reports, archive/profile logic,
+  admin SPA, Celery, Redis and WebSockets unchanged.
+
+## Phase 29 - React Profile Avatar
+
+- Added React `/profile` page with editable personal data and protected avatar upload/delete.
+- Added `/api/v1/profile/` and `/api/v1/profile/avatar/` for current-user profile and avatar
+  actions.
+- Extended avatar validation to JPG, PNG and WEBP with a 5 MB limit and header checks.
+- Added a local default avatar SVG and kept raw avatar storage paths out of API responses.
+- Kept Django templates, login/logout behavior, models, migrations, calculations, route providers,
+  reports, archive behavior, admin SPA and deploy files unchanged.
+
 ## Phase 28 - React Trips, Reports And Archive
 
 - Added React manager pages for trips list/detail, trip start/deliver actions, emissions reports

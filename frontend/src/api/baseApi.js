@@ -63,7 +63,9 @@ export const baseApi = createApi({
     "Trips",
     "Trip",
     "Reports",
-    "Archive"
+    "Archive",
+    "Profile",
+    "Avatar"
   ],
   endpoints: () => ({})
 });

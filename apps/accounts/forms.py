@@ -9,8 +9,8 @@ User = get_user_model()
 
 PHONE_HELP_TEXT = "Предпочтительный формат: +7 (999) 123-45-67"
 MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024
-ALLOWED_AVATAR_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-ALLOWED_AVATAR_CONTENT_TYPES = {"image/jpeg", "image/png"}
+ALLOWED_AVATAR_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_AVATAR_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def validate_russian_phone(phone):
@@ -28,6 +28,33 @@ def validate_russian_phone(phone):
         raise forms.ValidationError("Введите телефон в формате +7 (999) 123-45-67.")
 
     return f"+7 ({digits[:3]}) {digits[3:6]}-{digits[6:8]}-{digits[8:10]}"
+
+
+def validate_profile_avatar_file(avatar):
+    extension = Path(avatar.name).suffix.lower()
+    content_type = getattr(avatar, "content_type", "")
+
+    if not avatar.size:
+        raise forms.ValidationError("Файл пустой.")
+
+    if avatar.size > MAX_AVATAR_SIZE_BYTES:
+        raise forms.ValidationError("Файл слишком большой. Максимальный размер: 5 МБ.")
+
+    if extension not in ALLOWED_AVATAR_EXTENSIONS:
+        raise forms.ValidationError("Недопустимый формат файла. Загрузите JPG, PNG или WEBP.")
+
+    if content_type and content_type not in ALLOWED_AVATAR_CONTENT_TYPES:
+        raise forms.ValidationError("Недопустимый формат файла. Загрузите JPG, PNG или WEBP.")
+
+    header = avatar.read(16)
+    avatar.seek(0)
+    is_png = header.startswith(b"\x89PNG\r\n\x1a\n")
+    is_jpeg = header.startswith(b"\xff\xd8\xff")
+    is_webp = header.startswith(b"RIFF") and header[8:12] == b"WEBP"
+    if not (is_png or is_jpeg or is_webp):
+        raise forms.ValidationError("Файл не похож на изображение JPG, PNG или WEBP.")
+
+    return avatar
 
 
 class ManagerRegistrationForm(UserCreationForm):
@@ -174,24 +201,4 @@ class ProfileAvatarUploadForm(forms.Form):
     avatar = forms.FileField(label="Фото профиля")
 
     def clean_avatar(self):
-        avatar = self.cleaned_data["avatar"]
-        extension = Path(avatar.name).suffix.lower()
-        content_type = getattr(avatar, "content_type", "")
-
-        if avatar.size > MAX_AVATAR_SIZE_BYTES:
-            raise forms.ValidationError("Максимальный размер файла: 5 МБ.")
-
-        if extension not in ALLOWED_AVATAR_EXTENSIONS:
-            raise forms.ValidationError("Загрузите фото в формате JPG или PNG.")
-
-        if content_type and content_type not in ALLOWED_AVATAR_CONTENT_TYPES:
-            raise forms.ValidationError("Загрузите фото в формате JPG или PNG.")
-
-        header = avatar.read(12)
-        avatar.seek(0)
-        is_png = header.startswith(b"\x89PNG\r\n\x1a\n")
-        is_jpeg = header.startswith(b"\xff\xd8\xff")
-        if not (is_png or is_jpeg):
-            raise forms.ValidationError("Файл не похож на изображение JPG или PNG.")
-
-        return avatar
+        return validate_profile_avatar_file(self.cleaned_data["avatar"])

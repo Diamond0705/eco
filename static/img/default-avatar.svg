@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Фото профиля">
+  <circle cx="80" cy="80" r="76" fill="#e4efe7"/>
+  <circle cx="80" cy="62" r="30" fill="#7fb48e"/>
+  <path d="M34 133c7-31 26-48 46-48s39 17 46 48" fill="#7fb48e"/>
+  <path d="M111 39c16 2 25-7 28-24-17 1-27 8-28 24Z" fill="#2f8b5b"/>
+  <path d="M113 37c8-7 16-12 24-16" fill="none" stroke="#d8eadc" stroke-linecap="round" stroke-width="4"/>
+</svg>

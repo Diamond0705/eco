@@ -51,6 +51,8 @@ EXPECTED_PATHS = BUSINESS_PATHS + [
     "/api/v1/auth/token/refresh/",
     "/api/v1/auth/token/verify/",
     "/api/v1/auth/me/",
+    "/api/v1/profile/",
+    "/api/v1/profile/avatar/",
 ]
 
 FORBIDDEN_SCHEMA_FIELDS = [

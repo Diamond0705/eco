@@ -2,6 +2,9 @@
 .pytest_cache
 .ruff_cache
 .venv
+frontend/.vite
+frontend/dist
+frontend/node_modules
 __pycache__
 *.pyc
 db.sqlite3

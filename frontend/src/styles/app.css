@@ -253,6 +253,12 @@ p {
   padding: 7px 11px;
 }
 
+.profile-link {
+  color: #24563d;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .page-shell {
   display: grid;
   gap: 18px;
@@ -784,6 +790,52 @@ p {
   min-width: min(100%, 260px);
 }
 
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.45fr) minmax(420px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.profile-avatar-card {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  text-align: center;
+}
+
+.profile-avatar-card h2 {
+  margin-bottom: 8px;
+}
+
+.profile-avatar {
+  aspect-ratio: 1;
+  border: 6px solid #e4efe7;
+  border-radius: 999px;
+  box-shadow: 0 16px 32px rgba(39, 77, 54, 0.16);
+  height: 176px;
+  object-fit: cover;
+  width: 176px;
+}
+
+.profile-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.visually-hidden {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .warning-line {
   display: block;
 }
@@ -839,9 +891,11 @@ p {
   .dashboard-grid,
   .feature-grid,
   .detail-grid,
+  .profile-layout,
   .route-layout,
   .report-summary-grid,
   .lifecycle-form,
+  .profile-form,
   .order-form {
     grid-template-columns: 1fr;
   }

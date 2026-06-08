@@ -20,6 +20,8 @@ def _avatar_content_type(name):
     name = name.lower()
     if name.endswith(".png"):
         return "image/png"
+    if name.endswith(".webp"):
+        return "image/webp"
     return "image/jpeg"
 
 

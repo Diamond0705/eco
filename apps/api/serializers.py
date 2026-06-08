@@ -1,11 +1,14 @@
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.accounts.forms import validate_profile_avatar_file, validate_russian_phone
+from apps.accounts.models import User
 from apps.fleet.models import Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
@@ -38,6 +41,55 @@ class UserSummarySerializer(serializers.Serializer):
 
 class CurrentUserSerializer(UserSummarySerializer):
     role = serializers.CharField()
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(read_only=True)
+    avatar_exists = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "middle_name",
+            "email",
+            "phone",
+            "role",
+            "avatar_exists",
+        )
+        read_only_fields = ("id", "username", "role", "avatar_exists")
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_avatar_exists(self, user):
+        return bool(user.avatar)
+
+    def validate_phone(self, value):
+        return validate_russian_phone(value)
+
+    def validate_email(self, value):
+        email = value.strip()
+        if not email:
+            return email
+
+        users = User.objects.filter(email__iexact=email)
+        if self.instance and self.instance.pk:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError("Пользователь с таким email уже зарегистрирован.")
+        return email
+
+
+class AvatarUploadSerializer(serializers.Serializer):
+    avatar = serializers.FileField()
+
+    def validate_avatar(self, value):
+        try:
+            return validate_profile_avatar_file(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages[0]) from exc
 
 
 class EcoStandardSummarySerializer(serializers.Serializer):
