@@ -1,5 +1,9 @@
 # Phase 23 React SPA Foundation
 
+Phase 34 status note: this foundation plan has been implemented in later phases. The React SPA is
+now the main user-facing interface, while Django templates remain as legacy/fallback/internal views
+and Django Admin remains available at `/admin/`.
+
 Phase 23 is an architecture and migration-planning phase for moving EcoLogist from a
 Django-template user interface to a React single-page application. It records an explicit project
 scope change: React is now approved for later phases, while Django, PostgreSQL and the existing

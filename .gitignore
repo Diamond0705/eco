@@ -14,5 +14,6 @@ media/*
 !media/waybills/.gitkeep
 !media/reports/
 !media/reports/.gitkeep
+protected_media/
 *.log
 ~$*

@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## Phase 34 - Final Demo Readiness And Documentation Alignment
+
+- Aligned README and current-state documentation with the final React SPA + Django REST API
+  architecture.
+- Added a final demo readiness runbook covering local development, production-like deploy,
+  manager/admin/API demos, demo data cleanup and verification commands.
+- Clarified that Django templates and Django sessions remain for legacy/fallback views and Django
+  Admin, while React SPA is the main user-facing interface.
+- Documented runtime artifact hygiene for `.env`, `.tmp`, frontend build folders and
+  `protected_media/`.
+- Kept business logic, models, migrations, calculations, routing providers, React runtime behavior,
+  deploy logic, secrets, Celery, Redis, WebSockets and PostGIS unchanged.
+
 ## Phase 33 - CI Pipeline And Automated Quality Checks
 
 - Added GitHub Actions CI for backend checks, migration drift checks, pytest, ruff, frontend

@@ -1,12 +1,19 @@
 # EcoLogist
 
-EcoLogist is an educational Django monolith for planning road freight transportation with simplified environmental impact calculation.
+EcoLogist is an educational React SPA + Django REST API application for planning road freight
+transportation with simplified environmental impact calculation.
 
 The MVP UI is Russian-only. The demo domain is Russia-oriented: RUB currency, diesel fuel price in RUB/liter, Moscow and Moscow Oblast locations, and the `Europe/Moscow` timezone.
 
-## MVP Status
+## Current Status
 
-The MVP is completed through Phase 7:
+EcoLogist is complete through Phase 34 for final demonstration. The main user-facing interface is
+the React SPA in `/frontend`. The Django backend remains the source of truth for authentication,
+permissions, business services, route calculations, reports, archive access and database writes.
+Django templates remain in the project as legacy/fallback/internal views, and Django Admin remains
+available at `/admin/`.
+
+The original Django-template MVP was completed through Phase 7:
 
 - accounts, registration, login/logout, profile and role-based dashboards;
 - fleet, eco standards, calculation settings and demo locations;
@@ -16,34 +23,51 @@ The MVP is completed through Phase 7:
 - PDF waybill and emissions PDF via ReportLab;
 - manager analytics, admin company dashboard and final UI polish.
 
-Routing defaults to deterministic mock data. Phase 8 adds optional GraphHopper routing behind
+Routing defaults to deterministic mock data. Phase 8 added optional GraphHopper routing behind
 the existing provider boundary so orders, trips, reports and analytics continue to consume saved
-`RouteOption` snapshots. Phase 13 adds Calculation Model v2.1 for new calculations: routes above
+`RouteOption` snapshots. Phase 13 added Calculation Model v2.1 for new calculations: routes above
 `MAX_ROUTE_DISTANCE_KM` are filtered or rejected, eco-rating uses educational emissions intensity,
-and absolute emissions remain saved as route snapshots. Phase 15 adds in-application administrator
+and absolute emissions remain saved as route snapshots. Phase 15 added in-application administrator
 CRUD pages for common management tasks while keeping Django Admin available for extended editing.
 
-## Stack
+## Final Stack
+
+Backend:
 
 - Python 3.12 target, Python 3.14.4 allowed locally inside `.venv`
 - Django 5.2 LTS
-- PostgreSQL 16
 - Django ORM and migrations
-- Django templates + project CSS / Bootstrap-style layout
-- Leaflet
-- ReportLab
-- openpyxl for synchronous `.xlsx` exports
-- django-storages with S3 support for the optional private document archive
 - Django REST Framework for the session/JWT-authenticated API
 - SimpleJWT for external Bearer-token API authentication
 - drf-spectacular for OpenAPI schema and Swagger/ReDoc documentation
+- PostgreSQL 16
+- django-storages with S3 support for the optional private document archive
+- ReportLab
+- openpyxl for synchronous `.xlsx` exports
+- GraphHopper integration behind the routing provider boundary
+- Django templates + project CSS / Bootstrap-style layout for legacy/fallback/internal views
+
+Frontend:
+
 - React + Vite SPA under `/frontend`
-- Redux Toolkit, RTK Query, React Router and React Leaflet
+- JavaScript
+- React Router
+- Redux Toolkit and RTK Query
+- React Leaflet, Leaflet and OpenStreetMap tiles
+- HTML/CSS
+
+Infrastructure and quality:
+
+- Docker Compose
+- Nginx for React static serving and backend proxying
+- Waitress for deployment WSGI serving
 - Playwright for lightweight React E2E smoke tests
 - GitHub Actions for backend, frontend and deploy configuration checks
-- Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
+
+Redis, Celery, WebSockets and PostGIS are not implemented. They remain future options only if a
+measured production need appears.
 
 ## Local Setup
 
@@ -71,7 +95,8 @@ Keep Django running on `http://127.0.0.1:8000`; Vite proxies `/api` and `/static
 CORS is not required for local React development.
 
 The React SPA covers the manager workflow, administrator pages, document archive, reports and user
-profile with protected avatar upload. Django templates remain available during the migration.
+profile with protected avatar upload. Django templates remain available as legacy/fallback/internal
+views during and after the migration.
 
 Optional React E2E smoke tests:
 
@@ -254,7 +279,7 @@ The `seed_demo` command creates:
 ## REST API
 
 Phase 19 added a small JSON API under `/api/v1/` for authenticated integrations, Phase 20 added
-JWT Bearer authentication, and Phase 24 expands the manager workflow API for the future React SPA.
+JWT Bearer authentication, and Phase 24 expanded the manager workflow API used by the React SPA.
 
 - `GET /api/v1/locations/`
 - `GET /api/v1/transports/`
@@ -304,8 +329,8 @@ collection authorization to Bearer Token.
 - No real traffic, roadworks, truck restrictions or GPS tracking.
 - Production-style Docker/Nginx deployment preparation is available; full managed hosting,
   TLS automation and scheduled backups are not implemented.
-- The REST API supports sessions plus JWT Bearer tokens. Phase 24 adds manager workflow
-  write/action endpoints for the future React SPA, while CORS is not implemented.
+- The REST API supports sessions plus JWT Bearer tokens. Manager workflow write/action endpoints
+  are used by the React SPA, while CORS is not implemented.
 - Phase 25 adds a separate Vite React scaffold in `/frontend`.
 - Phase 26 adds the first manager SPA pages for dashboard and order create/list/detail/cancel.
 - Phase 27 adds React route calculation, Leaflet route comparison and route approval for manager
@@ -316,13 +341,15 @@ collection authorization to Bearer Token.
 - Phase 31 adds the React administrator SPA.
 - Phase 32 adds Playwright E2E smoke tests for core manager/admin React navigation.
 - Phase 33 adds GitHub Actions CI for backend, frontend and deploy compose validation.
+- Phase 34 aligns final demo documentation and runbooks.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
-records the approved React SPA migration plan, and docs `24` through `33` document the manager API,
-React scaffold, manager/admin SPA pages, deployment path, Playwright smoke tests and CI pipeline. Earlier docs
+records the approved React SPA migration plan, and docs `24` through `34` document the manager API,
+React scaffold, manager/admin SPA pages, deployment path, Playwright smoke tests, CI pipeline and
+final demo readiness. Earlier docs
 in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
 earlier phase boundaries.
 
@@ -339,10 +366,13 @@ earlier phase boundaries.
 - Consider the personal data policy for names, email, phone, route history and trip history.
 - Review tile, CDN and provider privacy before using real routes.
 
-## MVP Boundaries
+## Approved Scope Boundaries
 
-Do not add FastAPI, React, Celery, Redis, PostGIS, WebSocket, real GPS tracking, arbitrary address geocoding, or strict EN 16258 / EMEP / EEA calculations unless the project scope is explicitly changed. MinIO/S3-compatible storage is limited to the approved Phase 17 private document archive. Nginx and Waitress are limited to the approved Phase 18 deployment path. Excel export is limited to the approved synchronous `.xlsx` downloads.
-Django REST Framework is limited to the approved read-only API. SimpleJWT is limited to the
-approved Phase 20 external API authentication endpoints. drf-spectacular is limited to the
-approved Phase 21 OpenAPI schema, Swagger UI and ReDoc pages; CORS, OAuth and write API remain out
-of scope.
+React, Django REST Framework, SimpleJWT, MinIO/S3-compatible storage, Nginx, Waitress and
+synchronous Excel export are approved project scope changes from later phases. They should remain
+inside the architecture documented above.
+
+Do not add FastAPI, Celery, Redis, PostGIS, WebSocket, real GPS tracking, arbitrary address
+geocoding, OAuth, CORS or strict EN 16258 / EMEP / EEA calculations unless the project scope is
+explicitly changed. Do not replace Django business services, saved route snapshots, calculation
+formulas, routing providers, Django Admin or legacy templates as part of routine frontend work.

@@ -1,6 +1,24 @@
-# Current MVP State
+# Current Project State
 
-EcoLogist MVP is complete through Phase 8.1. Phase 9 is a documentation/specification phase and does not change application behavior.
+EcoLogist is complete through Phase 34 for final demonstration readiness.
+
+The current architecture is React SPA + Django REST API:
+
+- React SPA is the main user-facing interface.
+- Django templates still exist as legacy/fallback/internal views.
+- Django Admin remains available at `/admin/`.
+- Django REST Framework exposes JSON API under `/api/v1/`.
+- SimpleJWT Bearer tokens are used for React/API authentication.
+- Django sessions remain for Django Admin and legacy/template views.
+- Nginx serves the React build and proxies backend routes to Django/Waitress.
+- PostgreSQL stores application data.
+- MinIO/S3-compatible storage can store protected documents and avatar media when enabled.
+- GraphHopper remains the real routing integration behind the provider boundary; mock routing
+  remains the default for deterministic local demos.
+- Leaflet/OpenStreetMap are used client-side for map display.
+
+The original Django-template MVP was complete through Phase 8.1. Phase 9 was a
+documentation/specification phase and did not change application behavior.
 Фаза 12 включает расчетную модель v2 для новых маршрутов: она использует сохраненные
 `route_facts_json`, сохраняет версию модели и детали расчета, но не пересчитывает старые
 `RouteOption` и не меняет поведение отчетов, PDF, аналитики или рейсов.
@@ -219,6 +237,16 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - No business logic, models, migrations, calculations, routing providers, React behavior, secrets,
   Celery, Redis or WebSockets are changed.
 
+## Phase 34
+
+- Aligned final documentation with the React SPA + Django REST API architecture.
+- Added `docs/34_final_demo_readiness.md` as the final demo runbook.
+- Clarified local development, production-like deploy, manager/admin/API demos, demo data reset,
+  security notes and verification commands.
+- Added `protected_media/` to `.gitignore` as runtime protected storage.
+- No business logic, models, migrations, calculations, routing providers, React behavior, deploy
+  logic, Celery, Redis, WebSockets or PostGIS are changed.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -236,7 +264,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - JWT Bearer authentication for external read-only API clients.
 - OpenAPI schema, Swagger UI and ReDoc for API inspection and Postman import.
 - React SPA migration plan for later phases.
-- Manager workflow API for the future React SPA.
+- Manager workflow API used by the React SPA.
 - Vite React SPA scaffold with JWT auth shell.
 - Manager React dashboard and order workflow.
 - React route calculation, Leaflet comparison map and route approval.
@@ -247,6 +275,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
   calculation settings versions.
 - Playwright smoke coverage for core React manager/admin routes.
 - GitHub Actions CI for backend, frontend and deploy compose validation.
+- Final demo readiness documentation and runbook.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -288,12 +317,17 @@ planning notes for earlier phases, so they may describe target behavior or old p
 
 ## Demo Flow
 
+See `docs/34_final_demo_readiness.md` for the full final demo runbook.
+
+Short flow:
+
 1. Run `python manage.py seed_demo`.
-2. Log in as `manager_demo` / `Manager12345!`.
-3. Create an order, calculate routes and compare route options.
-4. Approve a route, start the trip and deliver it.
-5. Download the waybill PDF.
-6. Review reports and analytics.
+2. Open the React SPA and log in as `manager_demo` / `Manager12345!`.
+3. Create an order, calculate routes, compare route options on the map and approve a route.
+4. Open the created trip, start and deliver it if desired.
+5. Review reports, download PDF/XLSX documents and save documents to the archive.
+6. Log in as `admin_demo` / `Admin12345!` and show the admin React dashboard, reference pages,
+   archive and the Django Admin link.
 
 ## Known Limits
 
@@ -314,6 +348,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
   they require Django, PostgreSQL and `seed_demo` to be prepared before the E2E run.
 - GitHub Actions CI covers backend, frontend build and deploy compose validation. Browser E2E is
   intentionally local-only until a dedicated stable CI E2E environment is added.
+- Redis, Celery, WebSockets and PostGIS are not implemented.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment
