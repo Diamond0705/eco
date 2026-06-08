@@ -40,6 +40,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - React + Vite SPA under `/frontend`
 - Redux Toolkit, RTK Query, React Router and React Leaflet
 - Playwright for lightweight React E2E smoke tests
+- GitHub Actions for backend, frontend and deploy configuration checks
 - Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
@@ -146,6 +147,19 @@ cd frontend
 npm.cmd run build
 npm.cmd run test:e2e
 ```
+
+GitHub Actions CI runs on `push` and `pull_request`.
+
+CI checks:
+
+- backend: `python manage.py check`, migration drift detection, `pytest` and `ruff`;
+- frontend: `npm ci` and `npm run build` under `/frontend`;
+- deploy config: `docker compose -f docker-compose.deploy.yml config`.
+
+The CI workflow uses dummy safe environment values, PostgreSQL 16, `DEBUG=True` for the existing
+test suite, `ROUTE_PROVIDER=mock` and `USE_S3_STORAGE=False`. It does not call real GraphHopper,
+does not require MinIO/S3 and does not commit secrets. Playwright remains a local smoke check for
+now because it expects a prepared Django backend, demo seed data and a Vite server.
 
 ## Deployment Prep
 
@@ -301,13 +315,14 @@ collection authorization to Bearer Token.
 - Phase 30 adds the production-like Nginx React deploy path.
 - Phase 31 adds the React administrator SPA.
 - Phase 32 adds Playwright E2E smoke tests for core manager/admin React navigation.
+- Phase 33 adds GitHub Actions CI for backend, frontend and deploy compose validation.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
-records the approved React SPA migration plan, and docs `24` through `32` document the manager API,
-React scaffold, manager/admin SPA pages, deployment path and Playwright smoke tests. Earlier docs
+records the approved React SPA migration plan, and docs `24` through `33` document the manager API,
+React scaffold, manager/admin SPA pages, deployment path, Playwright smoke tests and CI pipeline. Earlier docs
 in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
 earlier phase boundaries.
 

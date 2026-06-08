@@ -206,6 +206,19 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Real GraphHopper, full visual regression, production monitoring, Celery, Redis, WebSockets,
   PostGIS, model changes and migrations remain out of scope.
 
+## Phase 33
+
+- Added GitHub Actions CI under `.github/workflows/ci.yml`.
+- Backend CI runs Django checks, migration drift detection, pytest and ruff against PostgreSQL 16
+  with dummy CI-only environment values.
+- Frontend CI installs `/frontend` dependencies with `npm ci` and builds the Vite React SPA.
+- Deploy CI validates `docker-compose.deploy.yml` with a dummy `.env` file but does not build or
+  pull the production images.
+- Playwright E2E remains a local smoke check because it requires an already running Django backend,
+  PostgreSQL, demo seed data and a Vite server.
+- No business logic, models, migrations, calculations, routing providers, React behavior, secrets,
+  Celery, Redis or WebSockets are changed.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -233,6 +246,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - React administrator SPA for company dashboard, admin archive, user activity, reference CRUD and
   calculation settings versions.
 - Playwright smoke coverage for core React manager/admin routes.
+- GitHub Actions CI for backend, frontend and deploy compose validation.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -298,6 +312,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
   proxying Django API/Admin. Django templates remain available.
 - Playwright smoke tests cover local React navigation and role access for demo manager/admin users;
   they require Django, PostgreSQL and `seed_demo` to be prepared before the E2E run.
+- GitHub Actions CI covers backend, frontend build and deploy compose validation. Browser E2E is
+  intentionally local-only until a dedicated stable CI E2E environment is added.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

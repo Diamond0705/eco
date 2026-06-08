@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Phase 33 - CI Pipeline And Automated Quality Checks
+
+- Added GitHub Actions CI for backend checks, migration drift checks, pytest, ruff, frontend
+  dependency installation and React production build.
+- Added a deploy configuration job that validates `docker-compose.deploy.yml` without building or
+  pulling the full production stack.
+- Documented CI environment values, local reproduction commands and why Playwright E2E remains a
+  local smoke check for now.
+- Kept business logic, models, migrations, calculations, routing providers, React runtime behavior,
+  reports, archive services, Celery, Redis, WebSockets and secrets unchanged.
+
 ## Phase 32 - React UI Stabilization And E2E Smoke Tests
 
 - Added Playwright smoke tests for the React manager and administrator SPA navigation, login,

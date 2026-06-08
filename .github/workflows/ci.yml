@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ecologist
+          POSTGRES_USER: ecologist
+          POSTGRES_PASSWORD: ecologist
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ecologist -d ecologist"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-secret-key-not-for-production-keep-it-long
+      DEBUG: "True"
+      DATABASE_URL: postgres://ecologist:ecologist@127.0.0.1:5432/ecologist
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      CSRF_TRUSTED_ORIGINS: http://localhost,http://127.0.0.1
+      USE_S3_STORAGE: "False"
+      DOCUMENT_ARCHIVE_ENABLED: "True"
+      ROUTE_PROVIDER: mock
+      GRAPHHOPPER_API_KEY: ""
+      GRAPHHOPPER_FALLBACK_TO_MOCK: "True"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Check migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run backend tests
+        run: python -m pytest --basetemp=.tmp/pytest
+
+      - name: Run ruff
+        run: python -m ruff check .
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build React SPA
+        working-directory: frontend
+        run: npm run build
+
+  deploy-config:
+    name: Deploy Config
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create dummy deploy env
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-secret-key-not-for-production-keep-it-long
+          DEBUG=False
+          ALLOWED_HOSTS=localhost,127.0.0.1
+          CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1
+          POSTGRES_DB=ecologist
+          POSTGRES_USER=ecologist
+          POSTGRES_PASSWORD=ecologist
+          AWS_ACCESS_KEY_ID=ecologist
+          AWS_SECRET_ACCESS_KEY=ecologist-password
+          AWS_STORAGE_BUCKET_NAME=ecologist-documents
+          EOF
+
+      - name: Validate deploy compose file
+        run: docker compose -f docker-compose.deploy.yml config
