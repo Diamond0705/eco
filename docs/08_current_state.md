@@ -126,6 +126,18 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Existing Django templates, backend views, models, migrations, business logic, route providers,
   calculation formulas, PDF/XLSX/archive behavior, WebSocket, Celery and Redis remain unchanged.
 
+## Phase 26
+
+- Added the first real manager React workflow: dashboard, orders list, order create and order
+  detail.
+- Added RTK Query manager API hooks for dashboard, orders, order detail/create/cancel, transports
+  and locations.
+- Added lightweight React UI components for cards, buttons, badges, data tables, fields, alerts
+  and loading states.
+- Route calculation UI, Leaflet route comparison and admin React pages remain deferred.
+- Existing Django templates, backend views, models, migrations, business logic, route providers,
+  formulas, PDF/XLSX/archive behavior, CORS, WebSocket, Celery and Redis remain unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -145,6 +157,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - React SPA migration plan for later phases.
 - Manager workflow API for the future React SPA.
 - Vite React SPA scaffold with JWT auth shell.
+- Manager React dashboard and order workflow.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -204,8 +217,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
   TLS certificate automation and scheduled backups are not implemented.
 - The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
   and now has manager workflow write/action endpoints. CORS is not implemented.
-- React SPA scaffold exists in `/frontend`, but full manager pages are not implemented yet; Django
-  templates remain available.
+- React SPA exists in `/frontend` with manager dashboard and order workflow. Route comparison,
+  reports, trips and admin React pages remain future work; Django templates remain available.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

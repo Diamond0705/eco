@@ -256,15 +256,17 @@ collection authorization to Bearer Token.
   write/action endpoints for the future React SPA, while CORS is not implemented.
 - Phase 25 adds a separate Vite React scaffold in `/frontend`; full manager pages remain future
   work.
+- Phase 26 adds the first manager SPA pages for dashboard and order create/list/detail/cancel.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
 records the approved React SPA migration plan, `docs/24_manager_api_expansion.md` documents the
-manager API contract, and `docs/25_react_spa_scaffold.md` documents the Vite React scaffold.
-Earlier docs in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may
-still describe earlier phase boundaries.
+manager API contract, `docs/25_react_spa_scaffold.md` documents the Vite React scaffold, and
+`docs/26_manager_spa_core.md` documents the first manager React workflow. Earlier docs in
+`docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
+earlier phase boundaries.
 
 ## Before Public Deployment
 

@@ -1,43 +1,85 @@
-import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
-import { selectCurrentUser } from "../features/auth/authSlice.js";
+import { useManagerDashboardQuery } from "../api/managerApi.js";
+import Alert from "../components/ui/Alert.jsx";
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import LoadingState from "../components/ui/LoadingState.jsx";
+import PageShell from "../components/ui/PageShell.jsx";
+import { formatDistance, formatNumber } from "../utils/formatters.js";
 
 export default function DashboardPage() {
-  const user = useSelector(selectCurrentUser);
+  const { data, isError, isLoading } = useManagerDashboardQuery();
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (isError) {
+    return <Alert tone="danger">Не удалось загрузить данные панели.</Alert>;
+  }
+
+  const orders = data?.orders || {};
+  const trips = data?.trips || {};
+  const delivered = data?.delivered || {};
 
   return (
-    <main className="dashboard-page">
-      <section className="summary-grid">
-        <article className="summary-card primary-card">
-          <p className="eyebrow">Phase 25</p>
-          <h2>Каркас React SPA готов</h2>
+    <PageShell
+      eyebrow="Панель менеджера"
+      title="Ключевые показатели"
+      actions={<Button to="/orders/create">Создать заявку</Button>}
+    >
+      <section className="dashboard-grid">
+        <Card className="metric-card">
+          <span className="metric-label">Мои заявки</span>
+          <strong>{orders.total ?? 0}</strong>
           <p>
-            Это базовая защищенная панель. Полные страницы заявок, маршрутов, рейсов и отчетов
-            будут перенесены в следующих фазах.
+            Новые: {orders.by_status?.new ?? 0} · Рассчитанные:{" "}
+            {orders.by_status?.calculated ?? 0}
           </p>
-        </article>
-        <article className="summary-card">
-          <span className="metric-label">Пользователь</span>
-          <strong>{user?.full_name || user?.username}</strong>
-          <p>{user?.role === "admin" ? "Администратор" : "Менеджер"}</p>
-        </article>
-        <article className="summary-card">
-          <span className="metric-label">API</span>
-          <strong>JWT + DRF</strong>
-          <p>Запросы идут через Vite proxy на `/api/` без CORS.</p>
-        </article>
+          <Link to="/orders">Открыть заявки</Link>
+        </Card>
+        <Card className="metric-card">
+          <span className="metric-label">Активные рейсы</span>
+          <strong>{trips.active ?? 0}</strong>
+          <p>
+            План: {trips.planned ?? 0} · В пути: {trips.in_progress ?? 0}
+          </p>
+        </Card>
+        <Card className="metric-card">
+          <span className="metric-label">Доставленные рейсы</span>
+          <strong>{trips.delivered ?? 0}</strong>
+          <p>
+            {formatDistance(delivered.distance_km)} ·{" "}
+            {formatNumber(delivered.fuel_liters, { maximumFractionDigits: 2 })} л топлива
+          </p>
+        </Card>
+        <Card className="metric-card">
+          <span className="metric-label">CO2 доставленных</span>
+          <strong>{formatNumber(delivered.co2_kg, { maximumFractionDigits: 2 })} кг</strong>
+          <p>Средний эко-рейтинг: {delivered.average_eco_rating ?? "—"}</p>
+        </Card>
       </section>
 
-      <section className="work-panel">
-        <h2>Следующие разделы</h2>
-        <div className="section-list">
-          <span>Заявки</span>
-          <span>Расчет маршрутов</span>
-          <span>Карта Leaflet</span>
-          <span>Рейсы</span>
-          <span>Отчеты</span>
-        </div>
+      <section className="feature-grid">
+        <Card className="feature-card">
+          <h2>Маршруты</h2>
+          <p>
+            Расчет и сравнение маршрутов будут перенесены в следующей фазе. Сейчас можно создать
+            заявку и перейти к ее деталям.
+          </p>
+          <Button to="/orders" variant="secondary">
+            Перейти к заявкам
+          </Button>
+        </Card>
+        <Card className="feature-card">
+          <h2>Отчеты</h2>
+          <p>
+            API для отчетов уже готов, React-страницы отчетов будут добавлены после основных
+            операций с заявками и маршрутами.
+          </p>
+        </Card>
       </section>
-    </main>
+    </PageShell>
   );
 }

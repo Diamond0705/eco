@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Phase 26 - Manager SPA Core
+
+- Added React manager dashboard, orders list, order create and order detail pages.
+- Added RTK Query manager API hooks for dashboard, orders, order detail/create/cancel, transports
+  and locations.
+- Added lightweight project UI components for cards, buttons, badges, tables, forms, alerts and
+  loading states.
+- Kept Django templates, backend business logic, models, migrations, route calculation UI, Leaflet
+  route comparison, admin SPA, CORS, WebSocket, Celery and Redis unchanged.
+
 ## Phase 25 - React SPA Scaffold
 
 - Added a Vite React SPA scaffold under `/frontend` using JavaScript, React Router, Redux Toolkit,

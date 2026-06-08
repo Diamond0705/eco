@@ -23,7 +23,7 @@ export default function AppLayout() {
         </NavLink>
         <nav className="main-nav" aria-label="Основная навигация">
           <NavLink to="/dashboard">Панель</NavLink>
-          <span className="nav-placeholder">Заявки</span>
+          <NavLink to="/orders">Заявки</NavLink>
           <span className="nav-placeholder">Маршруты</span>
           <span className="nav-placeholder">Рейсы</span>
           <span className="nav-placeholder">Отчеты</span>
