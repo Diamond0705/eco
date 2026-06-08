@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -11,8 +12,8 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.dashboard.services import ManagerAnalyticsService
-from apps.fleet.models import Transport
+from apps.dashboard.services import AdminDashboardService, ManagerAnalyticsService
+from apps.fleet.models import EcoCalculationSettings, EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import ShipmentOrder
 from apps.reports.models import ArchivedDocument
@@ -30,6 +31,13 @@ from apps.trips.models import Trip
 from apps.trips.services import TripLifecycleService
 
 from .serializers import (
+    AdminCalculationSettingsSerializer,
+    AdminDashboardSerializer,
+    AdminEcoStandardSerializer,
+    AdminLocationSerializer,
+    AdminTransportSerializer,
+    AdminUserActivitySerializer,
+    AdminUserSerializer,
     AnalyticsSummarySerializer,
     ArchivedDocumentSerializer,
     ArchiveDocumentResponseSerializer,
@@ -50,6 +58,8 @@ from .serializers import (
     TripStartSerializer,
     build_analytics_summary,
 )
+
+User = get_user_model()
 
 
 def is_admin_user(user):
@@ -111,6 +121,24 @@ def manager_only(request):
             status=status.HTTP_403_FORBIDDEN,
         )
     return None
+
+
+def admin_only(request):
+    if not is_admin_user(request.user):
+        return Response(
+            {"detail": "Действие доступно только администратору."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    return None
+
+
+def filter_is_active(queryset, params):
+    selected_active = params.get("is_active", params.get("active", "")).strip().lower()
+    if selected_active in {"1", "true", "active"}:
+        return queryset.filter(is_active=True)
+    if selected_active in {"0", "false", "inactive"}:
+        return queryset.filter(is_active=False)
+    return queryset
 
 
 def _avatar_content_type(name):
@@ -447,6 +475,306 @@ class CurrentUserAPIView(APIView):
     @extend_schema(responses=CurrentUserSerializer)
     def get(self, request):
         return Response(CurrentUserSerializer(request.user).data)
+
+
+class AdminDashboardAPIView(APIView):
+    @extend_schema(responses=AdminDashboardSerializer)
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        analytics = AdminDashboardService().build()
+        return Response(AdminDashboardSerializer(analytics).data)
+
+
+class AdminDashboardExportXlsxAPIView(APIView):
+    @extend_schema(
+        responses={
+            (200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"): (
+                OpenApiTypes.BINARY
+            )
+        }
+    )
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        analytics = AdminDashboardService().build()
+        xlsx_bytes = TripExcelExportService().build_company_dashboard(analytics)
+        return build_xlsx_response(xlsx_bytes, "company_dashboard.xlsx")
+
+
+class AdminDashboardExportXlsxArchiveAPIView(APIView):
+    @extend_schema(responses={201: ArchiveDocumentResponseSerializer})
+    def post(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        analytics = AdminDashboardService().build()
+        xlsx_bytes = TripExcelExportService().build_company_dashboard(analytics)
+        try:
+            document = DocumentArchiveService().save_document(
+                content_bytes=xlsx_bytes,
+                document_type=ArchivedDocument.DocumentType.ADMIN_ANALYTICS_XLSX,
+                file_format=ArchivedDocument.FileFormat.XLSX,
+                title="Сводка компании Excel",
+                owner=None,
+                created_by=request.user,
+                metadata={
+                    "source": "admin_dashboard_api",
+                    "delivered_trips": analytics["trips"]["delivered"],
+                },
+            )
+        except DocumentArchiveDisabledError:
+            return Response(
+                {"detail": "Архив документов временно отключен."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        serializer = ArchivedDocumentSerializer(document, context={"request": request})
+        return Response({"document": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class AdminUsersAPIView(APIView):
+    @extend_schema(responses=AdminUserSerializer(many=True))
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        users = User.objects.order_by("username")
+        users = filter_is_active(users, request.query_params)
+        search_query = request.query_params.get("q", "").strip()
+        if search_query:
+            users = users.filter(
+                Q(username__icontains=search_query)
+                | Q(first_name__icontains=search_query)
+                | Q(last_name__icontains=search_query)
+                | Q(email__icontains=search_query)
+                | Q(phone__icontains=search_query)
+            )
+        serializer = AdminUserSerializer(users, many=True, context={"request": request})
+        return Response(serializer.data)
+
+
+class AdminUserDetailAPIView(APIView):
+    def get_object(self, pk):
+        return get_object_or_404(User.objects.order_by("username"), pk=pk)
+
+    @extend_schema(responses=AdminUserSerializer)
+    def get(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminUserSerializer(self.get_object(pk), context={"request": request})
+        return Response(serializer.data)
+
+    @extend_schema(request=AdminUserActivitySerializer, responses=AdminUserSerializer)
+    def patch(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        user = self.get_object(pk)
+        if user.pk == request.user.pk or user.is_superuser or user.role == User.Role.ADMIN:
+            return Response(
+                {"detail": "Активность этого пользователя нельзя изменить через React API."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = AdminUserActivitySerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        response_serializer = AdminUserSerializer(user, context={"request": request})
+        return Response(response_serializer.data)
+
+
+class AdminTransportsAPIView(APIView):
+    @extend_schema(responses=AdminTransportSerializer(many=True))
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        transports = Transport.objects.select_related("eco_standard").order_by("plate_number")
+        transports = filter_is_active(transports, request.query_params)
+        search_query = request.query_params.get("q", "").strip()
+        if search_query:
+            transports = transports.filter(
+                Q(plate_number__icontains=search_query)
+                | Q(model__icontains=search_query)
+                | Q(eco_standard__name__icontains=search_query)
+            )
+        eco_standard_id = request.query_params.get("eco_standard", "").strip()
+        if eco_standard_id.isdigit():
+            transports = transports.filter(eco_standard_id=eco_standard_id)
+        serializer = AdminTransportSerializer(transports, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(request=AdminTransportSerializer, responses=AdminTransportSerializer)
+    def post(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminTransportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        transport = serializer.save()
+        response_serializer = AdminTransportSerializer(
+            Transport.objects.select_related("eco_standard").get(pk=transport.pk)
+        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminTransportDetailAPIView(APIView):
+    def get_object(self, pk):
+        return get_object_or_404(Transport.objects.select_related("eco_standard"), pk=pk)
+
+    @extend_schema(responses=AdminTransportSerializer)
+    def get(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        return Response(AdminTransportSerializer(self.get_object(pk)).data)
+
+    @extend_schema(request=AdminTransportSerializer, responses=AdminTransportSerializer)
+    def patch(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminTransportSerializer(
+            self.get_object(pk),
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        transport = serializer.save()
+        return Response(AdminTransportSerializer(self.get_object(transport.pk)).data)
+
+
+class AdminLocationsAPIView(APIView):
+    @extend_schema(responses=AdminLocationSerializer(many=True))
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        locations = Location.objects.order_by("name")
+        locations = filter_is_active(locations, request.query_params)
+        search_query = request.query_params.get("q", "").strip()
+        if search_query:
+            locations = locations.filter(
+                Q(name__icontains=search_query) | Q(address__icontains=search_query)
+            )
+        serializer = AdminLocationSerializer(locations, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(request=AdminLocationSerializer, responses=AdminLocationSerializer)
+    def post(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminLocationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        location = serializer.save()
+        return Response(AdminLocationSerializer(location).data, status=status.HTTP_201_CREATED)
+
+
+class AdminLocationDetailAPIView(APIView):
+    def get_object(self, pk):
+        return get_object_or_404(Location.objects.all(), pk=pk)
+
+    @extend_schema(responses=AdminLocationSerializer)
+    def get(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        return Response(AdminLocationSerializer(self.get_object(pk)).data)
+
+    @extend_schema(request=AdminLocationSerializer, responses=AdminLocationSerializer)
+    def patch(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminLocationSerializer(self.get_object(pk), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        location = serializer.save()
+        return Response(AdminLocationSerializer(location).data)
+
+
+class AdminEcoStandardsAPIView(APIView):
+    @extend_schema(responses=AdminEcoStandardSerializer(many=True))
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        standards = EcoStandard.objects.order_by("name")
+        standards = filter_is_active(standards, request.query_params)
+        search_query = request.query_params.get("q", "").strip()
+        if search_query:
+            standards = standards.filter(name__icontains=search_query)
+        serializer = AdminEcoStandardSerializer(standards, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(request=AdminEcoStandardSerializer, responses=AdminEcoStandardSerializer)
+    def post(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminEcoStandardSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        standard = serializer.save()
+        return Response(AdminEcoStandardSerializer(standard).data, status=status.HTTP_201_CREATED)
+
+
+class AdminEcoStandardDetailAPIView(APIView):
+    def get_object(self, pk):
+        return get_object_or_404(EcoStandard.objects.all(), pk=pk)
+
+    @extend_schema(responses=AdminEcoStandardSerializer)
+    def get(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        return Response(AdminEcoStandardSerializer(self.get_object(pk)).data)
+
+    @extend_schema(request=AdminEcoStandardSerializer, responses=AdminEcoStandardSerializer)
+    def patch(self, request, pk):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminEcoStandardSerializer(
+            self.get_object(pk),
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        standard = serializer.save()
+        return Response(AdminEcoStandardSerializer(standard).data)
+
+
+class AdminCalculationSettingsAPIView(APIView):
+    def get(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        current = EcoCalculationSettings.get_current()
+        versions = EcoCalculationSettings.objects.order_by("-is_active", "-updated_at", "-pk")
+        return Response(
+            {
+                "current": AdminCalculationSettingsSerializer(current).data,
+                "versions": AdminCalculationSettingsSerializer(versions, many=True).data,
+            }
+        )
+
+    @extend_schema(
+        request=AdminCalculationSettingsSerializer,
+        responses=AdminCalculationSettingsSerializer,
+    )
+    def post(self, request):
+        forbidden_response = admin_only(request)
+        if forbidden_response:
+            return forbidden_response
+        serializer = AdminCalculationSettingsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        settings_version = serializer.save()
+        return Response(
+            AdminCalculationSettingsSerializer(settings_version).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class ProfileAPIView(APIView):

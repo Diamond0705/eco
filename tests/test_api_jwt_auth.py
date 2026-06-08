@@ -316,9 +316,10 @@ def test_auth_me_returns_only_safe_fields(client, api_users):
 
     assert response.status_code == 200
     payload = response.json()
-    assert set(payload) == {"id", "username", "full_name", "role"}
+    assert set(payload) == {"id", "username", "full_name", "role", "is_admin"}
     assert payload["username"] == "jwt_manager"
     assert payload["role"] == "manager"
+    assert payload["is_admin"] is False
     assert "email" not in payload
     assert "phone" not in payload
     assert "middle_name" not in payload

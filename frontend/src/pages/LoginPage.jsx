@@ -19,12 +19,12 @@ export default function LoginPage() {
   const { data: user, isFetching: isUserLoading } = useCurrentUserQuery(undefined, {
     skip: !isAuthenticated
   });
-  const from = location.state?.from?.pathname || "/dashboard";
+  const from = location.state?.from?.pathname;
 
   useEffect(() => {
     if (user) {
       dispatch(setCurrentUser(user));
-      navigate(from, { replace: true });
+      navigate(from || (user.is_admin ? "/admin/dashboard" : "/dashboard"), { replace: true });
     }
   }, [dispatch, from, navigate, user]);
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
   }
 
   if (isAuthenticated && user) {
-    return <Navigate to={from} replace />;
+    return <Navigate to={from || (user.is_admin ? "/admin/dashboard" : "/dashboard")} replace />;
   }
 
   return (

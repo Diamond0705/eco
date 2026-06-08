@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## Phase 31 - React Admin SPA
+
+- Added admin-only REST API endpoints under `/api/v1/admin/` for the company dashboard, Excel
+  export/archive actions, users, transports, locations, eco standards and calculation settings.
+- Added a React administrator area with a separate top-navigation layout, dashboard cards,
+  reference CRUD pages, user activity controls and calculation settings version creation.
+- Extended `/api/v1/auth/me/` with derived `is_admin` for React route guards while keeping Django
+  Admin and legacy Django templates available.
+- Updated Nginx routing so selected `/admin/...` React routes serve the SPA while `/admin/` still
+  reaches Django Admin.
+- Kept models, migrations, formulas, route providers, reports, archive services, Celery, Redis and
+  WebSockets unchanged.
+
 ## Phase 30 - React Nginx Production Deploy
 
 - Added a dedicated Nginx Docker build that builds the React SPA with Node and serves the compiled

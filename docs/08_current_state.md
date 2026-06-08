@@ -183,6 +183,19 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Waitress remains the WSGI server. Gunicorn, Celery, Redis, WebSockets, admin React SPA,
   migrations and business logic changes remain out of scope.
 
+## Phase 31
+
+- Added React administrator pages for the company dashboard, archive, users, transport, locations,
+  eco standards, calculation settings and profile.
+- Added admin-only REST API endpoints under `/api/v1/admin/` for dashboard data, Excel
+  download/archive actions, reference CRUD and calculation settings version creation.
+- Added derived `is_admin` to `/api/v1/auth/me/` so React can allow both admin-role users and
+  superusers into the admin SPA.
+- Nginx now serves selected React `/admin/...` routes while keeping `/admin/` itself proxied to
+  Django Admin.
+- Existing Django templates, Django Admin, models, migrations, formulas, route providers, reports,
+  archive services, CORS, Celery, Redis and WebSockets remain unchanged.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -207,6 +220,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - React manager trips, emissions reports and document archive.
 - React current-user profile with protected avatar upload/delete.
 - Production-like Nginx deploy path serving the React SPA and proxying Django API/Admin.
+- React administrator SPA for company dashboard, admin archive, user activity, reference CRUD and
+  calculation settings versions.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -267,9 +282,9 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - The REST API supports session and JWT authentication, includes OpenAPI/Swagger documentation,
   and now has manager workflow write/action endpoints. CORS is not implemented.
 - React SPA exists in `/frontend` with manager dashboard, order workflow, route calculation,
-  Leaflet route comparison, route approval, trips, emissions reports, document archive and profile
-  avatar management. Production-like Nginx can serve the built SPA while proxying Django API/Admin.
-  Admin React pages remain future work; Django templates remain available.
+  Leaflet route comparison, route approval, trips, emissions reports, document archive, profile
+  avatar management and administrator pages. Production-like Nginx can serve the built SPA while
+  proxying Django API/Admin. Django templates remain available.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

@@ -65,7 +65,13 @@ export const baseApi = createApi({
     "Reports",
     "Archive",
     "Profile",
-    "Avatar"
+    "Avatar",
+    "AdminDashboard",
+    "AdminUsers",
+    "AdminTransports",
+    "AdminLocations",
+    "AdminEcoStandards",
+    "AdminSettings"
   ],
   endpoints: () => ({})
 });

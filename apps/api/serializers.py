@@ -9,7 +9,7 @@ from rest_framework import serializers
 
 from apps.accounts.forms import validate_profile_avatar_file, validate_russian_phone
 from apps.accounts.models import User
-from apps.fleet.models import Transport
+from apps.fleet.models import EcoCalculationSettings, EcoStandard, Transport
 from apps.locations.models import Location
 from apps.orders.models import OrderPoint, ShipmentOrder
 from apps.reports.models import ArchivedDocument
@@ -41,6 +41,11 @@ class UserSummarySerializer(serializers.Serializer):
 
 class CurrentUserSerializer(UserSummarySerializer):
     role = serializers.CharField()
+    is_admin = serializers.SerializerMethodField()
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_is_admin(self, user):
+        return user.is_superuser or user.role == User.Role.ADMIN
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -95,6 +100,175 @@ class AvatarUploadSerializer(serializers.Serializer):
 class EcoStandardSummarySerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
+
+
+class ModelFullCleanMixin:
+    def validate(self, attrs):
+        instance = self.instance or self.Meta.model()
+        for field, value in attrs.items():
+            setattr(instance, field, value)
+        try:
+            instance.full_clean()
+        except DjangoValidationError as exc:
+            errors = getattr(exc, "message_dict", None) or exc.messages
+            raise serializers.ValidationError(errors) from exc
+        return attrs
+
+
+class AdminDashboardSerializer(serializers.Serializer):
+    users = serializers.DictField()
+    transports = serializers.DictField()
+    orders = serializers.DictField()
+    trips = serializers.DictField()
+    company = serializers.DictField()
+    top_managers = serializers.ListField(child=serializers.DictField())
+    top_transports = serializers.ListField(child=serializers.DictField())
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+    can_edit_activity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "middle_name",
+            "full_name",
+            "email",
+            "phone",
+            "role",
+            "role_display",
+            "is_active",
+            "is_superuser",
+            "can_edit_activity",
+            "date_joined",
+            "last_login",
+        )
+        read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_full_name(self, user):
+        return user.get_full_name()
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_can_edit_activity(self, user):
+        request = self.context.get("request")
+        if request and user.pk == request.user.pk:
+            return False
+        return not user.is_superuser and user.role != User.Role.ADMIN
+
+
+class AdminUserActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("is_active",)
+
+
+class AdminEcoStandardSerializer(ModelFullCleanMixin, serializers.ModelSerializer):
+    class Meta:
+        model = EcoStandard
+        fields = (
+            "id",
+            "name",
+            "nox_limit_g_per_kwh",
+            "pm_limit_mg_per_kwh",
+            "is_active",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class AdminTransportSerializer(ModelFullCleanMixin, serializers.ModelSerializer):
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+    fuel_type_display = serializers.CharField(source="get_fuel_type_display", read_only=True)
+    eco_standard_detail = EcoStandardSummarySerializer(source="eco_standard", read_only=True)
+
+    class Meta:
+        model = Transport
+        fields = (
+            "id",
+            "plate_number",
+            "model",
+            "category",
+            "category_display",
+            "fuel_type",
+            "fuel_type_display",
+            "capacity_kg",
+            "fuel_consumption_l_per_100km",
+            "eco_standard",
+            "eco_standard_detail",
+            "year",
+            "is_active",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "category_display",
+            "fuel_type_display",
+            "eco_standard_detail",
+            "created_at",
+            "updated_at",
+        )
+
+
+class AdminLocationSerializer(ModelFullCleanMixin, serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = (
+            "id",
+            "name",
+            "address",
+            "latitude",
+            "longitude",
+            "is_active",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class AdminCalculationSettingsSerializer(ModelFullCleanMixin, serializers.ModelSerializer):
+    class Meta:
+        model = EcoCalculationSettings
+        fields = (
+            "id",
+            "name",
+            "is_active",
+            "fuel_price_rub_per_liter",
+            "service_tariff_rub_per_km",
+            "driver_time_tariff_rub_per_hour",
+            "diesel_co2_kg_per_liter",
+            "engine_work_kwh_per_km",
+            "full_load_fuel_increase_percent",
+            "co2_weight",
+            "nox_weight",
+            "pm_weight",
+            "co2_critical_kg",
+            "nox_critical_g",
+            "pm_critical_g",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+        extra_kwargs = {"is_active": {"validators": []}}
+
+    def validate(self, attrs):
+        instance = self.instance or self.Meta.model()
+        for field, value in attrs.items():
+            setattr(instance, field, value)
+        try:
+            instance.full_clean(validate_constraints=False)
+        except DjangoValidationError as exc:
+            errors = getattr(exc, "message_dict", None) or exc.messages
+            raise serializers.ValidationError(errors) from exc
+        return attrs
 
 
 class TransportSummarySerializer(serializers.ModelSerializer):

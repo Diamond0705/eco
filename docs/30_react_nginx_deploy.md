@@ -37,6 +37,14 @@ Nginx serves:
 - `/reports/emissions`
 - `/archive`
 - `/profile`
+- `/admin/dashboard`
+- `/admin/archive`
+- `/admin/users`
+- `/admin/transports`
+- `/admin/locations`
+- `/admin/eco-standards`
+- `/admin/calculation-settings`
+- `/admin/profile`
 
 SPA fallback uses:
 
@@ -53,6 +61,8 @@ Nginx proxies these backend routes to Django/Waitress:
 - selected legacy protected download/action routes under `/reports/`, `/trips/` and `/profile/avatar/`.
 
 `/api/unknown` is proxied to Django and must not return React `index.html`.
+`/admin/` itself is still Django Admin; selected React admin routes such as `/admin/dashboard`
+serve the SPA.
 
 ## Static And Protected Files
 
@@ -81,6 +91,7 @@ Useful checks:
 Invoke-WebRequest -UseBasicParsing http://localhost/
 Invoke-WebRequest -UseBasicParsing http://localhost/login
 Invoke-WebRequest -UseBasicParsing http://localhost/orders
+Invoke-WebRequest -UseBasicParsing http://localhost/admin/dashboard
 Invoke-WebRequest -UseBasicParsing http://localhost/api/v1/auth/me/
 Invoke-WebRequest -UseBasicParsing http://localhost/healthz/
 Invoke-WebRequest -UseBasicParsing http://localhost/admin/
@@ -88,7 +99,7 @@ Invoke-WebRequest -UseBasicParsing http://localhost/admin/
 
 Expected:
 
-- `/`, `/login`, `/orders` return the React SPA.
+- `/`, `/login`, `/orders` and `/admin/dashboard` return the React SPA.
 - `/api/v1/auth/me/` reaches Django and returns `401` when anonymous.
 - `/healthz/` returns `ok`.
 - `/admin/` reaches Django Admin.
@@ -120,6 +131,5 @@ separate local override that publishes `9000` and `9001`; do not expose those po
 ## Out Of Scope
 
 - Real domain and TLS certificate automation.
-- Admin React SPA.
 - Celery, Redis and WebSocket background workflows.
 - Changes to calculations, routing providers, reports, archive or profile avatar business logic.
