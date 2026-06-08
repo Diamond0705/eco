@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-import { clearCredentials, setAccessToken } from "../features/auth/authSlice.js";
+import { clearCredentials, setAccessToken, setCredentials } from "../features/auth/authSlice.js";
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: "/api/v1/",
@@ -20,7 +20,9 @@ const refreshBaseQuery = fetchBaseQuery({
 const baseQueryWithRefresh = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
 
-  if (result.error?.status !== 401) {
+  const status = result.error?.status;
+  const originalStatus = result.error?.originalStatus;
+  if (status !== 401 && originalStatus !== 401) {
     return result;
   }
 
@@ -41,7 +43,16 @@ const baseQueryWithRefresh = async (args, api, extraOptions) => {
   );
 
   if (refreshResult.data?.access) {
-    api.dispatch(setAccessToken(refreshResult.data.access));
+    if (refreshResult.data.refresh) {
+      api.dispatch(
+        setCredentials({
+          accessToken: refreshResult.data.access,
+          refreshToken: refreshResult.data.refresh
+        })
+      );
+    } else {
+      api.dispatch(setAccessToken(refreshResult.data.access));
+    }
     result = await rawBaseQuery(args, api, extraOptions);
   } else {
     api.dispatch(clearCredentials());

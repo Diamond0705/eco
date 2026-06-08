@@ -196,6 +196,16 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Existing Django templates, Django Admin, models, migrations, formulas, route providers, reports,
   archive services, CORS, Celery, Redis and WebSockets remain unchanged.
 
+## Phase 32
+
+- Added Playwright E2E smoke tests for React manager and administrator navigation, login,
+  protected-route redirects and role access boundaries.
+- Added frontend E2E scripts and Playwright configuration for local Vite development with Django
+  running separately on `http://127.0.0.1:8000`.
+- E2E tests use demo users from `seed_demo` by default and do not create or destroy business data.
+- Real GraphHopper, full visual regression, production monitoring, Celery, Redis, WebSockets,
+  PostGIS, model changes and migrations remain out of scope.
+
 ## Implemented
 
 - Russian-only Django monolith with custom `accounts.User`.
@@ -222,6 +232,7 @@ planning notes for earlier phases, so they may describe target behavior or old p
 - Production-like Nginx deploy path serving the React SPA and proxying Django API/Admin.
 - React administrator SPA for company dashboard, admin archive, user activity, reference CRUD and
   calculation settings versions.
+- Playwright smoke coverage for core React manager/admin routes.
 - Manager emissions report and analytics.
 - Admin company dashboard with real counters.
 
@@ -285,6 +296,8 @@ planning notes for earlier phases, so they may describe target behavior or old p
   Leaflet route comparison, route approval, trips, emissions reports, document archive, profile
   avatar management and administrator pages. Production-like Nginx can serve the built SPA while
   proxying Django API/Admin. Django templates remain available.
+- Playwright smoke tests cover local React navigation and role access for demo manager/admin users;
+  they require Django, PostgreSQL and `seed_demo` to be prepared before the E2E run.
 - Environmental calculations are intentionally simplified for educational use.
 
 ## Before Public Deployment

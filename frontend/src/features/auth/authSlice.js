@@ -15,6 +15,9 @@ const authSlice = createSlice({
     setCredentials(state, action) {
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
+      if (action.payload.refreshToken) {
+        sessionStorage.setItem("ecologist.refreshToken", action.payload.refreshToken);
+      }
     },
     setAccessToken(state, action) {
       state.accessToken = action.payload;
@@ -36,8 +39,13 @@ export const { clearCredentials, setAccessToken, setCredentials, setCurrentUser 
 
 export const selectAccessToken = (state) => state.auth.accessToken;
 export const selectCurrentUser = (state) => state.auth.user;
-export const selectRefreshToken = (state) => state.auth.refreshToken;
+export const selectRefreshToken = (state) =>
+  state.auth.refreshToken || sessionStorage.getItem("ecologist.refreshToken");
 export const selectIsAuthenticated = (state) =>
-  Boolean(state.auth.accessToken || state.auth.refreshToken);
+  Boolean(
+    state.auth.accessToken ||
+      state.auth.refreshToken ||
+      sessionStorage.getItem("ecologist.refreshToken")
+  );
 
 export default authSlice.reducer;

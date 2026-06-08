@@ -39,6 +39,7 @@ CRUD pages for common management tasks while keeping Django Admin available for 
 - drf-spectacular for OpenAPI schema and Swagger/ReDoc documentation
 - React + Vite SPA under `/frontend`
 - Redux Toolkit, RTK Query, React Router and React Leaflet
+- Playwright for lightweight React E2E smoke tests
 - Waitress for deployment WSGI serving
 - pytest + pytest-django
 - ruff
@@ -61,16 +62,38 @@ Optional React SPA development:
 
 ```powershell
 cd frontend
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
 Keep Django running on `http://127.0.0.1:8000`; Vite proxies `/api` and `/static` to Django, so
 CORS is not required for local React development.
 
-The manager React SPA currently covers dashboard, orders, route calculation/comparison, route
-approval, trips, emissions reports, document archive and user profile with protected avatar upload.
-Django templates remain available during the migration.
+The React SPA covers the manager workflow, administrator pages, document archive, reports and user
+profile with protected avatar upload. Django templates remain available during the migration.
+
+Optional React E2E smoke tests:
+
+```powershell
+docker compose up -d db minio
+.venv\Scripts\python.exe manage.py migrate
+.venv\Scripts\python.exe manage.py seed_demo
+.venv\Scripts\python.exe manage.py runserver
+cd frontend
+npm.cmd run test:e2e
+```
+
+If Playwright browser binaries are missing, install Chromium once:
+
+```powershell
+cd frontend
+npx playwright install chromium
+```
+
+The E2E smoke tests use the safe demo credentials from `seed_demo` by default and can be
+overridden with `ECOLOGIST_MANAGER_USERNAME`, `ECOLOGIST_MANAGER_PASSWORD`,
+`ECOLOGIST_ADMIN_USERNAME`, `ECOLOGIST_ADMIN_PASSWORD`, `ECOLOGIST_BACKEND_URL` and
+`PLAYWRIGHT_BASE_URL`.
 
 Optional local MinIO for the private document archive:
 
@@ -119,6 +142,9 @@ python manage.py check
 python manage.py makemigrations --check --dry-run
 pytest
 ruff check .
+cd frontend
+npm.cmd run build
+npm.cmd run test:e2e
 ```
 
 ## Deployment Prep
@@ -140,7 +166,9 @@ waitress-serve --listen=0.0.0.0:8000 config.wsgi:application
 
 In the production-like compose path, Nginx serves the built React SPA at `/`, proxies `/api/`,
 `/admin/` and `/healthz/` to Django/Waitress, and serves collected Django static files from the
-`static_data` volume. React is built inside the Nginx image; `frontend/dist` is not committed.
+`static_data` volume. Selected React administrator routes such as `/admin/dashboard` serve the SPA,
+while `/admin/` itself remains Django Admin. React is built inside the Nginx image;
+`frontend/dist` is not committed.
 
 Set production security variables in `.env` before `DEBUG=False`:
 
@@ -264,20 +292,22 @@ collection authorization to Bearer Token.
   TLS automation and scheduled backups are not implemented.
 - The REST API supports sessions plus JWT Bearer tokens. Phase 24 adds manager workflow
   write/action endpoints for the future React SPA, while CORS is not implemented.
-- Phase 25 adds a separate Vite React scaffold in `/frontend`; full manager pages remain future
-  work.
+- Phase 25 adds a separate Vite React scaffold in `/frontend`.
 - Phase 26 adds the first manager SPA pages for dashboard and order create/list/detail/cancel.
 - Phase 27 adds React route calculation, Leaflet route comparison and route approval for manager
   orders.
+- Phase 28 adds manager trips, emissions reports and document archive pages.
+- Phase 29 adds the React profile and avatar flow.
+- Phase 30 adds the production-like Nginx React deploy path.
+- Phase 31 adds the React administrator SPA.
+- Phase 32 adds Playwright E2E smoke tests for core manager/admin React navigation.
 - Environmental formulas are simplified for education and are not a strict EN 16258, EMEP or EEA implementation.
 
 ## Current Documentation
 
 `docs/08_current_state.md` is the current implementation snapshot. `docs/23_react_spa_foundation.md`
-records the approved React SPA migration plan, `docs/24_manager_api_expansion.md` documents the
-manager API contract, `docs/25_react_spa_scaffold.md` documents the Vite React scaffold, and
-`docs/26_manager_spa_core.md` documents the first manager React workflow.
-`docs/27_react_route_comparison.md` documents React route comparison and approval. Earlier docs
+records the approved React SPA migration plan, and docs `24` through `32` document the manager API,
+React scaffold, manager/admin SPA pages, deployment path and Playwright smoke tests. Earlier docs
 in `docs/00_*` through `docs/07_*` are useful historical and planning notes and may still describe
 earlier phase boundaries.
 

@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Phase 32 - React UI Stabilization And E2E Smoke Tests
+
+- Added Playwright smoke tests for the React manager and administrator SPA navigation, login,
+  protected-route redirects and role access boundaries.
+- Added frontend E2E scripts and Playwright configuration for local Vite development with the
+  Django backend running separately.
+- Documented the local E2E setup, demo credentials strategy and intentionally excluded heavy
+  browser coverage such as real GraphHopper routing and visual regression.
+- Kept business logic, models, migrations, calculations, routing providers, reports, archive
+  services, Celery, Redis, WebSockets and Django templates unchanged.
+
 ## Phase 31 - React Admin SPA
 
 - Added admin-only REST API endpoints under `/api/v1/admin/` for the company dashboard, Excel
