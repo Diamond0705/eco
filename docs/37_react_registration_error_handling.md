@@ -12,6 +12,8 @@ loading state.
   normalized as arrays of strings for stable React rendering.
 - React `/register` supports field errors, nested error payloads, server/network fallback messages
   and timeout messages.
+- React `/register` restores the Django-template phone normalization on blur and redirects to
+  `/login` without showing a post-registration success banner.
 - Registration requests time out instead of waiting indefinitely.
 - Playwright auth smoke covers duplicate `manager_demo` / `manager@example.com` registration.
 

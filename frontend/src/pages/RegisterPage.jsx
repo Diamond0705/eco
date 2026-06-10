@@ -90,6 +90,17 @@ function statusMessage(error) {
   return "Не удалось завершить регистрацию. Проверьте данные и попробуйте еще раз.";
 }
 
+function normalizeRussianPhone(value) {
+  let digits = value.replace(/\D/g, "");
+  if (digits.length === 11 && (digits[0] === "7" || digits[0] === "8")) {
+    digits = digits.slice(1);
+  }
+  if (digits.length !== 10 || digits[0] !== "9") {
+    return value;
+  }
+  return `+7 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 8)}-${digits.slice(8, 10)}`;
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -106,15 +117,20 @@ export default function RegisterPage() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+    if (name !== "phone") {
+      return;
+    }
+    setForm((current) => ({ ...current, phone: normalizeRussianPhone(value) }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
       await registerManager(form).unwrap();
       setForm(initialForm);
-      navigate("/login", {
-        replace: true,
-        state: { message: "Регистрация завершена. Теперь войдите в систему." }
-      });
+      navigate("/login", { replace: true });
     } catch {
       // Field-level messages are rendered from RTK Query error state.
     }
@@ -153,6 +169,7 @@ export default function RegisterPage() {
                 <input
                   autoComplete={field.autoComplete}
                   name={field.name}
+                  onBlur={handleBlur}
                   onChange={handleChange}
                   placeholder={field.placeholder || ""}
                   required={["username", "email", "password1", "password2"].includes(field.name)}

@@ -30,6 +30,7 @@ from apps.routing.views import (
     _has_unpriced_tolls,
     _route_option_rows,
 )
+from apps.trips.display import trip_route_display_name
 from apps.trips.models import Trip
 
 
@@ -581,6 +582,7 @@ class TripSerializer(serializers.ModelSerializer):
     order = OrderListSerializer(read_only=True)
     manager = serializers.SerializerMethodField()
     transport = serializers.SerializerMethodField()
+    display_route_name = serializers.SerializerMethodField()
     planned_start = serializers.DateTimeField(source="planned_start_at")
     planned_finish = serializers.SerializerMethodField()
     actual_start = serializers.DateTimeField(source="actual_start_at")
@@ -594,6 +596,7 @@ class TripSerializer(serializers.ModelSerializer):
             "order",
             "manager",
             "transport",
+            "display_route_name",
             "status",
             "planned_start",
             "planned_finish",
@@ -609,6 +612,10 @@ class TripSerializer(serializers.ModelSerializer):
     @extend_schema_field(TransportSummarySerializer)
     def get_transport(self, trip):
         return TransportSummarySerializer(trip.order.transport).data
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_display_route_name(self, trip):
+        return trip_route_display_name(trip)
 
     @extend_schema_field(OpenApiTypes.DATETIME)
     def get_planned_finish(self, trip):

@@ -1,8 +1,4 @@
 export default function DataTable({ columns, rows, emptyText = "Нет данных.", className = "" }) {
-  if (!rows.length) {
-    return <p className="empty-state">{emptyText}</p>;
-  }
-
   return (
     <div className={`table-wrap ${className}`.trim()}>
       <table className="data-table">
@@ -14,13 +10,21 @@ export default function DataTable({ columns, rows, emptyText = "Нет данн�
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr key={row.id || row.trip_id || index}>
-              {columns.map((column) => (
-                <td key={column.key}>{column.render ? column.render(row) : row[column.key]}</td>
-              ))}
+          {rows.length ? (
+            rows.map((row, index) => (
+              <tr key={row.id || row.trip_id || index}>
+                {columns.map((column) => (
+                  <td key={column.key}>{column.render ? column.render(row) : row[column.key]}</td>
+                ))}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={columns.length}>
+                <p className="empty-state">{emptyText}</p>
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

@@ -85,6 +85,9 @@ test.describe("React auth smoke", () => {
     await expect(page.getByRole("heading", { name: "Регистрация менеджера" })).toBeVisible();
     await expect(page.getByLabel("Уникальный никнейм")).toBeVisible();
     await expect(page.getByPlaceholder("+7 (999) 123-45-67")).toBeVisible();
+    await page.getByPlaceholder("+7 (999) 123-45-67").fill("89543564228");
+    await page.getByLabel("Email").focus();
+    await expect(page.getByPlaceholder("+7 (999) 123-45-67")).toHaveValue("+7 (954) 356-42-28");
     await expectNoMojibake(page);
 
     await page.getByLabel("Уникальный никнейм").fill(managerCredentials.username);
@@ -112,6 +115,19 @@ test.describe("React manager smoke", () => {
   test("manager can open core pages and cannot open admin dashboard", async ({ page }) => {
     await login(page, managerCredentials, "/dashboard");
     await expectSpaPageLoaded(page, "/orders", { reload: true });
+    await expect(page.getByRole("heading", { name: "Заявки" })).toBeVisible();
+    await expect(page.getByText("Заявки на перевозку текущего менеджера")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Мои заявки на перевозку" })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Вес, кг" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Статус" })).toBeVisible();
+    const openOrderLinks = page.getByRole("link", { name: "Открыть" });
+    if (await openOrderLinks.count()) {
+      await expect(openOrderLinks.first()).toBeVisible();
+    }
+    const orderBadges = page.locator(".orders-table-wrap .badge");
+    if (await orderBadges.count()) {
+      await expect(orderBadges.first()).toBeVisible();
+    }
 
     for (const path of [
       "/dashboard",
@@ -124,6 +140,31 @@ test.describe("React manager smoke", () => {
     ]) {
       await expectSpaPageLoaded(page, path);
     }
+
+    await expectSpaPageLoaded(page, "/trips");
+    await expect(page.getByRole("heading", { name: "Рейсы" })).toBeVisible();
+    await expect(page.getByText("Список рейсов по утвержденным маршрутам")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Экспорт Excel" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Расстояние" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Факт. начало" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Факт. завершение" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Время" })).toHaveCount(0);
+    await expectNoMojibake(page);
+
+    await expectSpaPageLoaded(page, "/profile");
+    await expect(page.getByRole("heading", { name: "Профиль" })).toBeVisible();
+    const placeholderAvatar = page.locator('img[src="/static/img/profile-avatar-placeholder.png"]');
+    if (await placeholderAvatar.count()) {
+      await expect(placeholderAvatar).toBeVisible();
+    } else {
+      await expect(page.locator(".profile-avatar")).toBeVisible();
+    }
+    await expect(page.getByRole("button", { name: "Загрузить фото" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Изменить фото" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Редактировать профиль" }).click();
+    await expect(page.getByRole("button", { name: /Загрузить фото|Изменить фото/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "К профилю" })).toBeVisible();
+    await expectNoMojibake(page);
 
     await page.goto("/admin/dashboard");
     await expect(page.locator("body")).toContainText("Доступ ограничен");

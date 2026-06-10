@@ -299,6 +299,7 @@ def test_trips_endpoint_respects_scope_status_and_date_filters(client, users, re
     assert [item["id"] for item in payload] == [own_trip.pk]
     assert payload[0]["planned_finish"] is None
     assert payload[0]["manager"]["username"] == "manager_api"
+    assert payload[0]["display_route_name"] == "Москва — Дмитров"
 
 
 @pytest.mark.django_db

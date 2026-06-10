@@ -26,6 +26,7 @@ const statusTone = {
 };
 
 export default function OrdersListPage() {
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const { data: orders = [], isError, isLoading } = useOrdersQuery();
   const filteredOrders = useMemo(() => {
@@ -35,10 +36,15 @@ export default function OrdersListPage() {
     return orders.filter((order) => order.status === statusFilter);
   }, [orders, statusFilter]);
 
+  const applyFilters = (event) => {
+    event.preventDefault();
+    setStatusFilter(selectedStatus);
+  };
+
   const columns = [
     { key: "id", label: "№", render: (order) => <Link to={`/orders/${order.id}`}>#{order.id}</Link> },
     { key: "cargo_name", label: "Груз" },
-    { key: "cargo_weight_kg", label: "Вес", render: (order) => formatWeight(order.cargo_weight_kg) },
+    { key: "cargo_weight_kg", label: "Вес, кг", render: (order) => formatWeight(order.cargo_weight_kg) },
     { key: "transport", label: "Транспорт", render: (order) => transportLabel(order.transport) },
     { key: "delivery_date", label: "Дата доставки", render: (order) => formatDate(order.delivery_date) },
     {
@@ -65,25 +71,37 @@ export default function OrdersListPage() {
 
   return (
     <PageShell
-      eyebrow="Заявки"
-      title="Мои заявки на перевозку"
+      title="Заявки"
+      subtitle="Заявки на перевозку текущего менеджера"
+      className="orders-list-panel"
+      variant="wide"
       actions={<Button to="/orders/create">Создать заявку</Button>}
     >
       {isError ? <Alert tone="danger">Не удалось загрузить данные.</Alert> : null}
-      <Card>
-        <div className="toolbar">
-          <label className="compact-field">
-            Статус
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-              {ORDER_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <DataTable columns={columns} rows={filteredOrders} emptyText="Нет заявок." />
+      <Card className="orders-list-card">
+        <form className="orders-filter-form" onSubmit={applyFilters}>
+          <label htmlFor="order-status">Статус</label>
+          <select
+            id="order-status"
+            value={selectedStatus}
+            onChange={(event) => setSelectedStatus(event.target.value)}
+          >
+            {ORDER_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="secondary">
+            Показать
+          </Button>
+        </form>
+        <DataTable
+          columns={columns}
+          rows={filteredOrders}
+          emptyText="Заявок пока нет. Создайте первую заявку, чтобы рассчитать маршруты и запланировать рейс."
+          className="orders-table-wrap"
+        />
       </Card>
     </PageShell>
   );

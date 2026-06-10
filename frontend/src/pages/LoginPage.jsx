@@ -21,7 +21,6 @@ export default function LoginPage() {
     skip: !isAuthenticated
   });
   const from = location.state?.from?.pathname;
-  const successMessage = location.state?.message;
 
   useEffect(() => {
     if (user) {
@@ -68,8 +67,6 @@ export default function LoginPage() {
 
         <h1>Вход</h1>
         <p className="muted">Введите никнейм или email и пароль</p>
-
-        {successMessage ? <p className="form-success">{successMessage}</p> : null}
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label className="form-row">

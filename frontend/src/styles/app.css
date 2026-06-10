@@ -643,7 +643,7 @@ p {
 .metric-card a,
 .table-action {
   color: #1f7a4d;
-  font-weight: 800;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -764,7 +764,7 @@ p {
   display: grid;
   gap: 7px;
   color: #385445;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .compact-field input,
@@ -815,20 +815,26 @@ p {
   width: 100%;
   border-collapse: collapse;
   min-width: 840px;
+  background: transparent;
 }
 
 .data-table th,
 .data-table td {
-  border-bottom: 1px solid #e1ece5;
-  padding: 13px 10px;
+  border-bottom: 1px solid #dfe4dc;
+  padding: 12px;
   text-align: left;
   vertical-align: middle;
 }
 
 .data-table th {
-  color: #5d7265;
-  font-size: 0.86rem;
-  text-transform: uppercase;
+  color: #596057;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.data-table td {
+  color: #20231f;
+  font-weight: 400;
 }
 
 .badge {
@@ -838,7 +844,7 @@ p {
   min-height: 30px;
   padding: 0 10px;
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .badge-neutral {
@@ -1249,7 +1255,8 @@ p {
 .manager-nav-button {
   background: transparent;
   color: #0f6b3a;
-  font-weight: 700;
+  font: inherit;
+  font-size: 15px;
   min-height: auto;
   padding: 7px 0;
   text-decoration: none;
@@ -1331,8 +1338,8 @@ p {
 .manager-workspace button {
   border: 1px solid #13713f;
   border-radius: 6px;
-  font-weight: 700;
-  min-height: 42px;
+  font-weight: 600;
+  min-height: 40px;
 }
 
 .manager-workspace .button-secondary {
@@ -1349,6 +1356,325 @@ p {
   border-color: #ff6b6b;
   background: #fff5f5;
   color: #ff4040;
+}
+
+.trips-list-panel {
+  max-width: 1180px;
+}
+
+.manager-workspace .trips-list-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.trips-filter-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.trips-filter-form label {
+  color: #20231f;
+  font-weight: 400;
+}
+
+.trips-filter-form select {
+  border: 1px solid #ccd4c8;
+  border-radius: 6px;
+  min-height: 40px;
+  min-width: 180px;
+  padding: 0 12px;
+}
+
+.trips-table-wrap {
+  margin-top: 24px;
+}
+
+.trips-table-wrap .data-table {
+  min-width: 1080px;
+}
+
+.trips-table-wrap .data-table th,
+.trips-table-wrap .data-table td {
+  padding: 12px;
+}
+
+.manager-workspace .table-action-button {
+  border-radius: 6px;
+  font-size: 14px;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.orders-list-panel {
+  max-width: 1180px;
+}
+
+.manager-workspace .orders-list-card {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.orders-filter-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.orders-filter-form label {
+  color: #20231f;
+  font-weight: 400;
+}
+
+.orders-filter-form select {
+  border: 1px solid #ccd4c8;
+  border-radius: 6px;
+  min-height: 40px;
+  min-width: 180px;
+  padding: 0 12px;
+}
+
+.orders-table-wrap {
+  margin-top: 24px;
+}
+
+.orders-table-wrap .data-table {
+  min-width: 980px;
+}
+
+.orders-table-wrap .table-action {
+  color: #13713f;
+  font-weight: 600;
+}
+
+.manager-workspace .profile-panel {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  max-width: 1210px;
+  padding: 42px 0 0;
+}
+
+.manager-workspace .profile-panel .page-heading {
+  align-items: start;
+  margin-bottom: 10px;
+}
+
+.manager-workspace .profile-panel .page-heading h1 {
+  font-size: clamp(2.15rem, 4vw, 2.65rem);
+  margin-bottom: 12px;
+}
+
+.manager-workspace .profile-panel .page-heading .muted {
+  font-size: 1.05rem;
+}
+
+.profile-edit-button {
+  gap: 10px;
+  min-height: 48px;
+  padding-inline: 22px;
+}
+
+.profile-layout {
+  align-items: stretch;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 340px minmax(0, 1fr);
+}
+
+.manager-workspace .profile-avatar-card,
+.manager-workspace .profile-data-card {
+  border: 1px solid rgba(223, 228, 220, 0.95);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 44px rgba(31, 95, 67, 0.1);
+}
+
+.manager-workspace .profile-avatar-card {
+  align-content: start;
+  gap: 0;
+  justify-items: center;
+  padding: 30px 28px;
+  text-align: center;
+}
+
+.profile-avatar-frame {
+  align-items: center;
+  border: 0;
+  border-radius: 50%;
+  display: flex;
+  height: 188px;
+  justify-content: center;
+  margin: 0 auto 24px;
+  overflow: hidden;
+  width: 188px;
+}
+
+.profile-avatar {
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.profile-avatar-card h2 {
+  color: #20231f;
+  font-size: 1.45rem;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.profile-role-badge {
+  align-items: center;
+  background: #e8f5e8;
+  border-radius: 7px;
+  color: #1f5f43;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 18px;
+}
+
+.profile-avatar-note,
+.profile-privacy-note {
+  align-items: center;
+  background: rgba(232, 245, 232, 0.72);
+  border-radius: 7px;
+  color: #596057;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  text-align: left;
+}
+
+.profile-avatar-note {
+  margin-top: 28px;
+  padding: 16px;
+}
+
+.profile-avatar-note p {
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.profile-avatar-note img {
+  height: 34px;
+  object-fit: contain;
+  width: 34px;
+}
+
+.profile-avatar-edit {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  width: 100%;
+}
+
+.profile-avatar-upload-button,
+.profile-avatar-delete-button {
+  width: 100%;
+}
+
+.profile-upload-hint {
+  color: #7c857f;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+
+.manager-workspace .profile-data-card {
+  padding: 32px 36px;
+}
+
+.profile-data-heading h2 {
+  color: #20231f;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 0 0 28px;
+}
+
+.profile-field-grid {
+  display: grid;
+  gap: 20px;
+  margin: 0;
+}
+
+.profile-field-grid div,
+.profile-data-form .form-field {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 210px minmax(0, 1fr);
+}
+
+.profile-field-grid dt,
+.profile-data-form .form-field span:first-child {
+  color: #3f4840;
+  font-weight: 700;
+}
+
+.profile-field-grid dd {
+  border: 1px solid #dfe4dc;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #30362f;
+  margin: 0;
+  min-height: 48px;
+  padding: 13px 16px;
+}
+
+.profile-data-form {
+  display: grid;
+  gap: 20px;
+}
+
+.profile-data-form .form-field input {
+  border-color: #dfe4dc;
+  border-radius: 7px;
+  min-height: 48px;
+}
+
+.profile-data-form .field-error {
+  grid-column: 2;
+}
+
+.profile-privacy-note {
+  font-size: 14px;
+  line-height: 1.45;
+  margin-top: 8px;
+  padding: 16px;
+}
+
+.profile-shield-icon {
+  align-items: center;
+  border: 2px solid #13713f;
+  border-radius: 50%;
+  color: #13713f;
+  display: inline-flex;
+  font-weight: 700;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.profile-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .manager-metrics-grid {
@@ -1438,7 +1764,7 @@ p {
   border-radius: 6px;
   color: #13713f;
   display: inline-flex;
-  font-weight: 800;
+  font-weight: 600;
   gap: 12px;
   justify-content: center;
   min-height: 38px;
@@ -1715,7 +2041,7 @@ p {
 .archive-file-icon text {
   fill: currentColor;
   font-size: 8px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .archive-file-icon-pdf,
@@ -1732,7 +2058,7 @@ p {
   border: 1px solid currentColor;
   border-radius: 8px;
   display: inline-flex;
-  font-weight: 900;
+  font-weight: 700;
   justify-content: center;
   min-width: 68px;
   padding: 8px 14px;
@@ -1760,7 +2086,7 @@ p {
   border-radius: 8px;
   color: #13713f;
   display: inline-flex;
-  font-weight: 800;
+  font-weight: 600;
   gap: 10px;
   min-height: 42px;
   padding: 0 18px;
@@ -2212,5 +2538,35 @@ p {
     align-items: center;
     flex-direction: column;
     gap: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .orders-filter-form,
+  .orders-filter-form select,
+  .orders-filter-form .button,
+  .profile-edit-button,
+  .profile-save-actions .button {
+    width: 100%;
+  }
+
+  .manager-workspace .profile-panel {
+    padding-top: 24px;
+  }
+
+  .manager-workspace .profile-avatar-card,
+  .manager-workspace .profile-data-card {
+    padding: 24px 18px;
+  }
+
+  .profile-field-grid div,
+  .profile-data-form .form-field {
+    align-items: start;
+    gap: 8px;
+    grid-template-columns: 1fr;
+  }
+
+  .profile-data-form .field-error {
+    grid-column: auto;
   }
 }

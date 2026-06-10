@@ -6,6 +6,8 @@
   Russian strings for React.
 - Improved React registration error rendering for duplicate username/email, invalid fields,
   network failures and request timeout.
+- Restored registration phone auto-formatting from `89...`/`79...` to `+7 (...) ...` on blur and
+  removed the post-registration login success banner.
 - Added a registration request timeout to prevent an endless `Регистрируем...` state.
 - Extended Playwright auth smoke coverage for the duplicate manager registration scenario.
 - Kept models, migrations, registration rules, JWT login/refresh behavior and Django templates

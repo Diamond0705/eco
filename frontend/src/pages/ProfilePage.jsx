@@ -8,7 +8,6 @@ import {
   useUploadAvatarMutation
 } from "../api/profileApi.js";
 import Alert from "../components/ui/Alert.jsx";
-import Badge from "../components/ui/Badge.jsx";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import FormField from "../components/ui/FormField.jsx";
@@ -71,7 +70,7 @@ export default function ProfilePage() {
     return () => URL.revokeObjectURL(objectUrl);
   }, [avatarBlob]);
 
-  const avatarSrc = avatarUrl || "/static/img/default-avatar.svg";
+  const avatarSrc = avatarUrl || "/static/img/profile-avatar-placeholder.png";
   const isBusy = isSaving || isUploading || isDeleting;
   const avatarButtonLabel = useMemo(() => {
     if (isUploading) {
@@ -157,57 +156,83 @@ export default function ProfilePage() {
     return <Alert tone="danger">Не удалось загрузить профиль.</Alert>;
   }
 
+  const displayName =
+    [profile.last_name, profile.first_name].filter(Boolean).join(" ") || profile.username;
+
   return (
-    <PageShell eyebrow="Профиль" title="Профиль пользователя">
+    <PageShell
+      title="Профиль"
+      subtitle="Управляйте своими персональными данными и настройками аккаунта."
+      className="profile-panel"
+      variant="wide"
+      actions={
+        isEditing ? (
+          <Button variant="secondary" onClick={handleCancel}>
+            К профилю
+          </Button>
+        ) : (
+          <Button variant="secondary" onClick={handleEdit} className="profile-edit-button">
+            Редактировать профиль
+          </Button>
+        )
+      }
+    >
       {message ? <Alert tone="success">{message}</Alert> : null}
       {errorMessage ? <Alert tone="danger">{errorMessage}</Alert> : null}
 
       <section className="profile-layout">
         <Card className="profile-avatar-card">
-          <img className="profile-avatar" src={avatarSrc} alt="Фото профиля" />
-          <div>
-            <h2>{profile.first_name || profile.last_name ? `${profile.first_name} ${profile.last_name}` : profile.username}</h2>
-            <Badge tone="success">{profileRoleLabel(profile.role)}</Badge>
+          <div className="profile-avatar-frame">
+            <img className="profile-avatar" src={avatarSrc} alt="Фото профиля" />
           </div>
-          <input
-            ref={fileInputRef}
-            className="visually-hidden"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleAvatarSelect}
-          />
-          <div className="form-actions">
-            <Button
-              variant="secondary"
-              disabled={isBusy}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {avatarButtonLabel}
-            </Button>
-            {profile.avatar_exists ? (
-              <Button variant="danger" disabled={isBusy} onClick={handleDeleteAvatar}>
-                {isDeleting ? "Удаляем..." : "Удалить фото"}
-              </Button>
-            ) : null}
-          </div>
-          <p className="field-hint">JPG, PNG или WEBP, до 5 МБ.</p>
-        </Card>
+          <h2>{displayName}</h2>
+          <span className="profile-role-badge">{profileRoleLabel(profile.role)}</span>
 
-        <Card>
-          <div className="detail-heading">
-            <div>
-              <h2>Персональные данные</h2>
-              <p>Данные используются в заявках, рейсах и отчетах EcoLogist.</p>
-            </div>
-            {!isEditing ? (
-              <Button variant="secondary" onClick={handleEdit}>
-                Редактировать
-              </Button>
-            ) : null}
+          <div className="profile-avatar-note">
+            <img src="/static/img/eco-leaf-icon.png" alt="" aria-hidden="true" />
+            <p>Вы можете добавить фотографию профиля, чтобы персонализировать свой аккаунт.</p>
           </div>
 
           {isEditing ? (
-            <form className="profile-form" onSubmit={handleSubmit}>
+            <div className="profile-avatar-edit">
+              <input
+                ref={fileInputRef}
+                className="visually-hidden"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarSelect}
+              />
+              <Button
+                className="profile-avatar-upload-button"
+                disabled={isBusy}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {avatarButtonLabel}
+              </Button>
+              {profile.avatar_exists ? (
+                <Button
+                  variant="danger"
+                  className="profile-avatar-delete-button"
+                  disabled={isBusy}
+                  onClick={handleDeleteAvatar}
+                >
+                  {isDeleting ? "Удаляем..." : "Удалить фото"}
+                </Button>
+              ) : null}
+              <p className="profile-upload-hint">
+                Рекомендуемый формат: JPG, PNG или WEBP. Максимальный размер файла: 5 МБ.
+              </p>
+            </div>
+          ) : null}
+        </Card>
+
+        <Card className="profile-data-card">
+          <div className="profile-data-heading">
+            <h2>Личные данные</h2>
+          </div>
+
+          {isEditing ? (
+            <form className="profile-data-form" onSubmit={handleSubmit}>
               <FormField
                 label="Фамилия"
                 name="last_name"
@@ -244,7 +269,11 @@ export default function ProfilePage() {
                 onChange={updateField}
                 error={fieldError(updateError, "phone")}
               />
-              <div className="form-actions">
+              <div className="profile-privacy-note">
+                <span className="profile-shield-icon" aria-hidden="true">✓</span>
+                <span>Ваши данные используются для работы в системе и не передаются третьим лицам.</span>
+              </div>
+              <div className="profile-save-actions">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving ? "Сохраняем..." : "Сохранить"}
                 </Button>
@@ -254,38 +283,42 @@ export default function ProfilePage() {
               </div>
             </form>
           ) : (
-            <dl className="detail-list">
-              <div>
-                <dt>Имя пользователя</dt>
-                <dd>{profile.username}</dd>
+            <>
+              <dl className="profile-field-grid">
+                <div>
+                  <dt>Имя пользователя</dt>
+                  <dd>{profile.username || "Не указано"}</dd>
+                </div>
+                <div>
+                  <dt>Фамилия</dt>
+                  <dd>{profile.last_name || "Не указано"}</dd>
+                </div>
+                <div>
+                  <dt>Имя</dt>
+                  <dd>{profile.first_name || "Не указано"}</dd>
+                </div>
+                <div>
+                  <dt>Отчество</dt>
+                  <dd>{profile.middle_name || "Не указано"}</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{profile.email || "Не указано"}</dd>
+                </div>
+                <div>
+                  <dt>Телефон</dt>
+                  <dd>{profile.phone || "Не указано"}</dd>
+                </div>
+                <div>
+                  <dt>Роль</dt>
+                  <dd>{profileRoleLabel(profile.role)}</dd>
+                </div>
+              </dl>
+              <div className="profile-privacy-note">
+                <span className="profile-shield-icon" aria-hidden="true">✓</span>
+                <span>Ваши данные используются для работы в системе и не передаются третьим лицам.</span>
               </div>
-              <div>
-                <dt>Фамилия</dt>
-                <dd>{profile.last_name || "—"}</dd>
-              </div>
-              <div>
-                <dt>Имя</dt>
-                <dd>{profile.first_name || "—"}</dd>
-              </div>
-              <div>
-                <dt>Отчество</dt>
-                <dd>{profile.middle_name || "—"}</dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{profile.email || "—"}</dd>
-              </div>
-              <div>
-                <dt>Телефон</dt>
-                <dd>{profile.phone || "—"}</dd>
-              </div>
-              <div>
-                <dt>Роль</dt>
-                <dd>
-                  <Badge tone="success">{profileRoleLabel(profile.role)}</Badge>
-                </dd>
-              </div>
-            </dl>
+            </>
           )}
         </Card>
       </section>

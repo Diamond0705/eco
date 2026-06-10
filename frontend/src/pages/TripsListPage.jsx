@@ -7,7 +7,6 @@ import {
   useTripsQuery
 } from "../api/managerApi.js";
 import Alert from "../components/ui/Alert.jsx";
-import Badge from "../components/ui/Badge.jsx";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
@@ -18,29 +17,26 @@ import {
   TRIP_STATUS_OPTIONS,
   formatDateTime,
   formatDistance,
-  formatDuration,
-  formatMoney,
-  tripStatusLabel,
-  transportLabel
+  tripStatusLabel
 } from "../utils/formatters.js";
 
-const statusTone = {
-  planned: "info",
-  in_progress: "success",
-  delivered: "neutral",
-  cancelled: "danger"
-};
-
 export default function TripsListPage() {
-  const [filters, setFilters] = useState({ status: "", date_from: "", date_to: "" });
+  const [filters, setFilters] = useState({ status: "" });
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const { data: trips = [], isError, isLoading } = useTripsQuery(filters);
   const [downloadTripsXlsx, { isLoading: isDownloading }] = useDownloadTripsXlsxMutation();
   const [archiveTripsXlsx, { isLoading: isArchiving }] = useArchiveTripsXlsxMutation();
 
-  const updateFilter = (key, value) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+  const applyFilters = (event) => {
+    event.preventDefault();
+    setFilters({ status: selectedStatus });
+  };
+
+  const resetFilters = () => {
+    setSelectedStatus("");
+    setFilters({ status: "" });
   };
 
   const handleDownload = async () => {
@@ -65,20 +61,14 @@ export default function TripsListPage() {
   };
 
   const columns = [
-    { key: "id", label: "№", render: (trip) => <Link to={`/trips/${trip.id}`}>#{trip.id}</Link> },
+    { key: "id", label: "Рейс", render: (trip) => `№${trip.id}` },
+    { key: "order", label: "Заявка", render: (trip) => (trip.order?.id ? `№${trip.order.id}` : "—") },
     { key: "cargo", label: "Груз", render: (trip) => trip.order?.cargo_name || "—" },
-    { key: "transport", label: "Транспорт", render: (trip) => transportLabel(trip.transport) },
+    { key: "route", label: "Маршрут", render: (trip) => trip.display_route_name || trip.route_option?.name || "—" },
     {
       key: "status",
       label: "Статус",
-      render: (trip) => (
-        <Badge tone={statusTone[trip.status] || "neutral"}>{tripStatusLabel(trip.status)}</Badge>
-      )
-    },
-    {
-      key: "planned_start",
-      label: "Плановый старт",
-      render: (trip) => formatDateTime(trip.planned_start)
+      render: (trip) => tripStatusLabel(trip.status)
     },
     {
       key: "distance",
@@ -86,20 +76,20 @@ export default function TripsListPage() {
       render: (trip) => formatDistance(trip.route_option?.distance_km)
     },
     {
-      key: "cost",
-      label: "Стоимость",
-      render: (trip) => formatMoney(trip.route_option?.cost_rub)
+      key: "actual_start",
+      label: "Факт. начало",
+      render: (trip) => formatDateTime(trip.actual_start)
     },
     {
-      key: "duration",
-      label: "Время",
-      render: (trip) => formatDuration(trip.route_option?.duration_minutes)
+      key: "actual_finish",
+      label: "Факт. завершение",
+      render: (trip) => formatDateTime(trip.actual_finish)
     },
     {
       key: "actions",
-      label: "Действие",
+      label: "",
       render: (trip) => (
-        <Link className="table-action" to={`/trips/${trip.id}`}>
+        <Link className="button button-primary table-action-button" to={`/trips/${trip.id}`}>
           Открыть
         </Link>
       )
@@ -111,48 +101,55 @@ export default function TripsListPage() {
   }
 
   return (
-    <PageShell eyebrow="Рейсы" title="Рейсы менеджера">
+    <PageShell
+      title="Рейсы"
+      subtitle="Список рейсов по утвержденным маршрутам"
+      className="trips-list-panel"
+      variant="wide"
+      actions={
+        <>
+          <Button variant="secondary" disabled={isDownloading} onClick={handleDownload}>
+            {isDownloading ? "Готовим файл..." : "Экспорт Excel"}
+          </Button>
+          <Button variant="secondary" disabled={isArchiving} onClick={handleArchive}>
+            {isArchiving ? "Сохраняем..." : "Сохранить Excel в архив"}
+          </Button>
+          <Button to="/orders" variant="secondary">
+            К заявкам
+          </Button>
+        </>
+      }
+    >
       {message ? <Alert tone="success">{message}</Alert> : null}
       {errorMessage ? <Alert tone="danger">{errorMessage}</Alert> : null}
       {isError ? <Alert tone="danger">Не удалось загрузить рейсы.</Alert> : null}
-      <Card>
-        <div className="toolbar toolbar-wrap">
-          <label className="compact-field">
-            Статус
-            <select value={filters.status} onChange={(event) => updateFilter("status", event.target.value)}>
-              {TRIP_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="compact-field">
-            Дата с
-            <input
-              type="date"
-              value={filters.date_from}
-              onChange={(event) => updateFilter("date_from", event.target.value)}
-            />
-          </label>
-          <label className="compact-field">
-            Дата по
-            <input
-              type="date"
-              value={filters.date_to}
-              onChange={(event) => updateFilter("date_to", event.target.value)}
-            />
-          </label>
-          <div className="toolbar-actions">
-            <Button variant="secondary" disabled={isDownloading} onClick={handleDownload}>
-              {isDownloading ? "Готовим файл..." : "Скачать Excel"}
-            </Button>
-            <Button variant="secondary" disabled={isArchiving} onClick={handleArchive}>
-              {isArchiving ? "Сохраняем..." : "В архив"}
-            </Button>
-          </div>
-        </div>
-        <DataTable columns={columns} rows={trips} emptyText="Рейсов по выбранным условиям нет." />
+      <Card className="trips-list-card">
+        <form className="trips-filter-form" onSubmit={applyFilters}>
+          <label htmlFor="trip-status">Статус</label>
+          <select
+            id="trip-status"
+            value={selectedStatus}
+            onChange={(event) => setSelectedStatus(event.target.value)}
+          >
+            {TRIP_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="secondary">
+            Показать
+          </Button>
+          <Button type="button" variant="secondary" onClick={resetFilters}>
+            Сбросить
+          </Button>
+        </form>
+        <DataTable
+          columns={columns}
+          rows={trips}
+          emptyText="Рейсы по выбранным фильтрам не найдены."
+          className="trips-table-wrap"
+        />
       </Card>
     </PageShell>
   );
